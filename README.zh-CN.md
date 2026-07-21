@@ -67,4 +67,4 @@ Electron 主进程启动一个只监听 `127.0.0.1` 随机端口的临时 Node �
 
 ## 许可证与品牌
 
-社区版代码计划以 GNU Affero General Public License v3.0 或更高版本发布。DocFlow Local 名称、Logo 和官方行业模板不包含在开源代码许可中，详见 [TRADEMARKS.md](TRADEMARKS.md)。OEM、闭源集成和企业商业许可请联系 `sales@docflowlocal.com`。
+社区版代码已按 GNU Affero General Public License v3.0 或更高版本发布。DocFlow Local 名称、Logo 和官方行业模板不包含在开源代码许可中，详见 [TRADEMARKS.md](TRADEMARKS.md)。OEM、闭源集成和企业商业许可请联系 `sales@docflowlocal.com`。

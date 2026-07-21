@@ -68,4 +68,4 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Use Issue
 
 ## License and trademarks
 
-Community Edition code is intended to be released under the GNU Affero General Public License v3.0 or later. The DocFlow Local name, logo, and official industry templates are not granted under the code license; see [TRADEMARKS.md](TRADEMARKS.md). For OEM, proprietary embedding, or enterprise licensing, contact `sales@docflowlocal.com`.
+Community Edition code is released under the GNU Affero General Public License v3.0 or later. The DocFlow Local name, logo, and official industry templates are not granted under the code license; see [TRADEMARKS.md](TRADEMARKS.md). For OEM, proprietary embedding, or enterprise licensing, contact `sales@docflowlocal.com`.
