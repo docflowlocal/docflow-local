@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light" />
+  <title>DocFlow Local — 本地文档批量自动化</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"><span>D</span><i></i></div>
+        <div><strong>DocFlow</strong><small>LOCAL</small></div>
+      </div>
+
+      <button class="project-switch" id="projectSwitch">
+        <span class="project-icon">Q3</span>
+        <span><small data-i18n="project.current">当前项目</small><b data-i18n="project.name">季度报价交付包</b></span>
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m6 8 4 4 4-4"/></svg>
+      </button>
+
+      <nav class="side-nav" aria-label="主要导航" data-i18n-aria="nav.aria">
+        <p data-i18n="nav.workspace">工作区</p>
+        <button class="nav-item active" data-target="overview"><svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zm10 0h6v6h-6zM4 14h6v6H4zm10 0h6v6h-6z"/></svg><span data-i18n="nav.overview">流程总览</span></button>
+        <button class="nav-item" data-target="dataSection"><svg viewBox="0 0 24 24"><path d="M4 5c0-1 3.6-2 8-2s8 1 8 2-3.6 2-8 2-8-1-8-2Zm0 0v6c0 1 3.6 2 8 2s8-1 8-2V5M4 11v6c0 1 3.6 2 8 2s8-1 8-2v-6"/></svg><span data-i18n="nav.data">数据源</span><em id="navRowCount">8</em></button>
+        <button class="nav-item" data-target="templateSection"><svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7zM14 3v5h5M10 13h5m-5 4h5"/></svg><span data-i18n="nav.templates">模板组合</span><em>2</em></button>
+        <button class="nav-item" data-target="mappingSection"><svg viewBox="0 0 24 24"><path d="M8 7h12M4 7h.01M8 12h12M4 12h.01M8 17h12M4 17h.01"/></svg><span data-i18n="nav.fields">字段与规则</span></button>
+        <button class="nav-item" data-target="outputSection"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 19h14"/></svg><span data-i18n="nav.generate">生成与校验</span></button>
+        <p data-i18n="nav.delivery">交付</p>
+        <button class="nav-item" id="openRecent"><svg viewBox="0 0 24 24"><path d="M4 7h6l2 2h8v10H4z"/></svg><span data-i18n="nav.packages">交付包</span><em>3</em></button>
+      </nav>
+
+      <div class="privacy-card">
+        <div class="privacy-icon"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 2.8 8.5 7 10 4.2-1.5 7-5.5 7-10V6zM9 12l2 2 4-5"/></svg></div>
+        <div><strong data-i18n="privacy.title">文件不离开本机</strong><p data-i18n="privacy.copy">仅在 127.0.0.1 处理，无云端上传。</p></div>
+      </div>
+      <div class="sidebar-footer"><span class="status-dot"></span><span id="engineLabel">本地引擎已连接</span> <button id="settingsBtn" aria-label="设置" data-i18n-aria="actions.settings">⌘</button></div>
+    </aside>
+
+    <main class="main-content" id="overview">
+      <header class="topbar">
+        <div><p class="eyebrow" data-i18n="hero.eyebrow">项目 / QUOTE PACKAGE · Q3</p><h1 data-i18n="hero.title">季度报价交付包</h1><p class="subtitle" data-i18n="hero.subtitle">把客户数据映射到报价模板，校验后一次生成全部交付文件。</p></div>
+        <div class="top-actions"><button class="language-toggle" id="languageToggle" aria-label="Switch to English" title="Switch to English"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.4 2.5 3.7 5.5 3.7 9S14.4 18.5 12 21M12 3c-2.4 2.5-3.7 5.5-3.7 9s1.3 6.5 3.7 9"/></svg><span id="languageToggleLabel">EN</span></button><button class="icon-btn" id="helpBtn" aria-label="帮助" data-i18n-aria="actions.help">?</button><button class="btn secondary" id="validateTop" data-i18n="actions.validate">运行校验</button><button class="btn primary" id="generateTop"><span data-i18n="actions.generate">生成交付包</span><svg viewBox="0 0 20 20"><path d="m8 5 5 5-5 5"/></svg></button></div>
+      </header>
+
+      <section class="workflow" aria-label="工作流程" data-i18n-aria="workflow.aria">
+        <div class="workflow-progress"><span id="progressFill"></span></div>
+        <button class="workflow-step complete" data-target="dataSection"><i>✓</i><span><small>01</small><b data-i18n="workflow.import">导入数据</b></span></button>
+        <button class="workflow-step complete" data-target="templateSection"><i>✓</i><span><small>02</small><b data-i18n="workflow.template">选择模板</b></span></button>
+        <button class="workflow-step active" data-target="mappingSection"><i>3</i><span><small>03</small><b data-i18n="workflow.mapping">映射与规则</b></span></button>
+        <button class="workflow-step" data-target="outputSection"><i>4</i><span><small>04</small><b data-i18n="workflow.validation">校验生成</b></span></button>
+        <button class="workflow-step"><i>5</i><span><small>05</small><b data-i18n="workflow.package">交付打包</b></span></button>
+      </section>
+
+      <div class="content-grid">
+        <div class="left-column">
+          <section class="panel data-panel" id="dataSection">
+            <div class="panel-heading">
+              <div class="heading-icon mint"><svg viewBox="0 0 24 24"><path d="M4 5c0-1 3.6-2 8-2s8 1 8 2-3.6 2-8 2-8-1-8-2Zm0 0v6c0 1 3.6 2 8 2s8-1 8-2V5M4 11v6c0 1 3.6 2 8 2s8-1 8-2v-6"/></svg></div>
+              <div><p class="section-kicker" data-i18n="data.kicker">数据源</p><h2 id="dataFilename">客户报价清单_Q3.csv</h2></div>
+              <div class="heading-actions"><span class="sync-label"><i></i><span data-i18n="data.loaded">已加载</span></span><button class="text-btn" id="replaceData" data-i18n="data.replace">替换文件</button></div>
+            </div>
+            <input type="file" id="dataInput" accept=".csv,.xlsx,.xlsm" hidden />
+            <div class="data-metrics">
+              <div><strong id="metricRows">8</strong><span data-i18n="data.records">数据记录</span></div>
+              <div><strong id="metricFields">12</strong><span data-i18n="data.fields">可用字段</span></div>
+              <div class="warning-metric"><strong id="metricMissing">2</strong><span data-i18n="data.missing">待处理缺失项</span></div>
+              <button id="expandData"><span data-i18n="data.view">查看数据表</span> <svg viewBox="0 0 20 20"><path d="m7 5 5 5-5 5"/></svg></button>
+            </div>
+            <div class="table-preview" id="tablePreview"></div>
+          </section>
+
+          <section class="panel" id="templateSection">
+            <div class="panel-heading compact">
+              <div><p class="section-kicker" data-i18n="templates.kicker">模板组合</p><h2 data-i18n="templates.heading">本批次将生成 2 份文件</h2></div>
+              <button class="text-btn" id="addTemplate"><span>＋</span> <span data-i18n="templates.add">添加模板</span></button>
+              <input type="file" id="templateInput" accept=".docx,.pdf" hidden />
+            </div>
+            <div class="template-row" id="templateList">
+              <article class="template-card selected" data-template="quote">
+                <div class="file-thumb word"><span>W</span><b data-i18n="templates.quoteShort">报价单</b><small>DOCX</small></div>
+                <div class="template-info"><div><strong data-i18n="templates.quoteName">标准报价单.docx</strong><span class="tag" data-i18n="templates.primary">主文件</span></div><p><span data-i18n="templates.nineFields">9 个字段</span><span data-i18n="templates.oneRule">1 个计算规则</span><span data-i18n="templates.qr">含二维码</span></p></div>
+                <button class="more-btn" aria-label="更多" data-i18n-aria="actions.more">•••</button><span class="selected-check">✓</span>
+              </article>
+              <article class="template-card selected" data-template="attachment">
+                <div class="file-thumb pdf"><span>P</span><b data-i18n="templates.attachmentShort">附件</b><small>PDF</small></div>
+                <div class="template-info"><div><strong data-i18n="templates.attachmentName">产品与交付说明.pdf</strong><span class="tag grey" data-i18n="templates.attachment">附件</span></div><p><span data-i18n="templates.fourFields">4 个字段</span><span data-i18n="templates.conditional">条件显示</span><span data-i18n="templates.itemList">项目清单</span></p></div>
+                <button class="more-btn" aria-label="更多" data-i18n-aria="actions.more">•••</button><span class="selected-check">✓</span>
+              </article>
+            </div>
+          </section>
+
+          <section class="panel mapping-panel" id="mappingSection">
+            <div class="panel-heading compact">
+              <div><p class="section-kicker" data-i18n="mapping.kicker">字段映射</p><h2 data-i18n="mapping.heading">模板字段与数据列</h2></div>
+              <div class="mapping-legend"><span><i class="ok"></i><span data-i18n="mapping.mapped">已映射</span> <b id="mappedCount">7</b></span><span><i class="warn"></i><span data-i18n="mapping.confirm">需确认</span> <b id="warnCount">2</b></span></div>
+            </div>
+            <div class="mapping-table">
+              <div class="mapping-header"><span data-i18n="mapping.templateField">模板字段</span><span data-i18n="mapping.sourceRule">数据源字段 / 规则</span><span data-i18n="mapping.preview">预览值</span><span data-i18n="mapping.status">状态</span></div>
+              <div id="mappingRows"></div>
+            </div>
+            <button class="add-rule" id="addRule"><span>＋</span> <span data-i18n="mapping.addRule">添加计算字段或条件规则</span></button>
+          </section>
+
+          <section class="panel rule-panel">
+            <div class="panel-heading compact">
+              <div><p class="section-kicker" data-i18n="rules.kicker">自动化规则</p><h2 data-i18n="rules.heading">计算与条件字段</h2></div><span class="tag mint-tag" data-i18n="rules.live">实时计算</span>
+            </div>
+            <div class="rule-list">
+              <div class="rule-row"><div class="rule-symbol">∑</div><div><strong data-i18n="rules.total">含税总额</strong><p data-i18n="rules.totalFormula">round((数量 × 单价 − 优惠) × (1 + 税率), 2)</p></div><span data-i18n="rules.computed">计算字段</span><button class="edit-rule" data-i18n="rules.edit">编辑</button></div>
+              <div class="rule-row"><div class="rule-symbol branch">⌁</div><div><strong data-i18n="rules.discount">显示优惠行</strong><p data-i18n="rules.discountCondition">仅当「优惠」大于 0 时显示</p></div><span data-i18n="rules.conditional">条件字段</span><button class="edit-rule" data-i18n="rules.edit">编辑</button></div>
+            </div>
+          </section>
+        </div>
+
+        <aside class="right-column" id="outputSection">
+          <section class="panel output-settings-panel">
+            <div class="panel-heading compact"><div><p class="section-kicker" data-i18n="output.kicker">输出设置</p><h2 data-i18n="output.heading">命名与目录</h2></div><button class="icon-btn small" id="resetSettings" aria-label="重置" data-i18n-aria="output.reset">↺</button></div>
+            <label class="field-label" data-i18n="output.filenameRule">文件命名规则</label>
+            <div class="pattern-input"><code id="filenamePattern" contenteditable="true" spellcheck="false">{{客户简称}}-报价单-{{报价编号}}</code><button class="token-btn" data-token-target="filenamePattern"><span>＋</span> <span data-i18n="output.field">字段</span></button></div>
+            <div class="pattern-preview"><span data-i18n="output.preview">预览</span><code id="filenamePreview">远海贸易-报价单-QT-24031.pdf</code></div>
+            <label class="field-label" data-i18n="output.folderStructure">目录结构</label>
+            <div class="pattern-input"><code id="folderPattern" contenteditable="true" spellcheck="false">{{客户简称}}/{{报价编号}}</code><button class="token-btn" data-token-target="folderPattern"><span>＋</span> <span data-i18n="output.field">字段</span></button></div>
+            <div class="folder-preview"><svg viewBox="0 0 24 24"><path d="M3 6h7l2 2h9v11H3z"/></svg><div><strong id="folderCustomer">远海贸易</strong><span>└─ <b id="folderQuote">QT-24031</b> / <span id="folderFileCount" data-i18n="output.twoFiles">2 个文件</span></span></div></div>
+            <div class="asset-upload-row"><div><strong data-i18n="output.signature">签名 / 印章图片</strong><p id="signatureStatus" data-i18n="output.noSignature">尚未添加，将保留签名线</p></div><button id="signatureUpload" data-i18n="output.upload">上传图片</button><input type="file" id="signatureInput" accept="image/png,image/jpeg,image/webp" hidden></div>
+            <div class="divider"></div>
+            <div class="setting-row"><div><strong data-i18n="output.skipBlank">跳过空白记录</strong><p data-i18n="output.skipBlankCopy">不为整行为空的数据生成文件</p></div><label class="switch"><input type="checkbox" checked><span></span></label></div>
+            <div class="setting-row"><div><strong data-i18n="output.stopMissing">缺失字段时停止</strong><p data-i18n="output.stopMissingCopy">存在必填项缺失则跳过该记录</p></div><label class="switch"><input type="checkbox" id="stopMissing" checked><span></span></label></div>
+            <div class="setting-row"><div><strong data-i18n="output.validationReport">生成校验报告</strong><p data-i18n="output.validationReportCopy">在 ZIP 内附带缺失字段明细</p></div><label class="switch"><input type="checkbox" checked><span></span></label></div>
+          </section>
+
+          <section class="panel readiness-card">
+            <div class="readiness-top"><div class="score-ring"><svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="18"/><circle id="scoreCircle" cx="22" cy="22" r="18"/></svg><strong id="scoreValue">82</strong></div><div><p class="section-kicker" data-i18n="readiness.kicker">生成准备度</p><h2 id="readinessTitle">还有 2 项需要确认</h2></div></div>
+            <ul id="readinessList"><li class="done">数据文件已加载 <span>✓</span></li><li class="done">2 个模板已选择 <span>✓</span></li><li class="attention">第 5、8 行存在必填项缺失 <span>!</span></li><li class="attention">2 个字段映射需确认 <span>!</span></li></ul>
+            <button class="btn validation-btn" id="validateSide"><svg viewBox="0 0 20 20"><path d="M10 2a8 8 0 1 0 8 8M10 6v4l3 2M16 3v4h-4"/></svg><span data-i18n="readiness.fullValidation">运行完整校验</span></button>
+            <button class="btn primary full" id="generateSide"><span id="generateSideLabel">生成 <b id="generateCount">8</b> 组交付文件</span> <svg viewBox="0 0 20 20"><path d="m8 5 5 5-5 5"/></svg></button>
+            <p class="local-note"><span class="status-dot"></span><span data-i18n="readiness.localNote">预计用时少于 10 秒 · 全程本地处理</span></p>
+          </section>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="validationModal" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <button class="modal-close" data-close-modal>×</button>
+      <div class="modal-icon" id="modalIcon">!</div>
+      <p class="section-kicker" data-i18n="modal.kicker">完整性校验</p><h2 id="modalTitle">发现 2 条记录需要处理</h2>
+      <p class="modal-copy" id="modalCopy">有效记录可以继续生成；缺少必填字段的记录将被跳过并写入校验报告。</p>
+      <div class="issue-list" id="issueList"></div>
+      <div class="modal-actions"><button class="btn secondary" data-close-modal data-i18n="modal.back">返回修改</button><button class="btn primary" id="modalGenerate">生成有效记录</button></div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" role="status"><span>✓</span><div><strong id="toastTitle">已完成</strong><p id="toastCopy"></p></div></div>
+  <script src="/i18n.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>

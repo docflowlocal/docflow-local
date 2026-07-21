@@ -1,0 +1,123 @@
+{
+  "name": "docflow-local",
+  "version": "0.3.1",
+  "description": "Privacy-first desktop document automation for Excel/CSV and Word/PDF templates",
+  "main": "desktop/main.js",
+  "author": "DocFlow Local Contributors",
+  "license": "AGPL-3.0-or-later",
+  "private": true,
+  "homepage": "https://docflowlocal.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/docflowlocal/docflow-local.git"
+  },
+  "bugs": {
+    "url": "https://github.com/docflowlocal/docflow-local/issues"
+  },
+  "keywords": [
+    "document-automation",
+    "mail-merge",
+    "excel-to-pdf",
+    "docx-template",
+    "pdf-generation",
+    "offline-first"
+  ],
+  "scripts": {
+    "test": "node desktop/smoke-test.js",
+    "test:syntax": "node --check static/app.js && node --check static/i18n.js && node --check desktop/engine.js && node --check desktop/main.js && node --check desktop/preload.js",
+    "test:pdf": "electron desktop/pdf-smoke.js",
+    "desktop": "electron .",
+    "desktop:debug": "DOCFLOW_DEBUG=1 electron .",
+    "build:mac": "zsh desktop/package-mac.sh arm64",
+    "build:mac:x64": "zsh desktop/package-mac.sh x64",
+    "build:win": "electron-builder --win nsis portable --x64",
+    "pack:mac": "electron-builder --mac dir --arm64"
+  },
+  "dependencies": {
+    "adm-zip": "^0.6.0",
+    "busboy": "^1.6.0",
+    "exceljs": "^4.4.0",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "electron": "^43.1.1",
+    "electron-builder": "^26.15.3"
+  },
+  "overrides": {
+    "uuid": "11.1.1"
+  },
+  "build": {
+    "appId": "com.docflow.local",
+    "productName": "DocFlow Local",
+    "copyright": "Copyright © 2026 DocFlow Local",
+    "asar": true,
+    "compression": "maximum",
+    "electronDist": "node_modules/electron/dist",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "desktop/**/*",
+      "!desktop/*test.js",
+      "!desktop/pdf-smoke.js",
+      "static/**/*",
+      "package.json",
+      "node_modules/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "icon": "build/icon.png",
+      "identity": null,
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "dmg": {
+      "title": "DocFlow Local ${version}",
+      "backgroundColor": "#F2F5F7",
+      "window": {
+        "width": 560,
+        "height": 380
+      },
+      "contents": [
+        {
+          "x": 155,
+          "y": 185,
+          "type": "file"
+        },
+        {
+          "x": 405,
+          "y": 185,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "win": {
+      "icon": "build/icon.png",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "DocFlow Local",
+      "artifactName": "DocFlow-Local-Setup-${version}-${arch}.${ext}"
+    },
+    "artifactName": "DocFlow-Local-${version}-${os}-${arch}.${ext}"
+  }
+}
