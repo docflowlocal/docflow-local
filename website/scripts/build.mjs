@@ -8,7 +8,10 @@ const projectRoot = resolve(siteRoot, '..');
 const dist = join(siteRoot, 'dist');
 const siteUrl = 'https://docflowlocal.com';
 const repoUrl = 'https://github.com/docflowlocal/docflow-local';
-const betaEmail = 'mailto:hello@docflowlocal.com?subject=DocFlow%20Local%20Beta';
+const betaEmail = {
+  en: 'mailto:support@willgo.tech?subject=DocFlow%20Local%20Beta',
+  zh: 'mailto:support@roboai.tech?subject=DocFlow%20Local%20Beta'
+};
 const contactEmail = {
   en: 'mailto:support@willgo.tech?subject=DocFlow%20Local',
   zh: 'mailto:support@roboai.tech?subject=DocFlow%20Local'
@@ -275,11 +278,11 @@ function pricingSection(locale, full = false) {
   const zh = locale === 'zh';
   const plans = zh ? [
     ['社区版','$0','个人探索与轻量批处理',['Excel / CSV 导入','基础 Word / PDF 字段映射','批量生成与完整性校验','社区支持'],repoUrl,'查看源码','secondary'],
-    ['专业版','$299','高频报价与交付团队',['社区版全部能力','高级条件与计算规则','项目保存、复用和自动化','优先支持与专业更新'],betaEmail,'申请创始用户价','primary'],
+    ['专业版','$299','高频报价与交付团队',['社区版全部能力','高级条件与计算规则','项目保存、复用和自动化','优先支持与专业更新'],betaEmail[locale],'申请创始用户价','primary'],
     ['企业版','询价','需要部署与行业落地的组织',['专业版全部能力','行业模板与实施服务','部署、培训与 SLA','商业许可与定制集成'],contactEmail[locale],'联系销售','dark']
   ] : [
     ['Community','$0','For exploration and lighter batch work',['Excel / CSV import','Core Word / PDF field mapping','Batch generation and integrity checks','Community support'],repoUrl,'View source','secondary'],
-    ['Pro','$299','For frequent quotation and delivery teams',['Everything in Community','Advanced conditions and calculations','Saved projects and automation','Priority support and Pro updates'],betaEmail,'Get founding price','primary'],
+    ['Pro','$299','For frequent quotation and delivery teams',['Everything in Community','Advanced conditions and calculations','Saved projects and automation','Priority support and Pro updates'],betaEmail[locale],'Get founding price','primary'],
     ['Business','Let’s talk','For deployment and industry rollout',['Everything in Pro','Industry packs and implementation','Deployment, training, and SLA','Commercial licensing and integration'],contactEmail[locale],'Contact sales','dark']
   ];
   const cards = plans.map((p,i)=>`<article class="price-card${i===1?' featured':''}" data-reveal>${i===1?`<span class="popular">${zh?'推荐':'MOST POPULAR'}</span>`:''}<div class="plan-name">${p[0]}</div><div class="price">${p[1]}${i===1?`<small>/${zh?'年':'year'}</small>`:''}</div><p class="plan-copy">${p[2]}</p><ul class="plan-list">${p[3].map(x=>`<li><i>✓</i>${x}</li>`).join('')}</ul><a class="button ${p[6]}" href="${p[4]}">${p[5]}</a></article>`).join('');
@@ -305,12 +308,12 @@ function faqSection(locale) {
 
 function cta(locale, title, lead) {
   const zh = locale === 'zh';
-  return `<section class="section"><div class="container"><div class="cta-panel"><div><h2>${title}</h2><p>${lead}</p></div><div class="cta-actions"><a class="button primary" href="${betaEmail}">${locales[locale].beta} ${icon('arrow')}</a><a class="button secondary" href="${repoUrl}">${zh?'GitHub 源码':'GitHub source'}</a></div></div></div></section>`;
+  return `<section class="section"><div class="container"><div class="cta-panel"><div><h2>${title}</h2><p>${lead}</p></div><div class="cta-actions"><a class="button primary" href="${betaEmail[locale]}">${locales[locale].beta} ${icon('arrow')}</a><a class="button secondary" href="${repoUrl}">${zh?'GitHub 源码':'GitHub source'}</a></div></div></div></section>`;
 }
 
 function pageHero(locale, eye, title, lead, actions = true) {
   const zh = locale === 'zh';
-  return `<section class="page-hero"><div class="container"><p class="eyebrow">${eye}</p><h1>${title}</h1><p>${lead}</p>${actions?`<div class="page-actions"><a class="button primary" href="${betaEmail}">${locales[locale].beta} ${icon('arrow')}</a><a class="button secondary" href="${repoUrl}">${zh?'查看社区版':'View Community'}</a></div>`:''}</div></section>`;
+  return `<section class="page-hero"><div class="container"><p class="eyebrow">${eye}</p><h1>${title}</h1><p>${lead}</p>${actions?`<div class="page-actions"><a class="button primary" href="${betaEmail[locale]}">${locales[locale].beta} ${icon('arrow')}</a><a class="button secondary" href="${repoUrl}">${zh?'查看社区版':'View Community'}</a></div>`:''}</div></section>`;
 }
 
 function pricingPage(locale) {
@@ -360,7 +363,7 @@ function templatesPage(locale) {
 function downloadPage(locale) {
   const zh = locale === 'zh';
   const body = `${pageHero(locale,zh?'公开测试准备中':'PUBLIC BETA IN PREPARATION',zh?'选择适合你的开始方式':'Choose how you want to get started',zh?'社区版源代码将通过 GitHub 发布；经过签名和公证的 Windows/macOS 安装包将在公测页提供。':'Community source will be published on GitHub. Signed and notarized Windows/macOS installers will follow on the beta page.',false)}
-  <section class="section"><div class="container"><div class="download-grid"><article class="download-card"><span class="os-icon">⌘</span><h2>macOS</h2><p>${zh?'面向 Apple Silicon 的签名安装包正在准备，Intel 兼容性将根据公测反馈确认。':'A signed Apple Silicon installer is being prepared. Intel support will be confirmed from beta demand.'}</p><a class="button primary" href="${betaEmail}">${zh?'加入 macOS 公测':'Join macOS beta'} ${icon('arrow')}</a></article><article class="download-card"><span class="os-icon">⊞</span><h2>Windows</h2><p>${zh?'Windows 10/11 安装包正在适配与签名流程中。':'The Windows 10/11 build is going through packaging and signing preparation.'}</p><a class="button primary" href="${betaEmail}">${zh?'加入 Windows 公测':'Join Windows beta'} ${icon('arrow')}</a></article></div><div class="download-note"><strong>${zh?'为什么暂不直接放未签名安装包？':'Why not publish an unsigned installer now?'}</strong><br>${zh?'文档工具会接触敏感业务文件，安装包来源与完整性同样重要。正式公测包会附版本号、校验值、签名状态和清晰的发布说明。':'A document tool touches sensitive business files, so installer provenance matters. Public beta builds will include a version, checksum, signing status, and clear release notes.'}</div></div></section>
+  <section class="section"><div class="container"><div class="download-grid"><article class="download-card"><span class="os-icon">⌘</span><h2>macOS</h2><p>${zh?'面向 Apple Silicon 的签名安装包正在准备，Intel 兼容性将根据公测反馈确认。':'A signed Apple Silicon installer is being prepared. Intel support will be confirmed from beta demand.'}</p><a class="button primary" href="${betaEmail[locale]}">${zh?'加入 macOS 公测':'Join macOS beta'} ${icon('arrow')}</a></article><article class="download-card"><span class="os-icon">⊞</span><h2>Windows</h2><p>${zh?'Windows 10/11 安装包正在适配与签名流程中。':'The Windows 10/11 build is going through packaging and signing preparation.'}</p><a class="button primary" href="${betaEmail[locale]}">${zh?'加入 Windows 公测':'Join Windows beta'} ${icon('arrow')}</a></article></div><div class="download-note"><strong>${zh?'为什么暂不直接放未签名安装包？':'Why not publish an unsigned installer now?'}</strong><br>${zh?'文档工具会接触敏感业务文件，安装包来源与完整性同样重要。正式公测包会附版本号、校验值、签名状态和清晰的发布说明。':'A document tool touches sensitive business files, so installer provenance matters. Public beta builds will include a version, checksum, signing status, and clear release notes.'}</div></div></section>
   <section class="section alt"><div class="container"><div class="section-heading"><p class="eyebrow">${zh?'开发者入口':'FOR DEVELOPERS'}</p><h2>${zh?'从社区版源代码开始':'Start from the community source'}</h2><p>${zh?'仓库发布后，可按 README 在本机运行桌面应用并参与改进。':'Once the repository is public, follow the README to run the desktop app locally and contribute improvements.'}</p></div><div class="code-card"><div class="code-card-top"><span><i></i> docflow-local</span><span>AGPL-3.0</span></div><pre><span class="accent">$</span> git clone ${repoUrl}.git
 <span class="accent">$</span> cd docflow-local
 <span class="accent">$</span> npm install
@@ -386,7 +389,7 @@ const industryContent = {
 function industryPage(locale,key) {
   const zh = locale === 'zh';
   const [eye,title,lead,files,benefits] = industryContent[locale][key];
-  const body = `<div class="container industry-hero-grid"><section class="page-hero"><p class="eyebrow">${eye}</p><h1>${title}</h1><p>${lead}</p><div class="page-actions start"><a class="button primary" href="${betaEmail}">${locales[locale].beta} ${icon('arrow')}</a><a class="button secondary" href="${urlFor(locale,'templates')}">${zh?'查看模板':'View templates'}</a></div></section><aside class="deliverable-box" data-reveal><small>${zh?'示例交付结构':'EXAMPLE DELIVERY STRUCTURE'}</small><h3>${zh?'批次输出目录':'Batch output folder'}</h3><div class="file-tree"><div>📁 {client}_{project}/</div>${files.map(f=>`<div>${f.endsWith('/')?'📁':'↳'} ${f}</div>`).join('')}</div></aside></div>
+  const body = `<div class="container industry-hero-grid"><section class="page-hero"><p class="eyebrow">${eye}</p><h1>${title}</h1><p>${lead}</p><div class="page-actions start"><a class="button primary" href="${betaEmail[locale]}">${locales[locale].beta} ${icon('arrow')}</a><a class="button secondary" href="${urlFor(locale,'templates')}">${zh?'查看模板':'View templates'}</a></div></section><aside class="deliverable-box" data-reveal><small>${zh?'示例交付结构':'EXAMPLE DELIVERY STRUCTURE'}</small><h3>${zh?'批次输出目录':'Batch output folder'}</h3><div class="file-tree"><div>📁 {client}_{project}/</div>${files.map(f=>`<div>${f.endsWith('/')?'📁':'↳'} ${f}</div>`).join('')}</div></aside></div>
   <section class="section alt"><div class="container"><div class="section-heading"><p class="eyebrow">${zh?'工作流价值':'WORKFLOW VALUE'}</p><h2>${zh?'把容易出错的步骤变成生成前规则':'Turn error-prone steps into preflight rules'}</h2></div><div class="cards">${benefits.map(([h,p],i)=>`<article class="feature-card" data-reveal><span class="card-icon">${icon(['table','check','folder'][i])}</span><h3>${h}</h3><p>${p}</p></article>`).join('')}</div></div></section>
   ${cta(locale,zh?'用你的真实模板验证这套流程':'Validate this workflow with your templates',zh?'申请公测或联系我们讨论行业模板与实施。':'Join the beta or talk to us about an industry pack and implementation.')}`;
   return layout(locale,key,body);
