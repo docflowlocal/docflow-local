@@ -9,7 +9,10 @@ const dist = join(siteRoot, 'dist');
 const siteUrl = 'https://docflowlocal.com';
 const repoUrl = 'https://github.com/docflowlocal/docflow-local';
 const betaEmail = 'mailto:hello@docflowlocal.com?subject=DocFlow%20Local%20Beta';
-const salesEmail = 'mailto:sales@docflowlocal.com?subject=DocFlow%20Local';
+const contactEmail = {
+  en: 'mailto:support@willgo.tech?subject=DocFlow%20Local',
+  zh: 'mailto:support@roboai.tech?subject=DocFlow%20Local'
+};
 
 const locales = {
   en: {
@@ -129,7 +132,7 @@ function footer(locale) {
         <div class="footer-intro"><a class="brand" href="${urlFor(locale, 'home')}">${brand()}</a><p>${l.footerIntro}</p></div>
         <div class="footer-column"><strong>${f.product}</strong><a href="${urlFor(locale, 'pricing')}">${f.pricing}</a><a href="${urlFor(locale, 'security')}">${f.security}</a><a href="${urlFor(locale, 'templates')}">${f.templates}</a><a href="${urlFor(locale, 'download')}">${f.download}</a></div>
         <div class="footer-column"><strong>${f.resources}</strong><a href="${urlFor(locale, 'trade')}">${f.trade}</a><a href="${urlFor(locale, 'engineering')}">${f.engineering}</a><a href="${urlFor(locale, 'hr')}">${f.hr}</a><a href="${urlFor(locale, 'compliance')}">${f.compliance}</a></div>
-        <div class="footer-column"><strong>${f.company}</strong><a href="${repoUrl}">${f.github}</a><a href="${repoUrl}/blob/main/ROADMAP.md">${f.roadmap}</a><a href="${repoUrl}/blob/main/PRIVACY.md">${f.privacy}</a><a href="${salesEmail}">${f.contact}</a></div>
+        <div class="footer-column"><strong>${f.company}</strong><a href="${repoUrl}">${f.github}</a><a href="${repoUrl}/blob/main/ROADMAP.md">${f.roadmap}</a><a href="${repoUrl}/blob/main/PRIVACY.md">${f.privacy}</a><a href="${contactEmail[locale]}">${f.contact}</a></div>
       </div>
       <div class="footer-bottom"><span>© <span data-year>2026</span> DocFlow Local. ${f.legal}</span><span>${f.locality}</span></div>
     </div>
@@ -273,11 +276,11 @@ function pricingSection(locale, full = false) {
   const plans = zh ? [
     ['社区版','$0','个人探索与轻量批处理',['Excel / CSV 导入','基础 Word / PDF 字段映射','批量生成与完整性校验','社区支持'],repoUrl,'查看源码','secondary'],
     ['专业版','$299','高频报价与交付团队',['社区版全部能力','高级条件与计算规则','项目保存、复用和自动化','优先支持与专业更新'],betaEmail,'申请创始用户价','primary'],
-    ['企业版','询价','需要部署与行业落地的组织',['专业版全部能力','行业模板与实施服务','部署、培训与 SLA','商业许可与定制集成'],salesEmail,'联系销售','dark']
+    ['企业版','询价','需要部署与行业落地的组织',['专业版全部能力','行业模板与实施服务','部署、培训与 SLA','商业许可与定制集成'],contactEmail[locale],'联系销售','dark']
   ] : [
     ['Community','$0','For exploration and lighter batch work',['Excel / CSV import','Core Word / PDF field mapping','Batch generation and integrity checks','Community support'],repoUrl,'View source','secondary'],
     ['Pro','$299','For frequent quotation and delivery teams',['Everything in Community','Advanced conditions and calculations','Saved projects and automation','Priority support and Pro updates'],betaEmail,'Get founding price','primary'],
-    ['Business','Let’s talk','For deployment and industry rollout',['Everything in Pro','Industry packs and implementation','Deployment, training, and SLA','Commercial licensing and integration'],salesEmail,'Contact sales','dark']
+    ['Business','Let’s talk','For deployment and industry rollout',['Everything in Pro','Industry packs and implementation','Deployment, training, and SLA','Commercial licensing and integration'],contactEmail[locale],'Contact sales','dark']
   ];
   const cards = plans.map((p,i)=>`<article class="price-card${i===1?' featured':''}" data-reveal>${i===1?`<span class="popular">${zh?'推荐':'MOST POPULAR'}</span>`:''}<div class="plan-name">${p[0]}</div><div class="price">${p[1]}${i===1?`<small>/${zh?'年':'year'}</small>`:''}</div><p class="plan-copy">${p[2]}</p><ul class="plan-list">${p[3].map(x=>`<li><i>✓</i>${x}</li>`).join('')}</ul><a class="button ${p[6]}" href="${p[4]}">${p[5]}</a></article>`).join('');
   const heading = full ? '' : `<div class="section-heading center"><p class="eyebrow">${zh?'清晰升级':'A CLEAR UPGRADE PATH'}</p><h2>${zh?'先用起来，再为高价值效率付费':'Start working, then pay for higher-value efficiency'}</h2></div>`;
