@@ -25,11 +25,11 @@
         <p data-i18n="nav.workspace">工作区</p>
         <button class="nav-item active" data-target="overview"><svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zm10 0h6v6h-6zM4 14h6v6H4zm10 0h6v6h-6z"/></svg><span data-i18n="nav.overview">流程总览</span></button>
         <button class="nav-item" data-target="dataSection"><svg viewBox="0 0 24 24"><path d="M4 5c0-1 3.6-2 8-2s8 1 8 2-3.6 2-8 2-8-1-8-2Zm0 0v6c0 1 3.6 2 8 2s8-1 8-2V5M4 11v6c0 1 3.6 2 8 2s8-1 8-2v-6"/></svg><span data-i18n="nav.data">数据源</span><em id="navRowCount">8</em></button>
-        <button class="nav-item" data-target="templateSection"><svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7zM14 3v5h5M10 13h5m-5 4h5"/></svg><span data-i18n="nav.templates">模板组合</span><em>2</em></button>
+        <button class="nav-item" data-target="templateSection"><svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7zM14 3v5h5M10 13h5m-5 4h5"/></svg><span data-i18n="nav.templates">模板组合</span><em id="navTemplateCount">2</em></button>
         <button class="nav-item" data-target="mappingSection"><svg viewBox="0 0 24 24"><path d="M8 7h12M4 7h.01M8 12h12M4 12h.01M8 17h12M4 17h.01"/></svg><span data-i18n="nav.fields">字段与规则</span></button>
         <button class="nav-item" data-target="outputSection"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 19h14"/></svg><span data-i18n="nav.generate">生成与校验</span></button>
         <p data-i18n="nav.delivery">交付</p>
-        <button class="nav-item" id="openRecent"><svg viewBox="0 0 24 24"><path d="M4 7h6l2 2h8v10H4z"/></svg><span data-i18n="nav.packages">交付包</span><em>3</em></button>
+        <button class="nav-item" id="openRecent"><svg viewBox="0 0 24 24"><path d="M4 7h6l2 2h8v10H4z"/></svg><span data-i18n="nav.packages">交付包</span><em id="recentPackageCount" hidden>0</em></button>
       </nav>
 
       <div class="privacy-card">
@@ -74,14 +74,14 @@
 
           <section class="panel" id="templateSection">
             <div class="panel-heading compact">
-              <div><p class="section-kicker" data-i18n="templates.kicker">模板组合</p><h2 data-i18n="templates.heading">本批次将生成 2 份文件</h2></div>
+              <div><p class="section-kicker" data-i18n="templates.kicker">模板组合</p><h2 id="templateHeading">本批次已选择 2 个模板</h2></div>
               <button class="text-btn" id="addTemplate"><span>＋</span> <span data-i18n="templates.add">添加模板</span></button>
-              <input type="file" id="templateInput" accept=".docx,.pdf" hidden />
+              <input type="file" id="templateInput" accept=".docx,.pdf" multiple hidden />
             </div>
             <div class="template-row" id="templateList">
               <article class="template-card selected" data-template="quote">
-                <div class="file-thumb word"><span>W</span><b data-i18n="templates.quoteShort">报价单</b><small>DOCX</small></div>
-                <div class="template-info"><div><strong data-i18n="templates.quoteName">标准报价单.docx</strong><span class="tag" data-i18n="templates.primary">主文件</span></div><p><span data-i18n="templates.nineFields">9 个字段</span><span data-i18n="templates.oneRule">1 个计算规则</span><span data-i18n="templates.qr">含二维码</span></p></div>
+                <div class="file-thumb pdf"><span>P</span><b data-i18n="templates.quoteShort">报价单</b><small>PDF</small></div>
+                <div class="template-info"><div><strong data-i18n="templates.quoteName">标准报价单.pdf</strong><span class="tag" data-i18n="templates.primary">主文件</span></div><p><span data-i18n="templates.nineFields">9 个字段</span><span data-i18n="templates.oneRule">1 个计算规则</span><span data-i18n="templates.qr">含二维码</span></p></div>
                 <button class="more-btn" aria-label="更多" data-i18n-aria="actions.more">•••</button><span class="selected-check">✓</span>
               </article>
               <article class="template-card selected" data-template="attachment">
@@ -108,10 +108,7 @@
             <div class="panel-heading compact">
               <div><p class="section-kicker" data-i18n="rules.kicker">自动化规则</p><h2 data-i18n="rules.heading">计算与条件字段</h2></div><span class="tag mint-tag" data-i18n="rules.live">实时计算</span>
             </div>
-            <div class="rule-list">
-              <div class="rule-row"><div class="rule-symbol">∑</div><div><strong data-i18n="rules.total">含税总额</strong><p data-i18n="rules.totalFormula">round((数量 × 单价 − 优惠) × (1 + 税率), 2)</p></div><span data-i18n="rules.computed">计算字段</span><button class="edit-rule" data-i18n="rules.edit">编辑</button></div>
-              <div class="rule-row"><div class="rule-symbol branch">⌁</div><div><strong data-i18n="rules.discount">显示优惠行</strong><p data-i18n="rules.discountCondition">仅当「优惠」大于 0 时显示</p></div><span data-i18n="rules.conditional">条件字段</span><button class="edit-rule" data-i18n="rules.edit">编辑</button></div>
-            </div>
+            <div class="rule-list" id="ruleList"></div>
           </section>
         </div>
 
@@ -124,11 +121,15 @@
             <label class="field-label" data-i18n="output.folderStructure">目录结构</label>
             <div class="pattern-input"><code id="folderPattern" contenteditable="true" spellcheck="false">{{客户简称}}/{{报价编号}}</code><button class="token-btn" data-token-target="folderPattern"><span>＋</span> <span data-i18n="output.field">字段</span></button></div>
             <div class="folder-preview"><svg viewBox="0 0 24 24"><path d="M3 6h7l2 2h9v11H3z"/></svg><div><strong id="folderCustomer">远海贸易</strong><span>└─ <b id="folderQuote">QT-24031</b> / <span id="folderFileCount" data-i18n="output.twoFiles">2 个文件</span></span></div></div>
-            <div class="asset-upload-row"><div><strong data-i18n="output.signature">签名 / 印章图片</strong><p id="signatureStatus" data-i18n="output.noSignature">尚未添加，将保留签名线</p></div><button id="signatureUpload" data-i18n="output.upload">上传图片</button><input type="file" id="signatureInput" accept="image/png,image/jpeg,image/webp" hidden></div>
+            <div class="asset-upload-row"><div><strong data-i18n="output.signature">签名 / 印章图片</strong><p id="signatureStatus" data-i18n="output.noSignature">尚未添加，将保留签名线</p></div><div class="asset-actions"><button id="signatureRemove" class="remove-asset-action" data-i18n="output.removeSignature" hidden>移除</button><button id="signatureUpload" data-i18n="output.upload">上传图片</button></div><input type="file" id="signatureInput" accept="image/png,image/jpeg" hidden></div>
+            <div class="asset-upload-row asset-library-row"><div><strong data-i18n="output.assets">模板图片资源</strong><p id="assetStatus" data-i18n="output.noAssets">可按文件名或不含扩展名的名称匹配图片字段</p><div class="asset-list" id="assetList"></div></div><button id="assetUpload" data-i18n="output.uploadMultiple">选择图片</button><input type="file" id="assetInput" accept="image/png,image/jpeg" multiple hidden></div>
             <div class="divider"></div>
-            <div class="setting-row"><div><strong data-i18n="output.skipBlank">跳过空白记录</strong><p data-i18n="output.skipBlankCopy">不为整行为空的数据生成文件</p></div><label class="switch"><input type="checkbox" checked><span></span></label></div>
-            <div class="setting-row"><div><strong data-i18n="output.stopMissing">缺失字段时停止</strong><p data-i18n="output.stopMissingCopy">存在必填项缺失则跳过该记录</p></div><label class="switch"><input type="checkbox" id="stopMissing" checked><span></span></label></div>
-            <div class="setting-row"><div><strong data-i18n="output.validationReport">生成校验报告</strong><p data-i18n="output.validationReportCopy">在 ZIP 内附带缺失字段明细</p></div><label class="switch"><input type="checkbox" checked><span></span></label></div>
+            <div class="setting-row"><div><strong data-i18n="output.skipBlank">跳过空白记录</strong><p data-i18n="output.skipBlankCopy">不为整行为空的数据生成文件</p></div><label class="switch"><input type="checkbox" id="skipBlank" checked><span></span></label></div>
+            <div class="setting-row"><div><strong data-i18n="output.stopMissing">缺失字段时停止</strong><p data-i18n="output.stopMissingCopy">存在必填项缺失则跳过该记录</p></div><label class="switch"><input type="checkbox" id="stopOnMissing" checked><span></span></label></div>
+            <div class="setting-row"><div><strong data-i18n="output.validationReport">生成校验报告</strong><p data-i18n="output.validationReportCopy">在 ZIP 内附带缺失字段明细</p></div><label class="switch"><input type="checkbox" id="validationReport" checked><span></span></label></div>
+            <div class="setting-row"><div><strong data-i18n="output.includeSourceDocx">包含源 DOCX</strong><p id="includeSourceDocxCopy" data-i18n="output.includeSourceDocxCopy">在交付包内保留完成字段替换的 Word 文件</p></div><label class="switch"><input type="checkbox" id="includeSourceDocx"><span></span></label></div>
+            <div class="setting-row"><div><strong data-i18n="output.mergePdfs">合并 PDF</strong><p data-i18n="output.mergePdfsCopy">为每条记录额外生成一份合并后的 PDF</p></div><label class="switch"><input type="checkbox" id="mergePdfs"><span></span></label></div>
+            <div class="setting-row"><div><strong data-i18n="output.flattenPdf">扁平化 PDF 表单</strong><p data-i18n="output.flattenPdfCopy">锁定已填写的 PDF 表单字段，便于交付</p></div><label class="switch"><input type="checkbox" id="flattenPdf" checked><span></span></label></div>
           </section>
 
           <section class="panel readiness-card">
@@ -151,6 +152,30 @@
       <p class="modal-copy" id="modalCopy">有效记录可以继续生成；缺少必填字段的记录将被跳过并写入校验报告。</p>
       <div class="issue-list" id="issueList"></div>
       <div class="modal-actions"><button class="btn secondary" data-close-modal data-i18n="modal.back">返回修改</button><button class="btn primary" id="modalGenerate">生成有效记录</button></div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="ruleModal" hidden>
+    <section class="modal rule-editor-modal" role="dialog" aria-modal="true" aria-labelledby="ruleModalTitle">
+      <button class="modal-close" type="button" data-close-rule-modal>×</button>
+      <div class="modal-icon rule-modal-icon">ƒ</div>
+      <p class="section-kicker" data-i18n="ruleEditor.kicker">规则编辑器</p>
+      <h2 id="ruleModalTitle">新增自动化规则</h2>
+      <p class="modal-copy" data-i18n="ruleEditor.copy">使用数据列名称编写本地计算或条件表达式。</p>
+      <form id="ruleForm">
+        <div class="rule-form-grid">
+          <label><span data-i18n="ruleEditor.type">规则类型</span><select id="ruleType"><option value="computed" data-i18n="rules.computed">计算字段</option><option value="conditional" data-i18n="rules.conditional">条件字段</option></select></label>
+          <label><span data-i18n="ruleEditor.name">输出字段名</span><input id="ruleName" type="text" maxlength="80" required placeholder="含税总额" data-i18n-placeholder="ruleEditor.namePlaceholder"></label>
+          <label class="rule-expression-field"><span data-i18n="ruleEditor.expression">表达式</span><textarea id="ruleExpression" rows="3" required placeholder="round((数量 * 单价 - 优惠) * (1 + 税率), 2)" data-i18n-placeholder="ruleEditor.expressionPlaceholder"></textarea></label>
+          <label id="ruleDigitsGroup"><span data-i18n="ruleEditor.digits">结果小数位</span><input id="ruleDigits" type="number" min="0" max="12" value="2"></label>
+          <div class="rule-branches" id="ruleBranches" hidden>
+            <label><span data-i18n="ruleEditor.whenTrue">条件成立时（可选）</span><input id="ruleWhenTrue" type="text" data-i18n-placeholder="ruleEditor.whenTruePlaceholder" placeholder="显示"></label>
+            <label><span data-i18n="ruleEditor.whenFalse">条件不成立时（可选）</span><input id="ruleWhenFalse" type="text" data-i18n-placeholder="ruleEditor.whenFalsePlaceholder" placeholder=""></label>
+          </div>
+        </div>
+        <p class="form-error" id="ruleError" hidden></p>
+        <div class="modal-actions rule-modal-actions"><button class="btn danger" id="ruleDelete" type="button" data-i18n="ruleEditor.delete" hidden>删除规则</button><span></span><button class="btn secondary" type="button" data-close-rule-modal data-i18n="ruleEditor.cancel">取消</button><button class="btn primary" type="submit" data-i18n="ruleEditor.save">保存规则</button></div>
+      </form>
     </section>
   </div>
 

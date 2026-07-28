@@ -1,6 +1,6 @@
 {
   "name": "docflow-local",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Privacy-first desktop document automation for Excel/CSV and Word/PDF templates",
   "main": "desktop/main.js",
   "author": "DocFlow Local Contributors",
@@ -23,28 +23,45 @@
     "offline-first"
   ],
   "scripts": {
-    "test": "node desktop/smoke-test.js",
-    "test:syntax": "node --check static/app.js && node --check static/i18n.js && node --check desktop/engine.js && node --check desktop/main.js && node --check desktop/preload.js",
+    "test": "node desktop/expression-test.js && node desktop/template-engine-test.js && node desktop/smoke-test.js && node desktop/mvp-regression-test.js",
+    "benchmark:engine": "node desktop/benchmark-engine.js",
+    "test:api": "node desktop/engine-api-test.js",
+    "test:syntax": "node --check static/app.js && node --check static/i18n.js && node --check desktop/expression.js && node --check desktop/template-engine.js && node --check desktop/engine.js && node --check desktop/main.js && node --check desktop/preload.js && node --check desktop/docx-render.js && node --check desktop/pdf-smoke.js && node --check desktop/ui-smoke.js && node --check desktop/mvp-regression-test.js && node --check desktop/benchmark-engine.js",
     "test:pdf": "electron desktop/pdf-smoke.js",
+    "test:ui": "electron desktop/ui-smoke.js",
+    "test:desktop": "npm run test:syntax && npm test && npm run test:api && npm run test:pdf && npm run test:ui",
     "desktop": "electron .",
     "desktop:debug": "DOCFLOW_DEBUG=1 electron .",
     "build:mac": "zsh desktop/package-mac.sh arm64",
+    "build:mac:arm64": "zsh desktop/package-mac.sh arm64",
     "build:mac:x64": "zsh desktop/package-mac.sh x64",
     "build:win": "electron-builder --win nsis portable --x64",
-    "pack:mac": "electron-builder --mac dir --arm64"
+    "build:win:x64": "electron-builder --win nsis portable --x64",
+    "pack:mac": "electron-builder --mac dir --arm64",
+    "pack:mac:x64": "electron-builder --mac dir --x64",
+    "pack:win": "electron-builder --win dir --x64"
   },
   "dependencies": {
+    "@fontsource/noto-sans-sc": "^5.3.0",
+    "@pdf-lib/fontkit": "^1.1.1",
     "adm-zip": "^0.6.0",
     "busboy": "^1.6.0",
+    "docx-preview": "^0.4.0",
+    "docxtemplater": "^3.69.3",
     "exceljs": "^4.4.0",
-    "qrcode": "^1.5.4"
+    "image-size": "^2.0.2",
+    "pdf-lib": "^1.17.1",
+    "pizzip": "^3.2.0",
+    "qrcode": "^1.5.4",
+    "ssf": "0.11.2"
   },
   "devDependencies": {
     "electron": "^43.1.1",
     "electron-builder": "^26.15.3"
   },
   "overrides": {
-    "uuid": "11.1.1"
+    "uuid": "11.1.1",
+    "brace-expansion": "5.0.8"
   },
   "build": {
     "appId": "com.docflow.local",
@@ -52,7 +69,14 @@
     "copyright": "Copyright © 2026 DocFlow Local",
     "asar": true,
     "compression": "maximum",
-    "electronDist": "node_modules/electron/dist",
+    "electronFuses": {
+      "runAsNode": false,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "enableEmbeddedAsarIntegrityValidation": true,
+      "onlyLoadAppFromAsar": true,
+      "grantFileProtocolExtraPrivileges": false
+    },
     "directories": {
       "output": "dist",
       "buildResources": "build"
@@ -61,6 +85,7 @@
       "desktop/**/*",
       "!desktop/*test.js",
       "!desktop/pdf-smoke.js",
+      "!desktop/ui-smoke.js",
       "static/**/*",
       "package.json",
       "node_modules/**/*"
@@ -102,11 +127,15 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ]
     },

@@ -16,6 +16,9 @@
     });
   });
 
+  const revealItems = document.querySelectorAll('[data-reveal]');
+  revealItems.forEach(element => element.classList.add('reveal-pending'));
+
   const observer = 'IntersectionObserver' in window
     ? new IntersectionObserver(entries => {
         entries.forEach(entry => {
@@ -27,7 +30,7 @@
       }, { threshold: 0.12 })
     : null;
 
-  document.querySelectorAll('[data-reveal]').forEach(element => {
+  revealItems.forEach(element => {
     if (observer) observer.observe(element);
     else element.classList.add('is-visible');
   });

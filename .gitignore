@@ -11,6 +11,7 @@ work/
 Thumbs.db
 website/dist/
 website/node_modules/
+/desktop-smoke.zip
 *.p12
 *.pfx
 *.cer
