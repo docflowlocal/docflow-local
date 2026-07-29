@@ -233,7 +233,19 @@ test("export writes verified trees, preserves metadata, and rejects a dirty reru
       assert.match(workflow, /npm ci --ignore-scripts/);
       assert.match(workflow, /release-readiness\.js --lockfile-only/);
       assert.match(workflow, /hashFiles\('package-lock\.json'\) != ''/);
-      assert.match(workflow, /hashFiles\('project\/package-lock\.json'\) == ''/);
+      assert.match(workflow, /id: bootstrap_mode/);
+      assert.match(
+        workflow,
+        /BOOTSTRAP_ENABLED: \$\{\{ hashFiles\('project\/package-lock\.json'\) == '' \}\}/
+      );
+      assert.match(
+        workflow,
+        /if: \$\{\{ steps\.bootstrap_mode\.outputs\.enabled == 'true' \}\}/
+      );
+      assert.doesNotMatch(
+        workflow.slice(workflow.indexOf("Install dependencies from reviewed tarballs")),
+        /hashFiles\('project\/package-lock\.json'\)/
+      );
       assert.match(workflow, /@docflow-local\/license-verifier/);
     }
   }

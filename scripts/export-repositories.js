@@ -370,8 +370,17 @@ async function generatedCiWorkflow(sourceRoot, repositoryName) {
         ])
       ]
     : [];
+  const bootstrapModeStep = repositoryName === "docflow-desktop"
+    ? [
+        "      - name: Detect bootstrap mode",
+        "        id: bootstrap_mode",
+        "        env:",
+        "          BOOTSTRAP_ENABLED: ${{ hashFiles('project/package-lock.json') == '' }}",
+        "        run: echo \"enabled=$BOOTSTRAP_ENABLED\" >> \"$GITHUB_OUTPUT\""
+      ]
+    : [];
   const bootstrapIf = repositoryName === "docflow-desktop"
-    ? ["        if: ${{ hashFiles('project/package-lock.json') == '' }}"]
+    ? ["        if: ${{ steps.bootstrap_mode.outputs.enabled == 'true' }}"]
     : [];
   return Buffer.from(`${[
     ...header,
@@ -380,9 +389,10 @@ async function generatedCiWorkflow(sourceRoot, repositoryName) {
     "  bootstrap:",
     "    runs-on: ubuntu-latest",
     "    steps:",
-      "      - uses: actions/checkout@v7",
+    "      - uses: actions/checkout@v7",
     "        with:",
     "          path: project",
+    ...bootstrapModeStep,
     "      - name: Check out reviewed DocFlow packages",
     ...bootstrapIf,
     "        uses: actions/checkout@v7",
