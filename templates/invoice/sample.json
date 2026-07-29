@@ -1,0 +1,19 @@
+{
+  "rows": [
+    {
+      "invoiceNumber": "INV-DEMO-001",
+      "invoiceDate": "2026-07-15",
+      "dueDate": "2026-08-14",
+      "billTo": "Contoso Demo Studio",
+      "items": [
+        { "description": "Demo consulting session", "quantity": 2, "unitPrice": 150, "lineTotal": 300 },
+        { "description": "Demo report preparation", "quantity": 1, "unitPrice": 80, "lineTotal": 80 }
+      ],
+      "subtotal": 380,
+      "showTax": true,
+      "tax": 30.4,
+      "total": 410.4,
+      "paymentReference": "INV-DEMO-001"
+    }
+  ]
+}

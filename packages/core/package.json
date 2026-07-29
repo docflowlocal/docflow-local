@@ -1,0 +1,74 @@
+{
+  "name": "@docflow-local/core",
+  "version": "0.1.0",
+  "description": "Local-first DOCX document generation engine, CLI, HTTP API and plugin SDK",
+  "license": "MPL-2.0 AND AGPL-3.0-or-later",
+  "author": "DocFlow Local Contributors",
+  "homepage": "https://github.com/docflowlocal/docflow#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/docflowlocal/docflow.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/docflowlocal/docflow/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "commonjs",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./plugin-sdk": "./src/plugin-sdk.js",
+    "./http": "./src/http-server.js",
+    "./cli": "./src/cli.js",
+    "./data": "./src/data.js",
+    "./expression": "./src/expression.js",
+    "./template-engine": "./src/template-engine.js",
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "docflow": "bin/docflow.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "LICENSE",
+    "LICENSES",
+    "NOTICE.md"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "test:syntax": "node --check src/contracts.js && node --check src/request-validator.js && node --check src/index.js && node --check src/plugin-sdk.js && node --check src/http-server.js && node --check src/cli.js && node --check bin/docflow.js",
+    "prepublishOnly": "npm run test:syntax && npm test"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "keywords": [
+    "document-automation",
+    "docx",
+    "mail-merge",
+    "excel",
+    "csv",
+    "cli",
+    "local-first"
+  ],
+  "dependencies": {
+    "@docflow-local/contracts": "^0.1.0",
+    "@fontsource/noto-sans-sc": "^5.3.0",
+    "@pdf-lib/fontkit": "^1.1.1",
+    "adm-zip": "^0.6.0",
+    "ajv": "8.20.0",
+    "busboy": "^1.6.0",
+    "docxtemplater": "^3.69.3",
+    "exceljs": "^4.4.0",
+    "image-size": "^2.0.2",
+    "pdf-lib": "^1.17.1",
+    "pizzip": "^3.2.0",
+    "qrcode": "^1.5.4",
+    "ssf": "0.11.2"
+  }
+}

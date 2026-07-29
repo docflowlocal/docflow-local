@@ -2,13 +2,13 @@
 
 [English](README.md) · [官网](https://docflowlocal.com) · [实用指南](https://docflowlocal.com/zh/guides/) · [下载](https://docflowlocal.com/zh/download/) · [安全与隐私](https://docflowlocal.com/zh/security/) · [性能测试](BENCHMARKS.md)
 
-DocFlow Local 是一款“文件不离开本机”的桌面文档自动化工具。它把 Excel/CSV 数据与 Word/PDF 模板组合起来，完成字段映射、真实校验、批量生成、自动命名和交付打包。
+DocFlow Local 是“文件不离开本机”的桌面文档自动化工具与模块化文档引擎。它把 JSON/Excel/CSV 数据与 Word/PDF 模板组合起来，完成字段映射、真实校验、批量生成、自动命名和交付打包。
 
 > 客户文件只通过临时本机回环服务和应用内存处理；社区版不上传文档内容。
 
 ## MVP 已完成功能
 
-- 导入 CSV、XLSX、XLSM，并将数据列映射到模板字段；保留原始物理行号以及 Excel 前导零、百分比等显示格式。
+- 导入 JSON、CSV、XLSX、XLSM，并将数据列映射到模板字段；保留原始物理行号以及 Excel 前导零、百分比等显示格式。
 - 识别并填充自定义 DOCX，同时保留原文档包、样式、表格、页眉页脚和页面设置。
 - 识别并填写 PDF AcroForm 文本框、复选框、单选组、下拉框、列表和图片字段。
 - 在界面中新增、编辑和删除计算字段与条件字段；表达式由受限解析器执行，不使用 `eval`，也不执行任意 JavaScript。
@@ -66,11 +66,16 @@ DocFlow 会读取正文、页眉、页脚、脚注和尾注中的占位符。普
 | --- | --- | --- |
 | 文本或映射值 | `{{字段名}}` | `{{客户名称}}` |
 | 条件区块 | `{{#条件字段}}...{{/条件字段}}` | `{{#显示优惠行}}优惠：{{优惠}}{{/显示优惠行}}` |
+| 数组 / 表格循环 | `{{#项目}}...{{/项目}}` | `{{#项目}}{{名称}} — {{金额}}{{/项目}}` |
+| 日期 / 数字格式 | `{{字段 \| 格式器}}` | `{{金额 \| currency:CNY}}` |
 | 二维码 | `{{@qrcode:字段名}}` | `{{@qrcode:报价编号}}` |
 | 普通图片 | `{{@image:字段名}}` | `{{@image:照片}}` |
 | 签名或印章图片 | `{{@signature}}` | `{{@signature}}` |
 
 为了让 Word 版式更稳定，建议将条件的开始/结束标记和每个图片标记分别放在独立段落或文本 run 中。图片数据单元格可以填写已上传图片的文件名，例如 `photo.png`；DocFlow 也会按文件名主体或引用字段名匹配图片。图片只支持 PNG 和 JPEG。
+
+内置格式器包括 `date:YYYY-MM-DD`、`number:2`、`currency:CNY`、
+`percent:1`、`trim`、`upper`、`lower` 和 `default:默认值`。JSON 数据可直接携带嵌套数组，用于表格循环。
 
 示例：
 
@@ -130,7 +135,14 @@ Electron 主进程启动一个只监听 `127.0.0.1` 随机端口的临时 Node �
 
 ## Community 与 Pro
 
-社区版已经提供可实际使用的本地导入、映射、规则编辑、原模板生成、校验和交付打包能力。规划中的付费能力包括 PDF 可视化坐标设计器、项目保存、监控目录、CLI/定时任务、共享模板库、离线商业授权和优先支持。
+DocFlow 正在拆分为四层：开源 Core 引擎、开源 Desktop Community、
+私有 Pro 扩展，以及未来可选的 Hub。Core 免费提供 CLI、带鉴权的本地
+API、模板语法和插件合同；Community 继续保留 0.x 已公开且真正有用的
+本地工作流，不采用人为文档数量限额。
+
+Pro 聚焦企业愿意为运营和治理购买的能力：多数据源关系、可视化设计器、
+监控目录与计划任务、失败重试、审计与审批、商业连接器、团队模板治理、
+部署控制、离线激活和商业支持。
 
 商业版不会以隐藏遥测、上传客户文档或降低安全性作为付费条件。
 
@@ -142,6 +154,9 @@ Electron 主进程启动一个只监听 `127.0.0.1` 随机端口的临时 Node �
 - [性能测试方法和结果](BENCHMARKS.md)
 - [桌面端构建与发布清单](DESKTOP_BUILD.md)
 - [路线图](ROADMAP.md)
+- [平台架构与多仓拆分](PLATFORM_ARCHITECTURE.md)
+- [未发布版本变更记录](CHANGELOG.md)
+- [模块化发布清单](RELEASE_CHECKLIST.md)
 - [参与贡献](CONTRIBUTING.md)
 
 ## 参与贡献
@@ -150,4 +165,9 @@ Electron 主进程启动一个只监听 `127.0.0.1` 随机端口的临时 Node �
 
 ## 许可证与品牌
 
-社区版代码已按 GNU Affero General Public License v3.0 或更高版本发布。DocFlow Local 名称、Logo 和官方行业模板不包含在开源代码许可中，详见 [TRADEMARKS.md](TRADEMARKS.md)。技术支持、OEM、闭源集成和企业商业许可请联系 `support@roboai.tech`。
+历史 0.x 单体版本继续适用 GNU AGPL-3.0-or-later，既有授权不会被撤回。
+全新编写的合同、许可证校验器、扩展 SDK 和模块文件按 MPL-2.0 准备；当前
+Core 过渡包仍为混合许可，继承自历史引擎的文件继续适用 AGPL-3.0-or-later。
+准确边界见 [NOTICE.md](NOTICE.md)。私有 Pro 模块和商业模板包采用独立条款。DocFlow Local 名称、Logo 和官方行业模板
+不包含在代码许可中，详见 [TRADEMARKS.md](TRADEMARKS.md)。技术支持、
+OEM、闭源集成和企业商业许可请联系 `support@roboai.tech`。

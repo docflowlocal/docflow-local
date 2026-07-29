@@ -8,7 +8,8 @@ const AdmZip = require("adm-zip");
 const QRCode = require("qrcode");
 const SSF = require("ssf");
 const { PDFDocument } = require("pdf-lib");
-const { applyRulesDetailed, evaluateExpression } = require("./expression");
+const { parseTabular: parseCoreTabular } = require("@docflow-local/core/data");
+const { applyRulesDetailed, evaluateExpression } = require("@docflow-local/core/expression");
 const {
   extractDocxTemplateInfo,
   fillPdfTemplate,
@@ -16,7 +17,7 @@ const {
   mergePdfBuffers,
   renderDocxTemplate,
   validateImageData
-} = require("./template-engine");
+} = require("@docflow-local/core/template-engine");
 
 const APP_VERSION = require("../package.json").version;
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
@@ -252,7 +253,23 @@ function excelCellValue(cell) {
 
 async function parseTabular(filename, data) {
   const extension = path.extname(filename).toLowerCase();
-  if (![".csv", ".xlsx", ".xlsm"].includes(extension)) throw new Error("仅支持 CSV、XLSX 或 XLSM 数据文件");
+  if (extension === ".json") {
+    try {
+      return await parseCoreTabular(filename, data);
+    } catch (error) {
+      const message = String(error?.message || "JSON 数据无效")
+        .replace(/^Data file is empty$/, "数据文件为空")
+        .replace(/^Data file exceeds the 25 MB limit$/, "文件超过 25 MB 限制")
+        .replace(/^JSON data is not valid UTF-8 JSON$/, "JSON 数据不是有效的 UTF-8 JSON")
+        .replace(/^JSON data must be an array or an object with a "rows" array$/, "JSON 数据必须是数组，或包含 rows 数组的对象")
+        .replace(/^JSON row (\d+) must be an object$/, "JSON 第 $1 条记录必须是对象")
+        .replace(/^JSON contains a forbidden key: (.+)$/, "JSON 包含禁止字段：$1")
+        .replace(/^Data exceeds the 10,000-row limit$/, "数据记录超过 10000 条限制")
+        .replace(/^Data exceeds the 500-column limit$/, "数据列超过 500 列限制");
+      throw new Error(message, { cause: error });
+    }
+  }
+  if (![".csv", ".xlsx", ".xlsm"].includes(extension)) throw new Error("仅支持 JSON、CSV、XLSX 或 XLSM 数据文件");
   let matrix;
   let sourceRows;
   if (extension === ".csv") {
@@ -1173,6 +1190,102 @@ async function createLocalEngine({ staticDir, renderPdf, renderHtmlToPdf, render
     return true;
   }
 
+  async function inspectTemplateData(filename, data, requestedId = "") {
+    const safeFilename = path.basename(String(filename || "template"));
+    const bytes = Buffer.from(data || []);
+    const extension = path.extname(safeFilename).toLowerCase();
+    if (![".docx", ".pdf"].includes(extension)) throw new Error("模板仅支持 DOCX 或 PDF");
+    if (!bytes.length || bytes.length > MAX_TEMPLATE_BYTES) throw new Error("模板大小超出支持范围");
+    let inspection;
+    if (extension === ".docx") {
+      const info = extractDocxTemplateInfo(bytes);
+      await renderDocxTemplate(
+        bytes,
+        Object.fromEntries(info.fields.map(field => [field, ""])),
+        {}
+      );
+      inspection = {
+        fields: info.fields,
+        fieldDetails: info.fields.map(name => ({ name, type: "text", required: false })),
+        assets: info.assets,
+        fillable: true,
+        pageCount: null
+      };
+    } else {
+      const info = await inspectPdfTemplate(bytes);
+      const publicFields = publicPdfFieldInspection(info.fields);
+      inspection = {
+        ...publicFields,
+        fillable: info.fillable,
+        pageCount: info.pageCount
+      };
+    }
+    const id = /^template-[a-f0-9]{24}$/i.test(String(requestedId || ""))
+      ? String(requestedId)
+      : `template-${crypto.randomBytes(12).toString("hex")}`;
+    return {
+      id,
+      filename: safeFilename,
+      kind: extension.slice(1).toUpperCase(),
+      data: bytes,
+      sha256: sha256(bytes),
+      ...inspection
+    };
+  }
+
+  async function replaceTemplates(entries) {
+    if (!Array.isArray(entries)) throw new Error("项目模板列表无效");
+    if (entries.length > MAX_TEMPLATES) throw new Error(`单次项目最多添加 ${MAX_TEMPLATES} 个模板`);
+    const incomingBytes = entries.reduce((sum, entry) => sum + Buffer.byteLength(entry?.data || []), 0);
+    if (incomingBytes > MAX_TEMPLATE_BYTES) throw new Error("模板总大小超过 100 MB 限制");
+    const inspected = [];
+    const projectKeys = new Set();
+    for (const entry of entries) {
+      const projectKey = String(entry?.projectKey || "");
+      if (!/^[a-z0-9][a-z0-9._-]{7,79}$/i.test(projectKey) || projectKeys.has(projectKey)) {
+        throw new Error("项目模板标识无效或重复");
+      }
+      projectKeys.add(projectKey);
+      const template = await inspectTemplateData(entry.filename, entry.data);
+      if (entry.sha256 && template.sha256 !== String(entry.sha256).toLowerCase()) {
+        throw new Error(`模板 ${template.filename} 完整性校验失败`);
+      }
+      inspected.push({ projectKey, template });
+    }
+    templateStore.clear();
+    templateBytes = 0;
+    for (const { template } of inspected) {
+      templateStore.set(template.id, template);
+      templateBytes += template.data.length;
+    }
+    return inspected.map(({ projectKey, template }) => ({
+      projectKey,
+      ...publicTemplate(template)
+    }));
+  }
+
+  function exportTemplates(entries) {
+    if (!Array.isArray(entries)) throw new Error("项目模板列表无效");
+    const projectKeys = new Set();
+    return entries.map(entry => {
+      const id = String(entry?.id || "");
+      const projectKey = String(entry?.projectKey || "");
+      if (!/^[a-z0-9][a-z0-9._-]{7,79}$/i.test(projectKey) || projectKeys.has(projectKey)) {
+        throw new Error("项目模板标识无效或重复");
+      }
+      projectKeys.add(projectKey);
+      const template = templateStore.get(id);
+      if (!template) throw new Error(`模板 ${id} 已失效，请重新添加`);
+      return {
+        projectKey,
+        filename: template.filename,
+        kind: template.kind,
+        sha256: template.sha256,
+        data: Buffer.from(template.data)
+      };
+    });
+  }
+
   const server = http.createServer(async (request, response) => {
     try {
       const url = new URL(request.url, origin || "http://127.0.0.1");
@@ -1203,50 +1316,16 @@ async function createLocalEngine({ staticDir, renderPdf, renderHtmlToPdf, render
       }
       if (request.method === "POST" && url.pathname === "/api/template") {
         const upload = await readUpload(request);
-        const extension = path.extname(upload.filename).toLowerCase();
-        if (![".docx", ".pdf"].includes(extension)) throw new Error("模板仅支持 DOCX 或 PDF");
         if (templateStore.size >= MAX_TEMPLATES) throw new Error(`单次项目最多添加 ${MAX_TEMPLATES} 个模板`);
         if (templateBytes + upload.data.length > MAX_TEMPLATE_BYTES) throw new Error("模板总大小超过 100 MB 限制");
-        let inspection;
-        if (extension === ".docx") {
-          const info = extractDocxTemplateInfo(upload.data);
-          await renderDocxTemplate(
-            upload.data,
-            Object.fromEntries(info.fields.map(field => [field, ""])),
-            {}
-          );
-          inspection = {
-            fields: info.fields,
-            fieldDetails: info.fields.map(name => ({ name, type: "text", required: false })),
-            assets: info.assets,
-            fillable: true,
-            pageCount: null
-          };
-        } else {
-          const info = await inspectPdfTemplate(upload.data);
-          const publicFields = publicPdfFieldInspection(info.fields);
-          inspection = {
-            ...publicFields,
-            fillable: info.fillable,
-            pageCount: info.pageCount
-          };
-        }
-        const id = `template-${crypto.randomBytes(12).toString("hex")}`;
-        const template = {
-          id,
-          filename: upload.filename,
-          kind: extension.slice(1).toUpperCase(),
-          data: upload.data,
-          sha256: sha256(upload.data),
-          ...inspection
-        };
-        templateStore.set(id, template);
+        const template = await inspectTemplateData(upload.filename, upload.data);
+        templateStore.set(template.id, template);
         templateBytes += upload.data.length;
         sendJson(response, 200, {
           ...publicTemplate(template),
-          message: extension === ".docx"
+          message: template.kind === "DOCX"
             ? "已识别并保留 DOCX 模板；生成时将使用原始版式"
-            : inspection.fillable
+            : template.fillable
               ? "已识别 PDF 表单字段"
               : "PDF 没有表单字段，将作为静态模板逐条复制"
         });
@@ -1346,6 +1425,8 @@ async function createLocalEngine({ staticDir, renderPdf, renderHtmlToPdf, render
   return {
     origin,
     token,
+    exportTemplates,
+    replaceTemplates,
     close: callback => {
       templateStore.clear();
       templateBytes = 0;

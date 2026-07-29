@@ -10,7 +10,7 @@ const dist = join(siteRoot, 'dist');
 const siteUrl = 'https://docflowlocal.com';
 const repoUrl = 'https://github.com/docflowlocal/docflow-local';
 const gaMeasurementId = 'G-77MP7J9XFT';
-const lastModified = '2026-07-28';
+const lastModified = '2026-07-29';
 const indexNowKey = '62a1c4ddd5abb4809935e193aa22fd73';
 const socialImageUrl = `${siteUrl}/assets/docflow-local-og.png`;
 const betaEmail = {
@@ -35,7 +35,7 @@ const locales = {
       guides: 'Guides', benchmark: 'Benchmarks',
       github: 'GitHub', roadmap: 'Roadmap', privacy: 'Privacy', contact: 'Contact',
       trade: 'Trade quotations', engineering: 'Engineering delivery', hr: 'HR onboarding', compliance: 'Compliance packages',
-      legal: 'AGPL-3.0 community edition. DocFlow Local is a trademark of its owner.',
+      legal: 'Modular Community packages are moving to MPL-2.0; legacy 0.x source remains AGPL-3.0. DocFlow Local is a trademark of its owner.',
       locality: 'Designed for local-first work.'
     }
   },
@@ -51,7 +51,7 @@ const locales = {
       guides: '实用指南', benchmark: '性能测试',
       github: 'GitHub', roadmap: '路线图', privacy: '隐私说明', contact: '联系我们',
       trade: '贸易报价', engineering: '工程交付', hr: 'HR 入职', compliance: '合规文件包',
-      legal: '社区版采用 AGPL-3.0 许可。DocFlow Local 为其所有者商标。',
+      legal: '模块化社区版将采用 MPL-2.0；历史 0.x 源码继续采用 AGPL-3.0。DocFlow Local 为其所有者商标。',
       locality: '为本地优先工作流而设计。'
     }
   }
@@ -61,7 +61,7 @@ const pages = {
   en: {
     home: {
       path: '/', title: 'Offline Excel to Word & PDF Automation | DocFlow Local',
-      description: 'Batch-generate Word and PDF files from Excel or CSV on Windows and macOS. Map fields, validate data, auto-name files, and keep every document local.'
+      description: 'Batch-generate Word and PDF files from JSON, Excel, or CSV on Windows and macOS. Map fields, validate data, auto-name files, and keep every document local.'
     },
     pricing: { path: '/pricing/', title: 'Document Automation Software Pricing | DocFlow Local', description: 'Compare the planned open-source Community edition, Pro workflow features, industry template packs, and business implementation options.' },
     security: { path: '/security/', title: 'Offline Document Automation & Privacy | DocFlow Local', description: 'Learn how DocFlow Local processes Excel, Word, PDF, signatures, and customer data on your computer without uploading source files.' },
@@ -74,7 +74,7 @@ const pages = {
     compliance: { path: '/industries/compliance-package/', title: 'Compliance Package Automation | DocFlow Local', description: 'Assemble traceable, validated compliance applications, declarations, evidence indexes, and delivery folders from approved templates.' }
   },
   zh: {
-    home: { path: '/zh/', title: 'Excel批量生成Word/PDF｜本地文档自动化 - DocFlow Local', description: '导入 Excel/CSV，绑定 Word/PDF 模板，批量生成、自动命名并校验交付文件。Windows/macOS 本地运行，客户文件不上传。' },
+    home: { path: '/zh/', title: 'Excel批量生成Word/PDF｜本地文档自动化 - DocFlow Local', description: '导入 JSON、Excel 或 CSV，绑定 Word/PDF 模板，批量生成、自动命名并校验交付文件。Windows/macOS 本地运行，客户文件不上传。' },
     pricing: { path: '/zh/pricing/', title: '本地文档自动化软件价格 | DocFlow Local', description: '比较免费社区版、规划中的专业版功能、行业模板包与企业实施服务，按文档工作流价值选择方案。' },
     security: { path: '/zh/security/', title: '本地文档处理与数据安全 | DocFlow Local', description: '了解 DocFlow Local 如何在电脑本机处理 Excel、Word、PDF、签名和客户数据，不上传源文件。' },
     templates: { path: '/zh/templates/', title: 'Word/PDF 批量生成行业模板 | DocFlow Local', description: '查看贸易报价、工程交付、HR 入职、教育证书、合规认证和房产资料的文档自动化模板包。' },
@@ -392,8 +392,8 @@ function productMock(locale) {
 function home(locale) {
   const zh = locale === 'zh';
   const t = zh ? {
-    eye: '文件不离开本机', h1: '从 Excel 批量生成 Word/PDF，<span>客户文件无需上传。</span>',
-    lead: '导入 Excel 或 CSV，绑定 Word/PDF 模板，按每行数据批量生成、自动命名、校验缺失字段并整理成交付包。全程本地运行。',
+    eye: '文件不离开本机', h1: '从结构化数据批量生成 Word/PDF，<span>客户文件无需上传。</span>',
+    lead: '导入 JSON、Excel 或 CSV，绑定 Word/PDF 模板，按记录批量生成、自动命名、校验缺失字段并整理成交付包。全程本地运行。',
     trust: ['无需上传客户文件', 'Windows 与 macOS', '开源社区版'],
     trustTitle: '适合高频文档团队', trustItems: ['贸易报价', '工程交付', 'HR 入职', '认证合规'],
     featuresEye: '一个本地工作台', featuresTitle: '从数据到交付，不再反复复制粘贴', featuresLead: '把容易出错的重复劳动，变成可检查、可复用的标准流程。',
@@ -405,7 +405,7 @@ function home(locale) {
       ['check','生成前校验','发现必填缺失、重复编号、模板未绑定等问题后再生成。'],
       ['file','多模板交付包','一条记录生成多份文档，并合并整理为可交付文件包。']
     ],
-    workflowEye: '五步完成', workflowTitle: '让每次交付都有清晰路径', workflow: [['01','导入数据','Excel / CSV'],['02','添加模板','Word / PDF'],['03','绑定字段','可视化映射'],['04','运行校验','先发现问题'],['05','批量生成','整理并交付']],
+    workflowEye: '五步完成', workflowTitle: '让每次交付都有清晰路径', workflow: [['01','导入数据','JSON / Excel / CSV'],['02','添加模板','Word / PDF'],['03','绑定字段','可视化映射'],['04','运行校验','先发现问题'],['05','批量生成','整理并交付']],
     industriesEye: '为真实场景设计', industriesTitle: '先解决四类高频、刚需工作流', industriesLead: '每个行业页都从具体交付物出发，而不是堆砌泛用功能。',
     industries: [
       ['trade','贸易报价','报价单、形式发票、装箱单和客户目录一次生成。'],
@@ -415,12 +415,12 @@ function home(locale) {
     ],
     privacyEye: '本地优先', privacyTitle: '敏感客户文档，不该成为云端副本', privacyLead: 'DocFlow Local 在你的电脑上读取数据、渲染文档并输出文件。我们的网站无需接触这些内容。',
     privacyPoints: ['桌面应用只绑定本机回环地址','处理中的原始文件保留在本地内存和本机目录','默认不收集文档内容或字段值','社区版源代码可审查'],
-    openEye: '社区版开源', openTitle: '核心工作流可验证，也可由团队共同改进', openLead: '社区版采用 AGPL-3.0，开发目标包括数据导入、模板映射、批量生成与校验基础能力；公测发布说明会逐项标注成熟度。专业版聚焦高级规则、商业支持和效率增强。',
+    openEye: 'Core 与社区版开源', openTitle: '开发引擎与桌面工作流都可检查、扩展和共同改进', openLead: '模块化 0.5 正在拆分 Core、CLI、本地 API、插件接口和 Desktop Community；完成源码来源与许可审查后，新模块计划采用 MPL-2.0，历史 0.x 源码继续使用 AGPL-3.0。Pro 聚焦多数据源关系、无人值守自动化、审计审批、商业连接器与支持。',
     pricingEye: '清晰升级', pricingTitle: '先用起来，再为高价值效率付费', faqEye: '常见问题', faqTitle: '购买前最常被问到的事',
     ctaTitle: '拿一套真实文件，完成第一次批量交付', ctaLead: '申请公测，或从 GitHub 查看社区版。'
   } : {
-    eye: 'YOUR FILES NEVER LEAVE YOUR COMPUTER', h1: 'Batch-generate Word and PDF documents from Excel—<span>without uploading files.</span>',
-    lead: 'Import Excel or CSV data, bind Word/PDF template fields, create documents for every row, validate missing values, name files, and assemble the final package — entirely offline.',
+    eye: 'YOUR FILES NEVER LEAVE YOUR COMPUTER', h1: 'Batch-generate Word and PDF documents from structured data—<span>without uploading files.</span>',
+    lead: 'Import JSON, Excel, or CSV data, bind Word/PDF template fields, create documents for every record, validate missing values, name files, and assemble the final package — entirely offline.',
     trust: ['No customer-file uploads', 'Windows & macOS', 'Open-source community edition'],
     trustTitle: 'Built for document-heavy teams', trustItems: ['Trade quotations', 'Engineering delivery', 'HR onboarding', 'Compliance'],
     featuresEye: 'One local workspace', featuresTitle: 'From structured data to delivery, without copy-paste', featuresLead: 'Turn repetitive, error-prone document work into a reusable process your team can inspect before delivery.',
@@ -432,7 +432,7 @@ function home(locale) {
       ['check','Preflight validation','Catch required fields, duplicate IDs, and unbound template fields before generation.'],
       ['file','Multi-template packages','Generate several documents per record and organize them into a delivery-ready package.']
     ],
-    workflowEye: 'Five clear steps', workflowTitle: 'Every delivery follows a visible path', workflow: [['01','Import data','Excel / CSV'],['02','Add templates','Word / PDF'],['03','Bind fields','Reusable mapping'],['04','Run preflight','Catch issues first'],['05','Generate','Package & deliver']],
+    workflowEye: 'Five clear steps', workflowTitle: 'Every delivery follows a visible path', workflow: [['01','Import data','JSON / Excel / CSV'],['02','Add templates','Word / PDF'],['03','Bind fields','Reusable mapping'],['04','Run preflight','Catch issues first'],['05','Generate','Package & deliver']],
     industriesEye: 'Designed around real work', industriesTitle: 'Starting with four frequent, high-value workflows', industriesLead: 'Each workflow begins with a concrete deliverable, not a generic list of features.',
     industries: [
       ['trade','Trade quotations','Generate quotations, proforma invoices, packing lists, and customer folders together.'],
@@ -442,7 +442,7 @@ function home(locale) {
     ],
     privacyEye: 'Local first', privacyTitle: 'Sensitive customer documents should not become cloud copies', privacyLead: 'DocFlow Local reads data, renders documents, and writes deliverables on your computer. Our website never needs the contents.',
     privacyPoints: ['Desktop service binds only to your loopback interface','Source files remain in local memory and local folders','No document contents or field values are collected by default','Community source is available for inspection'],
-    openEye: 'Open-source community edition', openTitle: 'Inspect the core workflow. Improve it with the community.', openLead: 'The AGPL-3.0 Community roadmap covers data import, template mapping, batch generation, and validation foundations; beta release notes state the maturity of each capability. Pro focuses on advanced rules, support, and higher-throughput workflows.',
+    openEye: 'Open-source Core and Community', openTitle: 'Inspect the engine and desktop workflow. Extend them with the community.', openLead: 'Modular 0.5 is separating Core, CLI, local API, plugin contracts, and Desktop Community. New modules are intended for MPL-2.0 after source-provenance and license review; legacy 0.x source remains AGPL-3.0. Pro focuses on relational data sources, unattended automation, audit and approval controls, commercial connectors, and support.',
     pricingEye: 'A clear upgrade path', pricingTitle: 'Start working, then pay for higher-value efficiency', faqEye: 'FAQ', faqTitle: 'What teams ask before getting started',
     ctaTitle: 'Bring one real file set. Complete your first batch.', ctaLead: 'Join the beta or inspect the community edition on GitHub.'
   };
@@ -454,10 +454,11 @@ function home(locale) {
   <section class="section" id="product"><div class="container"><div class="section-heading"><p class="eyebrow">${t.featuresEye}</p><h2>${t.featuresTitle}</h2><p>${t.featuresLead}</p></div><div class="cards">${featureCards}</div><div class="hero-actions"><a class="button secondary" href="${urlFor(locale,'batch')}">${zh?'了解 Excel 批量生成 Word/PDF':'See the Excel-to-Word/PDF workflow'} ${icon('arrow')}</a></div></div></section>
   <section class="section alt"><div class="container"><div class="section-heading center"><p class="eyebrow">${t.workflowEye}</p><h2>${t.workflowTitle}</h2></div><div class="workflow-list">${workflow}</div></div></section>
   <section class="section" id="industries"><div class="container"><div class="section-heading"><p class="eyebrow">${t.industriesEye}</p><h2>${t.industriesTitle}</h2><p>${t.industriesLead}</p></div><div class="industry-grid">${industryCards}</div></div></section>
-  <section class="section alt"><div class="container privacy-grid"><div class="privacy-diagram" data-reveal><span class="no-cloud">${zh ? '无文档云上传' : 'NO DOCUMENT CLOUD'}</span><div class="device-box"><div class="device-top"><i></i><span><b>${zh ? '你的电脑' : 'Your computer'}</b><small>${zh ? '本地处理边界' : 'LOCAL PROCESSING BOUNDARY'}</small></span></div><div class="device-flow"><span>Excel / CSV <i></i></span><span>Word / PDF <i></i></span><span>${zh ? '输出交付包' : 'Delivery package'} <i></i></span></div></div></div><div><p class="eyebrow">${t.privacyEye}</p><div class="section-heading"><h2>${t.privacyTitle}</h2><p>${t.privacyLead}</p></div><ul class="privacy-points">${t.privacyPoints.map(x=>`<li><i>✓</i><span>${x}</span></li>`).join('')}</ul><div class="hero-actions"><a class="button secondary" href="${urlFor(locale,'security')}">${zh ? '查看安全设计' : 'Read the security design'} ${icon('arrow')}</a></div></div></div></section>
-  <section class="open-source-band"><div class="container open-grid"><div><p class="eyebrow">${t.openEye}</p><h2>${t.openTitle}</h2><p>${t.openLead}</p><div class="hero-actions"><a class="button primary" href="${repoUrl}">${locales[locale].source} ${icon('arrow')}</a><a class="button secondary" href="${repoUrl}/blob/main/ROADMAP.md">${zh ? '查看路线图' : 'Read the roadmap'}</a></div></div><div class="code-card"><div class="code-card-top"><span><i></i> docflow-local</span><span>AGPL-3.0</span></div><pre><span class="accent">$</span> git clone ${repoUrl}.git
-<span class="accent">$</span> npm install
-<span class="accent">$</span> npm run dev
+  <section class="section alt"><div class="container privacy-grid"><div class="privacy-diagram" data-reveal><span class="no-cloud">${zh ? '无文档云上传' : 'NO DOCUMENT CLOUD'}</span><div class="device-box"><div class="device-top"><i></i><span><b>${zh ? '你的电脑' : 'Your computer'}</b><small>${zh ? '本地处理边界' : 'LOCAL PROCESSING BOUNDARY'}</small></span></div><div class="device-flow"><span>JSON / Excel / CSV <i></i></span><span>Word / PDF <i></i></span><span>${zh ? '输出交付包' : 'Delivery package'} <i></i></span></div></div></div><div><p class="eyebrow">${t.privacyEye}</p><div class="section-heading"><h2>${t.privacyTitle}</h2><p>${t.privacyLead}</p></div><ul class="privacy-points">${t.privacyPoints.map(x=>`<li><i>✓</i><span>${x}</span></li>`).join('')}</ul><div class="hero-actions"><a class="button secondary" href="${urlFor(locale,'security')}">${zh ? '查看安全设计' : 'Read the security design'} ${icon('arrow')}</a></div></div></div></section>
+  <section class="open-source-band"><div class="container open-grid"><div><p class="eyebrow">${t.openEye}</p><h2>${t.openTitle}</h2><p>${t.openLead}</p><div class="hero-actions"><a class="button primary" href="${repoUrl}">${locales[locale].source} ${icon('arrow')}</a><a class="button secondary" href="${repoUrl}/blob/main/ROADMAP.md">${zh ? '查看路线图' : 'Read the roadmap'}</a></div></div><div class="code-card"><div class="code-card-top"><span><i></i> docflow-local</span><span>COMMUNITY</span></div><pre><span class="accent">$</span> git clone ${repoUrl}.git
+<span class="accent">$</span> cd docflow-local
+<span class="accent">$</span> npm ci
+<span class="accent">$</span> npm run desktop
 
 ✓ ${zh ? '数据在本机处理' : 'data processed locally'}
 ✓ ${zh ? '社区可审查源码' : 'source open for inspection'}</pre></div></div></section>
@@ -470,13 +471,13 @@ function home(locale) {
 function pricingSection(locale, full = false) {
   const zh = locale === 'zh';
   const plans = zh ? [
-    ['社区版','$0','个人探索与轻量批处理',['Excel / CSV 导入（公测）','Word / PDF 基础字段映射（公测）','批量生成与完整性校验（公测）','社区支持'],repoUrl,'查看源码','secondary'],
-    ['专业版','$299','高频报价与交付团队',['社区版全部能力','高级条件与计算规则','项目保存、复用和自动化','优先支持与专业更新'],betaEmail[locale],'申请创始用户价','primary'],
-    ['企业版','询价','需要部署与行业落地的组织',['专业版全部能力','行业模板与实施服务','部署、培训与 SLA','商业许可与定制集成'],contactEmail[locale],'联系销售','dark']
+    ['社区版','$0','个人与本地批处理',['JSON / Excel / CSV 导入','Word / PDF 字段映射','基础条件、计算与多模板生成','命名、校验与本地处理'],repoUrl,'查看源码','secondary'],
+    ['专业版','$299','高频报价与交付团队',['社区版全部能力','多数据源关系与复杂规则','监控目录、定时任务与失败重试','审计、审批与商业支持'],betaEmail[locale],'申请创始用户价','primary'],
+    ['企业版','询价','需要团队治理与行业落地的组织',['专业版全部能力','团队模板库、权限与集中许可','行业模板、部署、培训与 SLA','商业连接器与定制集成'],contactEmail[locale],'联系销售','dark']
   ] : [
-    ['Community','$0','For exploration and lighter batch work',['Excel / CSV import (beta)','Core Word / PDF field mapping (beta)','Batch generation and integrity checks (beta)','Community support'],repoUrl,'View source','secondary'],
-    ['Pro','$299','For frequent quotation and delivery teams',['Everything in Community','Advanced conditions and calculations','Saved projects and automation','Priority support and Pro updates'],betaEmail[locale],'Get founding price','primary'],
-    ['Business','Let’s talk','For deployment and industry rollout',['Everything in Pro','Industry packs and implementation','Deployment, training, and SLA','Commercial licensing and integration'],contactEmail[locale],'Contact sales','dark']
+    ['Community','$0','For personal and local batch work',['JSON / Excel / CSV import','Word / PDF field mapping','Core conditions, calculations, and multi-template generation','Naming, validation, and local processing'],repoUrl,'View source','secondary'],
+    ['Pro','$299','For frequent quotation and delivery teams',['Everything in Community','Relational data sources and complex rules','Watched folders, scheduling, and failure retry','Audit, approval controls, and commercial support'],betaEmail[locale],'Get founding price','primary'],
+    ['Business','Let’s talk','For team governance and industry rollout',['Everything in Pro','Team template library, permissions, and centralized licensing','Industry packs, deployment, training, and SLA','Commercial connectors and custom integration'],contactEmail[locale],'Contact sales','dark']
   ];
   const cards = plans.map((p,i)=>`<article class="price-card${i===1?' featured':''}" data-reveal>${i===1?`<span class="popular">${zh?'推荐':'MOST POPULAR'}</span>`:''}<div class="plan-name">${p[0]}</div><div class="price">${p[1]}${i===1?`<small>/${zh?'年':'year'}</small>`:''}</div><p class="plan-copy">${p[2]}</p><ul class="plan-list">${p[3].map(x=>`<li><i>✓</i>${x}</li>`).join('')}</ul><a class="button ${p[6]}" href="${p[4]}">${p[5]}</a></article>`).join('');
   const heading = full ? '' : `<div class="section-heading center"><p class="eyebrow">${zh?'清晰升级':'A CLEAR UPGRADE PATH'}</p><h2>${zh?'先用起来，再为高价值效率付费':'Start working, then pay for higher-value efficiency'}</h2></div>`;
@@ -487,12 +488,12 @@ function faqItems(locale) {
   const zh = locale === 'zh';
   return zh ? [
     ['客户文件会上传吗？','不会。桌面端文档处理在本机完成；官网只承载产品信息与下载入口。'],
-    ['社区版是真的可用，还是只是演示？','社区版首个公开版本计划覆盖数据导入、模板映射、批量生成、命名和校验等基础工作流；每个公测版本会在发布说明中标注实际支持范围。'],
+    ['社区版是真的可用，还是只是演示？','社区版不是限额试用：当前代码已覆盖 JSON/Excel/CSV 导入、模板映射、批量生成、命名、基础条件计算和校验。模块化 0.5 源码与安装包仍会在发布说明中逐项标注成熟度。'],
     ['Word 和 PDF 都支持吗？','MVP 以两类模板为目标。复杂 Word 原版式保真和可视化 PDF 坐标映射会持续增强，并在发布说明中明确成熟度。'],
     ['能否购买一次永久使用？','社区版可永久免费使用。专业版按年提供更新与支持；企业客户可沟通商业许可和长期维护方案。']
   ] : [
     ['Are customer files uploaded?','No. Desktop document processing runs on your computer. The website only hosts product information and release links.'],
-    ['Is Community usable or just a demo?','The first public Community release is planned to cover data import, template mapping, batch generation, naming, and validation foundations. Every beta release will state its actual supported scope.'],
+    ['Is Community usable or just a demo?','Community is not a quota-limited trial: the current code covers JSON/Excel/CSV import, template mapping, batch generation, naming, core conditions and calculations, and validation. The modular 0.5 source and installers will state maturity per capability in release notes.'],
     ['Do Word and PDF both work?','The MVP targets both template types. Complex Word layout fidelity and visual PDF coordinate mapping will keep improving, with maturity stated clearly in release notes.'],
     ['Can I buy it once and keep using it?','Community remains free to use. Pro is annual because it includes ongoing updates and support; businesses can discuss commercial licensing and longer-term maintenance.']
   ];
@@ -516,10 +517,15 @@ function pageHero(locale, eye, title, lead, actions = true) {
 
 function pricingPage(locale) {
   const zh = locale === 'zh';
-  const body = `${pageHero(locale,zh?'从开源到专业交付':'FROM OPEN SOURCE TO PROFESSIONAL DELIVERY',zh?'从免费开始，按工作流价值升级':'Start free. Upgrade when the workflow earns its place.',zh?'社区版用于验证基础流程；专业版和行业服务面向高频团队提供更强自动化、支持与落地能力。具体开放范围以发布说明为准。':'Community is intended for validating the foundational workflow. Pro and industry services add deeper automation, support, and rollout help for high-frequency teams. Availability follows the release notes.')}
+  const body = `${pageHero(locale,zh?'从开源到专业交付':'FROM OPEN SOURCE TO PROFESSIONAL DELIVERY',zh?'从免费开始，按工作流价值升级':'Start free. Upgrade when the workflow earns its place.',zh?'社区版提供真正可用的本地批处理；专业版和企业服务面向高频团队增加关系数据、无人值守自动化、审计审批、治理和落地支持。具体开放范围以发布说明为准。':'Community provides a genuinely useful local batch workflow. Pro and Business add relational data, unattended automation, audit and approval controls, governance, and rollout support for high-frequency teams. Availability follows the release notes.')}
   ${pricingSection(locale,true)}
   <section class="section alt"><div class="container"><div class="section-heading"><p class="eyebrow">${zh?'版本对比':'PLAN COMPARISON'}</p><h2>${zh?'核心能力一眼看清':'The capabilities that matter'}</h2></div><table class="comparison"><thead><tr><th>${zh?'能力':'Capability'}</th><th>${zh?'社区版':'Community'}</th><th>${zh?'专业版':'Pro'}</th><th>${zh?'企业版':'Business'}</th></tr></thead><tbody>${[
-    [zh?'数据导入与基础映射':'Data import & core mapping','✓','✓','✓'],[zh?'批量生成与校验':'Batch generation & validation','✓','✓','✓'],[zh?'高级条件与计算':'Advanced conditions & calculations','—','✓','✓'],[zh?'项目复用与自动化':'Project reuse & automation','—','✓','✓'],[zh?'优先支持':'Priority support','—','✓','✓'],[zh?'商业许可、培训与 SLA':'Commercial license, training & SLA','—','—','✓']
+    [zh?'JSON / Excel / CSV 与基础映射':'JSON / Excel / CSV & core mapping','✓','✓','✓'],
+    [zh?'批量生成、基础条件计算与校验':'Batch generation, core conditions & validation','✓','✓','✓'],
+    [zh?'关系数据源与无人值守自动化':'Relational sources & unattended automation','—','✓','✓'],
+    [zh?'任务历史、审计与审批控制':'Task history, audit & approval controls','—','✓','✓'],
+    [zh?'商业连接器与优先支持':'Commercial connectors & priority support','—','✓','✓'],
+    [zh?'团队权限、集中部署与 SLA':'Team permissions, managed deployment & SLA','—','—','✓']
   ].map(r=>`<tr><td>${r[0]}</td>${r.slice(1).map(v=>`<td class="${v==='✓'?'check':''}">${v}</td>`).join('')}</tr>`).join('')}</tbody></table></div></section>
   ${faqSection(locale)}${cta(locale,zh?'先用真实文件验证价值':'Validate the value with real files',zh?'申请创始用户资格，首年专业版计划价 $149。':'Apply as a founding user for a planned $149 first Pro year.')}`;
   return layout(locale,'pricing',body,{ faq: faqItems(locale) });
@@ -562,10 +568,10 @@ function downloadPage(locale) {
   const zh = locale === 'zh';
   const body = `${pageHero(locale,zh?'公开测试准备中':'PUBLIC BETA IN PREPARATION',zh?'选择适合你的开始方式':'Choose how you want to get started',zh?'社区版源代码将通过 GitHub 发布；经过签名和公证的 Windows/macOS 安装包将在公测页提供。':'Community source will be published on GitHub. Signed and notarized Windows/macOS installers will follow on the beta page.',false)}
   <section class="section"><div class="container"><div class="download-grid"><article class="download-card"><span class="os-icon">⌘</span><h2>macOS</h2><p>${zh?'面向 Apple Silicon 的签名安装包正在准备，Intel 兼容性将根据公测反馈确认。':'A signed Apple Silicon installer is being prepared. Intel support will be confirmed from beta demand.'}</p><a class="button primary" href="${betaEmail[locale]}">${zh?'加入 macOS 公测':'Join macOS beta'} ${icon('arrow')}</a></article><article class="download-card"><span class="os-icon">⊞</span><h2>Windows</h2><p>${zh?'Windows 10/11 安装包正在适配与签名流程中。':'The Windows 10/11 build is going through packaging and signing preparation.'}</p><a class="button primary" href="${betaEmail[locale]}">${zh?'加入 Windows 公测':'Join Windows beta'} ${icon('arrow')}</a></article></div><div class="download-note"><strong>${zh?'为什么暂不直接放未签名安装包？':'Why not publish an unsigned installer now?'}</strong><br>${zh?'文档工具会接触敏感业务文件，安装包来源与完整性同样重要。正式公测包会附版本号、校验值、签名状态和清晰的发布说明。':'A document tool touches sensitive business files, so installer provenance matters. Public beta builds will include a version, checksum, signing status, and clear release notes.'}</div></div></section>
-  <section class="section alt"><div class="container"><div class="section-heading"><p class="eyebrow">${zh?'开发者入口':'FOR DEVELOPERS'}</p><h2>${zh?'从社区版源代码开始':'Start from the community source'}</h2><p>${zh?'仓库发布后，可按 README 在本机运行桌面应用并参与改进。':'Once the repository is public, follow the README to run the desktop app locally and contribute improvements.'}</p></div><div class="code-card"><div class="code-card-top"><span><i></i> docflow-local</span><span>AGPL-3.0</span></div><pre><span class="accent">$</span> git clone ${repoUrl}.git
+  <section class="section alt"><div class="container"><div class="section-heading"><p class="eyebrow">${zh?'开发者入口':'FOR DEVELOPERS'}</p><h2>${zh?'从社区版源代码开始':'Start from the community source'}</h2><p>${zh?'模块化 0.5 源码发布后，可按 README 运行桌面端，也可直接使用 Core 的 CLI、本地 API 与插件接口。':'When the modular 0.5 source is published, follow the README to run Desktop Community or use the Core CLI, local API, and plugin contracts directly.'}</p></div><div class="code-card"><div class="code-card-top"><span><i></i> docflow-local</span><span>COMMUNITY</span></div><pre><span class="accent">$</span> git clone ${repoUrl}.git
 <span class="accent">$</span> cd docflow-local
-<span class="accent">$</span> npm install
-<span class="accent">$</span> npm run dev</pre></div></div></section>`;
+<span class="accent">$</span> npm ci
+<span class="accent">$</span> npm run desktop</pre></div></div></section>`;
   return layout(locale,'download',body);
 }
 
@@ -906,7 +912,7 @@ Sitemap: ${siteUrl}/sitemap.xml
   await writeFile(join(dist, `${indexNowKey}.txt`), indexNowKey);
   await writeFile(join(dist, 'llms.txt'), `# DocFlow Local
 
-> DocFlow Local is a privacy-first desktop application that turns Excel or CSV records and Word or PDF templates into validated, consistently named delivery packages. The Community Edition processes document content locally.
+> DocFlow Local is a privacy-first document automation platform. Its open Core reads JSON, Excel, or CSV data and drives DOCX generation through a CLI, local API, and plugin contracts; Desktop Community turns those capabilities into validated, consistently named delivery packages without uploading document content.
 
 ## Product
 - [Homepage](${siteUrl}/)
@@ -915,6 +921,7 @@ Sitemap: ${siteUrl}/sitemap.xml
 - [Pricing](${siteUrl}/pricing/)
 - [Download and beta](${siteUrl}/download/)
 - [Open-source repository](${repoUrl})
+- [Core, CLI, API, and plugin architecture](${repoUrl}/blob/main/PLATFORM_ARCHITECTURE.md)
 
 ## Practical guides
 - [Document automation guides](${siteUrl}/guides/)

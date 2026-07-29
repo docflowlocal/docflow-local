@@ -56,6 +56,27 @@ async function main() {
     assert.deepStrictEqual(importedData.headers, ["Company", "Quote"]);
     assert.strictEqual(importedData.rows[0].Company, "ACME Ltd");
 
+    const jsonForm = new FormData();
+    jsonForm.append("file", new Blob([
+      JSON.stringify({
+        rows: [{
+          Company: "JSON Customer",
+          Quote: "J-100",
+          Items: [{ name: "Consulting", amount: 1200 }]
+        }]
+      })
+    ], { type: "application/json" }), "customers.json");
+    const jsonImported = await fetch(`${engine.origin}/api/import`, {
+      method: "POST",
+      headers: apiHeaders,
+      body: jsonForm
+    });
+    assert.strictEqual(jsonImported.status, 200);
+    const jsonImportedData = await jsonImported.json();
+    assert.deepStrictEqual(jsonImportedData.headers, ["Company", "Quote", "Items"]);
+    assert.strictEqual(jsonImportedData.rows[0].Company, "JSON Customer");
+    assert.deepStrictEqual(jsonImportedData.rows[0].Items, [{ name: "Consulting", amount: 1200 }]);
+
     const templateForm = new FormData();
     templateForm.append("file", new Blob([await pdfFormTemplate()], { type: "application/pdf" }), "customer-form.pdf");
     const uploaded = await fetch(`${engine.origin}/api/template`, { method: "POST", headers: apiHeaders, body: templateForm });
@@ -114,6 +135,7 @@ async function main() {
       authentication: true,
       hostileOriginBlocked: true,
       csvImport: true,
+      jsonImport: true,
       pdfTemplate: true,
       customOnlyGeneration: true,
       flattened: true

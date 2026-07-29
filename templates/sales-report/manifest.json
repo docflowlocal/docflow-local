@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "sales-report",
+  "name": "Starter sales report",
+  "version": "1.0.0",
+  "license": "CC-BY-4.0",
+  "creator": "DocFlow Local Contributors",
+  "attribution": "DocFlow Local starter template — https://docflowlocal.com",
+  "locale": "en",
+  "template": "starter.docx",
+  "sample": "sample.csv",
+  "filenamePattern": "{{reportName}}-{{periodEnd}}",
+  "fields": [
+    { "name": "reportName", "type": "string", "required": true },
+    { "name": "periodStart", "type": "date", "required": true },
+    { "name": "periodEnd", "type": "date", "required": true },
+    { "name": "preparedBy", "type": "string", "required": true },
+    {
+      "name": "metrics",
+      "type": "array",
+      "required": true,
+      "fields": [
+        { "name": "metric", "type": "string", "required": true },
+        { "name": "currentValue", "type": "number", "required": true },
+        { "name": "previousValue", "type": "number", "required": true },
+        { "name": "changeRate", "type": "number", "required": true }
+      ]
+    },
+    { "name": "totalSales", "type": "number", "required": true },
+    { "name": "growthRate", "type": "number", "required": true },
+    { "name": "showCommentary", "type": "boolean", "required": false },
+    { "name": "commentary", "type": "string", "required": false }
+  ]
+}

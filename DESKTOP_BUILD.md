@@ -44,6 +44,35 @@ npm run build:mac:x64
 
 ad-hoc 签名只适合本机测试。公开分发必须配置 Apple Developer ID Application/Installer 证书、启用 hardened runtime，并完成 notarization；不能把当前 `identity: null` 配置视为正式发布签名。
 
+正式发布使用独立、失败即停止的构建链，不会复用 ad-hoc 配置：
+
+```bash
+npm run build:mac:release
+```
+
+发布脚本要求：
+
+- `CSC_LINK`/`CSC_KEY_PASSWORD` 或钥匙串中的 `CSC_NAME` 提供 Developer ID
+  Application 证书；
+- `CSC_INSTALLER_LINK`/`CSC_INSTALLER_KEY_PASSWORD` 或
+  `DOCFLOW_PKG_IDENTITY` 提供 Developer ID Installer 证书；
+- 使用 `APPLE_API_KEY`、`APPLE_API_KEY_ID`、`APPLE_API_ISSUER`，Apple ID
+  专用密码组合，或 `APPLE_KEYCHAIN`/`APPLE_KEYCHAIN_PROFILE` 三种方式之一
+  提供完整公证凭据；
+- 工作树干净，并且权属、GitHub 拆仓、npm 2FA 和生产许可证公钥证据已记录。
+
+脚本启用 hardened runtime，使用
+`build/entitlements.mac.plist`，由 electron-builder 完成签名和公证，再执行
+packaged smoke、`codesign`、Gatekeeper、PKG 签名和 stapled ticket 验证。任何
+证书、环境变量、证据或验收步骤缺失都会停止构建。证书私钥不得进入源码仓库。
+
+CI 会根据 macOS runner 的真实 `process.arch` 构建同架构应用，再从打包后的
+`app.asar` 运行 release smoke：
+
+```bash
+npm run test:packaged:mac:host
+```
+
 ## Windows
 
 必须在 Windows x64 构建机运行：
@@ -54,6 +83,33 @@ npm run build:win
 ```
 
 构建结果包括 NSIS 安装包和 portable 便携版。公开发行必须配置可信的 Windows 代码签名证书；未签名构建可能触发 SmartScreen 警告。
+
+正式签名构建使用：
+
+```powershell
+npm run build:win:release
+```
+
+发布脚本要求 `WIN_CSC_LINK` 与 `WIN_CSC_KEY_PASSWORD`，或者 Windows
+证书存储中的 `DOCFLOW_WIN_CERTIFICATE_SUBJECT`；同时必须设置与证书一致的
+`DOCFLOW_WIN_PUBLISHER_NAME`。它强制使用 SHA-256 Authenticode 和 RFC 3161
+时间戳，执行完整桌面/包消费测试与 packaged smoke，并对 NSIS 和 portable
+产物逐个调用 `Get-AuthenticodeSignature`。缺少证书、发布证据、干净工作树
+或有效签名时构建会失败。PFX 和密码只能来自受控 CI secrets 或发布机证书
+存储，不得写入仓库。
+
+Windows 打包脚本会先生成 `win-unpacked` 目录，直接从打包后的
+`app.asar` 启动本地引擎并运行 JSON 导入与鉴权健康检查。只有
+`DOCFLOW_PACKAGED_SMOKE_OK` 成功退出后，脚本才继续生成 NSIS 和 portable
+安装包。也可以只执行目录打包与冒烟检查：
+
+```powershell
+npm run pack:win
+npm run test:packaged:win
+```
+
+该检查必须在 Windows 构建机或 `windows-latest` CI 上运行；macOS 本机只能
+静态检查 PowerShell 脚本，不能替代真实 Windows 可执行文件验收。
 
 ## MVP 文档引擎
 
@@ -75,9 +131,20 @@ npm run build:win
 npm run test:syntax
 npm test
 npm run test:api
+npm run test:core
+npm run test:packages
 ```
 
-这些测试覆盖安全表达式、规则依赖与财务取整、跨 Word run 的占位符、条件区块、图片/签名/二维码、恶意或高压缩比模板拒绝、DOCX 版式部件保留、PDF AcroForm 与中文字体、静态 PDF 保真、PDF 合并、API 会话与来源校验、CSV/XLSX 导入、字段映射、必填校验、自动目录、CSV 注入防护，以及中英文 ZIP 清单。
+这些测试覆盖 Core CLI 与带鉴权的本地 API、JSON/CSV/XLSX
+数据源、数组循环、格式器和插件合同，以及桌面端的安全表达式、规则依赖与
+财务取整、跨 Word run 的占位符、条件区块、图片/签名/二维码、恶意或高压缩比
+模板拒绝、DOCX 版式部件保留、PDF AcroForm 与中文字体、静态 PDF 保真、
+PDF 合并、API 会话与来源校验、字段映射、必填校验、自动目录、CSV 注入防护，
+以及中英文 ZIP 清单。
+
+`test:packages` 会把四个公开包打成真实 npm tarball，在全新临时项目中安装，
+再通过打包后的 `docflow` 命令完成 inspect、validate 和 generate。它同时拒绝
+缺少独立 `LICENSE` 的 tarball。
 
 需要图形桌面会话的端到端 PDF 测试：
 
@@ -94,10 +161,31 @@ npm run test:ui
 npm audit
 ```
 
+供应链与发布证据检查：
+
+```bash
+npm run test:release
+npm run release:check
+npm run release:metadata
+```
+
+`release:check` 是公开发布门禁，未签名/未公证、脏工作树或人工证据未完成时
+会以非零状态退出。`release:metadata` 只生成内部预览用的 CycloneDX SBOM 和
+带安装包 SHA-256 的发布清单；正式发布脚本会在所有公开门禁通过后重新生成
+最终版本。默认别名面向 macOS；Windows 使用
+`npm run release:check:win` 与 `npm run release:metadata:win`。Windows
+发布清单会绑定 NSIS 与 portable 两个 `.exe`，并要求在 Windows 主机完成
+Authenticode 验证。
+
 ## 发布前检查
 
 - 在目标 macOS/Windows 架构上完成全部测试；
+- 确认 macOS 与 Windows 的 packaged release smoke 均从打包产物成功退出；
 - 使用代表性的复杂 DOCX、AcroForm PDF 和中英文数据做视觉抽检；
 - 确认输出 ZIP 可解压，校验报告、交付清单和合并 PDF 符合预期；
+- 确认 Electron 产物包含根 `LICENSE`、`NOTICE.md`、完整 MPL 文本和模板
+  attribution notice；四个 npm tarball 均包含独立可读的许可材料；
+- 在 provenance/relicense 或独立重写完成前，不得把当前混合许可 Core
+  过渡包标注或发布为“纯 MPL”；
 - 配置正式签名、notarization/时间戳并验证安装包；
 - 使用合成数据测试，禁止把真实客户机密文件加入仓库或 CI 工件。

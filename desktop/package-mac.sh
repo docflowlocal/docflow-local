@@ -19,6 +19,7 @@ APP_PATH="${APP_DIR}/DocFlow Local.app"
 node_modules/.bin/electron-builder --mac dir "--${ARCH}"
 codesign --force --deep --sign - "$APP_PATH"
 codesign --verify --deep --strict "$APP_PATH"
+"$APP_PATH/Contents/MacOS/DocFlow Local" --docflow-release-smoke
 
 ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "dist/DocFlow-Local-${VERSION}-macOS-${ARCH}.zip"
 pkgbuild \

@@ -1,0 +1,3 @@
+certificateId,recipientName,courseName,issuedAt,achievements,showScore,score,verificationUrl
+CERT-DEMO-001,Alex Morgan,Workplace Safety Basics,2026-07-18,"[{""achievement"":""Completed all learning modules""},{""achievement"":""Passed the practical review""}]",true,94.5,https://example.invalid/verify/CERT-DEMO-001
+CERT-DEMO-002,Jamie Chen,Workplace Safety Basics,2026-07-18,"[{""achievement"":""Completed all learning modules""}]",false,,https://example.invalid/verify/CERT-DEMO-002

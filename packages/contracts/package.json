@@ -1,0 +1,38 @@
+{
+  "name": "@docflow-local/contracts",
+  "version": "0.1.0",
+  "description": "Versioned public contracts shared by DocFlow Core, hosts and plugins",
+  "license": "MPL-2.0",
+  "homepage": "https://github.com/docflowlocal/docflow#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/docflowlocal/docflow.git",
+    "directory": "packages/contracts"
+  },
+  "bugs": {
+    "url": "https://github.com/docflowlocal/docflow/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "commonjs",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./schemas/*": "./src/schemas/*"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "prepublishOnly": "npm test"
+  },
+  "files": [
+    "src",
+    "LICENSE"
+  ],
+  "devDependencies": {
+    "ajv": "8.20.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

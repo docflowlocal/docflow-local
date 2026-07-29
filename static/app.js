@@ -193,7 +193,12 @@ function localizeEngineMessage(value) {
   const message = String(value || "").trim();
   if (state.locale !== "en" || !message || /^[A-Za-z]/.test(message)) return message;
   const replacements = [
-    [/^仅支持 CSV、XLSX 或 XLSM 数据文件$/, "Only CSV, XLSX, or XLSM data files are supported."],
+    [/^仅支持 JSON、CSV、XLSX 或 XLSM 数据文件$/, "Only JSON, CSV, XLSX, or XLSM data files are supported."],
+    [/^数据文件为空$/, "The data file is empty."],
+    [/^JSON 数据不是有效的 UTF-8 JSON$/, "The JSON file is not valid UTF-8 JSON."],
+    [/^JSON 数据必须是数组，或包含 rows 数组的对象$/, 'JSON must be an array or an object with a "rows" array.'],
+    [/^JSON 第 (\d+) 条记录必须是对象$/, "JSON row $1 must be an object."],
+    [/^JSON 包含禁止字段：(.+)$/, "JSON contains a forbidden field: $1"],
     [/^数据列超过 (\d+) 列限制$/, "The data exceeds the $1-column limit."],
     [/^数据记录超过 (\d+) 条限制$/, "The data exceeds the $1-record limit."],
     [/^CSV 包含未闭合的引号字段$/, "The CSV contains an unclosed quoted field."],

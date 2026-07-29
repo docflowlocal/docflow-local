@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "legalProvenanceReview": {
+    "status": "pending",
+    "reference": ""
+  },
+  "githubSplitRepositories": {
+    "status": "pending",
+    "reference": ""
+  },
+  "npmScopeTwoFactorAuthentication": {
+    "status": "pending",
+    "reference": ""
+  },
+  "appleDeveloperId": {
+    "status": "pending",
+    "reference": ""
+  },
+  "appleNotarization": {
+    "status": "pending",
+    "reference": ""
+  },
+  "windowsAuthenticode": {
+    "status": "pending",
+    "reference": ""
+  },
+  "windowsPackagedSmoke": {
+    "status": "pending",
+    "reference": ""
+  },
+  "productionLicenseKeyring": {
+    "status": "pending",
+    "reference": ""
+  }
+}

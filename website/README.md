@@ -3,7 +3,7 @@
 The commercial website is a dependency-light static build deployed with Cloudflare Workers Static Assets.
 
 ```bash
-npm install
+npm ci
 npm run build
 npm run dev
 ```

@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "packing-list",
+  "name": "Starter packing list",
+  "version": "1.0.0",
+  "license": "CC-BY-4.0",
+  "creator": "DocFlow Local Contributors",
+  "attribution": "DocFlow Local starter template — https://docflowlocal.com",
+  "locale": "en",
+  "template": "starter.docx",
+  "sample": "sample.csv",
+  "filenamePattern": "{{shipmentNumber}}-packing-list",
+  "fields": [
+    { "name": "shipmentNumber", "type": "string", "required": true },
+    { "name": "shipDate", "type": "date", "required": true },
+    { "name": "consignee", "type": "string", "required": true },
+    {
+      "name": "items",
+      "type": "array",
+      "required": true,
+      "fields": [
+        { "name": "sku", "type": "string", "required": true },
+        { "name": "description", "type": "string", "required": true },
+        { "name": "cartons", "type": "number", "required": true },
+        { "name": "netWeight", "type": "number", "required": true },
+        { "name": "grossWeight", "type": "number", "required": true }
+      ]
+    },
+    { "name": "totalCartons", "type": "number", "required": true },
+    { "name": "totalGrossWeight", "type": "number", "required": true },
+    { "name": "showHandling", "type": "boolean", "required": false },
+    { "name": "handlingNotes", "type": "string", "required": false }
+  ]
+}

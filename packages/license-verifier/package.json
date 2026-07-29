@@ -1,0 +1,38 @@
+{
+  "name": "@docflow-local/license-verifier",
+  "version": "0.1.0",
+  "description": "Offline signed-license verification contracts for DocFlow hosts",
+  "license": "MPL-2.0",
+  "homepage": "https://github.com/docflowlocal/docflow#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/docflowlocal/docflow.git",
+    "directory": "packages/license-verifier"
+  },
+  "bugs": {
+    "url": "https://github.com/docflowlocal/docflow/issues"
+  },
+  "type": "commonjs",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./feature-policy": "./src/feature-policy.js",
+    "./license": "./src/license.js"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node test/license.test.js",
+    "test:syntax": "node --check src/index.js && node --check src/feature-policy.js && node --check src/license.js",
+    "prepublishOnly": "npm run test:syntax && npm test"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

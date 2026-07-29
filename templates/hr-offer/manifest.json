@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "hr-offer",
+  "name": "Starter employment offer",
+  "version": "1.0.0",
+  "license": "CC-BY-4.0",
+  "creator": "DocFlow Local Contributors",
+  "attribution": "DocFlow Local starter template — https://docflowlocal.com",
+  "locale": "en",
+  "template": "starter.docx",
+  "sample": "sample.csv",
+  "filenamePattern": "{{candidateName}}-offer",
+  "fields": [
+    { "name": "offerDate", "type": "date", "required": true },
+    { "name": "candidateName", "type": "string", "required": true },
+    { "name": "jobTitle", "type": "string", "required": true },
+    { "name": "companyName", "type": "string", "required": true },
+    { "name": "startDate", "type": "date", "required": true },
+    { "name": "annualSalary", "type": "number", "required": true },
+    { "name": "showBonus", "type": "boolean", "required": false },
+    { "name": "bonusAmount", "type": "number", "required": false },
+    { "name": "managerName", "type": "string", "required": true },
+    { "name": "senderName", "type": "string", "required": false }
+  ]
+}

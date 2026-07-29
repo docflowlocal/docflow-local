@@ -545,7 +545,20 @@ renderDebug("module identity", {
   parent: module.parent?.filename || null,
   main: require.main?.filename || null
 });
-if (module.parent == null) bootstrap();
+// Electron's packaged bootstrap requires the configured main module, so
+// `module.parent` is not reliably null inside app.asar. `app.isPackaged`
+// identifies that real entry path while source tests can still require this
+// module without starting the application.
+if (app.isPackaged || module.parent == null) {
+  if (process.argv.includes("--docflow-release-smoke")) {
+    require("./release-smoke").main().catch(error => {
+      console.error("DOCFLOW_PACKAGED_SMOKE_FAILED", error);
+      app.exit(1);
+    });
+  } else {
+    bootstrap();
+  }
+}
 
 module.exports = {
   assertPdfBuffer,

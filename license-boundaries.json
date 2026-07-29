@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 1,
+  "releaseGate": {
+    "pureMplCoreAllowed": false,
+    "reviewReferences": []
+  },
+  "historicalBaseline": {
+    "commit": "867e700d4b0d42f4f3e2d938ad2416fcb9457b2f",
+    "license": "AGPL-3.0-or-later",
+    "files": {
+      "desktop/engine.js": {
+        "gitBlob": "ca2a8702952cc10cff1cc382b96bdf3853c6baad"
+      },
+      "desktop/expression.js": {
+        "gitBlob": "38f6939b143aa18ca20647c126ac0b8608979aec"
+      },
+      "desktop/template-engine.js": {
+        "gitBlob": "2feefd547bd6b5fd26a61f5ab438e8265c3bf915"
+      }
+    }
+  },
+  "packageLicenses": {
+    "packages/contracts": "MPL-2.0",
+    "packages/core": "MPL-2.0 AND AGPL-3.0-or-later",
+    "packages/license-verifier": "MPL-2.0",
+    "packages/desktop-extension-sdk": "MPL-2.0"
+  },
+  "publishedMplSourceRoots": [
+    "packages/contracts/src",
+    "packages/license-verifier/src",
+    "packages/desktop-extension-sdk/src"
+  ],
+  "coreInheritedFiles": {
+    "packages/core/src/data.js": {
+      "spdx": "AGPL-3.0-or-later",
+      "relationship": "adapted-extraction",
+      "historicalSources": [
+        "desktop/engine.js"
+      ],
+      "sharedTopLevelSymbols": {
+        "desktop/engine.js": [
+          "decodeCsv",
+          "parseCsv",
+          "assertSafeSpreadsheetArchive",
+          "excelCellValue",
+          "parseTabular"
+        ]
+      },
+      "directRuntimeDependencies": {
+        "adm-zip": "MIT",
+        "exceljs": "MIT",
+        "ssf": "Apache-2.0"
+      },
+      "resolution": {
+        "status": "unresolved",
+        "basis": null,
+        "evidenceReferences": []
+      }
+    },
+    "packages/core/src/expression.js": {
+      "spdx": "AGPL-3.0-or-later",
+      "relationship": "byte-identical-after-removing-added-spdx",
+      "historicalSources": [
+        "desktop/expression.js"
+      ],
+      "byteIdenticalAfterRemovingSpdxWith": "desktop/expression.js",
+      "sharedTopLevelSymbols": {},
+      "directRuntimeDependencies": {},
+      "resolution": {
+        "status": "unresolved",
+        "basis": null,
+        "evidenceReferences": []
+      }
+    },
+    "packages/core/src/index.js": {
+      "spdx": "AGPL-3.0-or-later",
+      "relationship": "adapted-orchestration",
+      "historicalSources": [
+        "desktop/engine.js",
+        "desktop/template-engine.js"
+      ],
+      "sharedTopLevelSymbols": {
+        "desktop/engine.js": [
+          "mapRow",
+          "patternFields",
+          "sha256"
+        ]
+      },
+      "directRuntimeDependencies": {},
+      "resolution": {
+        "status": "unresolved",
+        "basis": null,
+        "evidenceReferences": []
+      }
+    },
+    "packages/core/src/template-engine.js": {
+      "spdx": "AGPL-3.0-or-later",
+      "relationship": "extended-copy",
+      "historicalSources": [
+        "desktop/template-engine.js",
+        "desktop/engine.js"
+      ],
+      "sharedTopLevelSymbols": {
+        "desktop/template-engine.js": [
+          "assertSafeDocxArchive",
+          "extractDocxTemplateInfo",
+          "renderDocxTemplate",
+          "inspectPdfTemplate",
+          "fillPdfTemplate",
+          "mergePdfBuffers"
+        ],
+        "desktop/engine.js": [
+          "decodeXml",
+          "conditionTruthy"
+        ]
+      },
+      "directRuntimeDependencies": {
+        "@fontsource/noto-sans-sc": "OFL-1.1",
+        "@pdf-lib/fontkit": "MIT",
+        "adm-zip": "MIT",
+        "docxtemplater": "MIT",
+        "image-size": "MIT",
+        "pdf-lib": "MIT",
+        "pizzip": "(MIT OR GPL-3.0)",
+        "qrcode": "MIT"
+      },
+      "resolution": {
+        "status": "unresolved",
+        "basis": null,
+        "evidenceReferences": []
+      }
+    }
+  },
+  "electronRequiredLicenseFiles": [
+    "LICENSE",
+    "LICENSES/**/*",
+    "NOTICE.md",
+    "packages/core/NOTICE.md",
+    "templates/NOTICE.md"
+  ]
+}

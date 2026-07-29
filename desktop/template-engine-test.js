@@ -80,6 +80,13 @@ function minimalDocxTemplate() {
       <w:tblPr><w:tblW w:w="4800" w:type="dxa"/></w:tblPr>
       <w:tr><w:tc><w:tcPr><w:tcW w:w="2400" w:type="dxa"/></w:tcPr><w:p><w:r><w:t>固定版式内容</w:t></w:r></w:p></w:tc></w:tr>
     </w:tbl>
+    <w:p><w:r><w:t>{{报价日期 | date:YYYY/MM/DD}}</w:t></w:r></w:p>
+    <w:tbl>
+      <w:tr>
+        <w:tc><w:p><w:r><w:t>{{#项目}}{{名称}}</w:t></w:r></w:p></w:tc>
+        <w:tc><w:p><w:r><w:t>{{金额 | currency:CNY}}{{/项目}}</w:t></w:r></w:p></w:tc>
+      </w:tr>
+    </w:tbl>
     <w:p><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>{{@qrcode:编号}}</w:t></w:r></w:p>
     <w:p><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>{{@signature}}</w:t></w:r></w:p>
     <w:p><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>{{@image:照片}}</w:t></w:r></w:p>
@@ -123,7 +130,7 @@ function matches(text, pattern) {
 async function testDocxTemplateEngine() {
   const fixture = minimalDocxTemplate();
   const info = extractDocxTemplateInfo(fixture.buffer);
-  assert.deepStrictEqual(info.conditions, ["显示优惠"]);
+  assert.deepStrictEqual(info.conditions, ["显示优惠", "项目"]);
   assert.deepStrictEqual(info.assets, [
     { tag: "@image:照片", kind: "image", source: "照片" },
     { tag: "@qrcode:编号", kind: "qrcode", source: "编号" },
@@ -131,13 +138,18 @@ async function testDocxTemplateEngine() {
   ]);
   assert.deepStrictEqual(
     new Set(info.fields),
-    new Set(["客户名称", "显示优惠", "优惠", "编号", "照片"])
+    new Set(["客户名称", "显示优惠", "优惠", "报价日期", "项目", "名称", "金额", "编号", "照片"])
   );
 
   const context = {
     客户名称: "测试客户有限公司",
     显示优惠: true,
     优惠: "¥100.00",
+    报价日期: "2026-07-29",
+    项目: [
+      { 名称: "实施服务", 金额: 1200 },
+      { 名称: "支持服务", 金额: 300 }
+    ],
     编号: "QT-2026-001",
     照片: "photo.png"
   };
@@ -160,6 +172,9 @@ async function testDocxTemplateEngine() {
   const text = xmlVisibleText(documentXml);
   assert(text.includes("测试客户有限公司"), "Cross-run text field should be rendered");
   assert(text.includes("优惠金额：¥100.00"), "Truthy conditional section should be rendered");
+  assert(text.includes("2026/07/29"), "Date formatter should render a deterministic calendar date");
+  assert(text.includes("实施服务") && text.includes("支持服务"), "Array sections should repeat table content");
+  assert(text.includes("CN¥1,200.00") && text.includes("CN¥300.00"), "Currency formatter should render loop values");
   assert(text.includes("固定版式内容"), "Static table content should remain");
   assert(documentXml.includes("<w:tbl>"), "Original table layout should remain");
   assert(documentXml.includes('<w:jc w:val="center"/>'), "Paragraph alignment should remain");

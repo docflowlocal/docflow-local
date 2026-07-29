@@ -76,7 +76,7 @@ async function rendererCheck(window) {
       dataInput.files = invalidTransfer.files;
       dataInput.dispatchEvent(new Event("change", { bubbles: true }));
       await waitFor(
-        () => document.querySelector("#toastCopy").textContent.includes("Only CSV"),
+        () => document.querySelector("#toastCopy").textContent.includes("Only JSON, CSV"),
         "English engine error localization"
       );
 

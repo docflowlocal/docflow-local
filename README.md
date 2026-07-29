@@ -2,13 +2,13 @@
 
 [简体中文](README.zh-CN.md) · [Website](https://docflowlocal.com) · [Guides](https://docflowlocal.com/guides/) · [Download](https://docflowlocal.com/download/) · [Security](https://docflowlocal.com/security/) · [Benchmarks](BENCHMARKS.md)
 
-DocFlow Local is a privacy-first desktop application that turns Excel/CSV data and Word/PDF templates into validated, consistently named delivery packages.
+DocFlow Local is a privacy-first desktop application and modular document engine that turns JSON/Excel/CSV data and Word/PDF templates into validated, consistently named delivery packages.
 
 > Customer documents are processed locally through a temporary loopback service and application memory. The Community Edition does not upload document content.
 
 ## MVP capabilities
 
-- Import CSV, XLSX, and XLSM data, preserve physical source-row numbers and displayed formats such as leading-zero identifiers and percentages, and map columns to template fields.
+- Import JSON, CSV, XLSX, and XLSM data, preserve physical source-row numbers and displayed formats such as leading-zero identifiers and percentages, and map columns to template fields.
 - Inspect and populate custom DOCX templates while preserving their original document package, styles, tables, headers, footers, and page setup.
 - Inspect and fill PDF AcroForm text fields, checkboxes, radio groups, dropdowns, option lists, and image fields.
 - Create and edit computed and conditional rules with a bounded expression evaluator—no `eval` or arbitrary JavaScript execution.
@@ -66,11 +66,17 @@ DocFlow reads placeholders from the document body, headers, footers, footnotes, 
 | --- | --- | --- |
 | Text or mapped value | `{{Field}}` | `{{Customer Name}}` |
 | Conditional section | `{{#Condition}}...{{/Condition}}` | `{{#Show Discount}}Discount: {{Discount}}{{/Show Discount}}` |
+| Array/table loop | `{{#Items}}...{{/Items}}` | `{{#Items}}{{Name}} — {{Amount}}{{/Items}}` |
+| Date/number formatting | `{{Field \| formatter}}` | `{{Amount \| currency:CNY}}` |
 | QR code | `{{@qrcode:Field}}` | `{{@qrcode:Quote ID}}` |
 | Uploaded image | `{{@image:Field}}` | `{{@image:Photo}}` |
 | Uploaded signature/stamp | `{{@signature}}` | `{{@signature}}` |
 
 For predictable Word layout, put each opening/closing conditional marker and every image marker in its own paragraph or text run. Image cells may contain the uploaded file name, such as `photo.png`; DocFlow also matches an uploaded image by its base name or by the referenced field name. Image assets must be PNG or JPEG.
+
+Built-in formatters include `date:YYYY-MM-DD`, `number:2`,
+`currency:CNY`, `percent:1`, `trim`, `upper`, `lower`, and
+`default:fallback`. JSON input can carry nested arrays for table loops.
 
 Example:
 
@@ -130,7 +136,16 @@ See [PRIVACY.md](PRIVACY.md) and [SECURITY.md](SECURITY.md) for the project poli
 
 ## Community and Pro
 
-The Community Edition remains useful for local import, mapping, rule editing, original-template generation, validation, and delivery packaging. Planned paid capabilities include a visual PDF coordinate designer, saved projects, watched folders, CLI/scheduled jobs, shared template libraries, offline business licensing, and priority support.
+DocFlow is being separated into four layers: an open Core engine, an open
+Desktop Community application, private Pro extensions, and a future optional
+Hub. Core includes the CLI, authenticated loopback API, template syntax, and
+plugin contracts. Community keeps the useful local workflow already published
+in the 0.x application; it is not reduced to a document-count-limited trial.
+
+Pro focuses on capabilities that businesses pay to operate and govern:
+multi-source relationships, visual designers, watched folders and schedules,
+retries, audit and approval workflows, commercial connectors, team template
+governance, deployment controls, offline activation, and support.
 
 Paid editions will not be differentiated by hidden telemetry, document uploads, or reduced security.
 
@@ -142,6 +157,9 @@ Paid editions will not be differentiated by hidden telemetry, document uploads, 
 - [Benchmark method and results](BENCHMARKS.md)
 - [Desktop build and release checklist](DESKTOP_BUILD.md)
 - [Roadmap](ROADMAP.md)
+- [Platform architecture and repository split](PLATFORM_ARCHITECTURE.md)
+- [Unreleased changelog](CHANGELOG.md)
+- [Modular release checklist](RELEASE_CHECKLIST.md)
 - [Contributing](CONTRIBUTING.md)
 
 ## Contributing
@@ -150,4 +168,12 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Use Issue
 
 ## License and trademarks
 
-Community Edition code is released under the GNU Affero General Public License v3.0 or later. The DocFlow Local name, logo, and official industry templates are not granted under the code license; see [TRADEMARKS.md](TRADEMARKS.md). For support, OEM, proprietary embedding, or enterprise licensing, contact `support@willgo.tech`.
+The historical 0.x monolith remains available under GNU AGPL-3.0-or-later.
+Original new contracts, verifier, extension SDK, and modular source files are
+being prepared under MPL-2.0. The current Core transition package remains mixed
+because inherited engine files retain AGPL-3.0-or-later; old AGPL grants are not
+revoked. See [NOTICE.md](NOTICE.md) for the exact boundaries. Private Pro modules
+and commercial template packs use separate terms. The DocFlow Local
+name, logo, and official industry templates are not granted under the code
+license; see [TRADEMARKS.md](TRADEMARKS.md). For support, OEM, proprietary
+embedding, or enterprise licensing, contact `support@willgo.tech`.

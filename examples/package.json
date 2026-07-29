@@ -1,0 +1,17 @@
+{
+  "name": "@docflow-local/examples-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MPL-2.0",
+  "scripts": {
+    "test": "node scripts/validate-content.js",
+    "build:quotation-data": "node excel-to-quotation/build-data.js"
+  },
+  "dependencies": {
+    "@docflow-local/core": "^0.1.0",
+    "exceljs": "^4.4.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

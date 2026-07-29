@@ -1,0 +1,2 @@
+shipmentNumber,shipDate,consignee,items,totalCartons,totalGrossWeight,showHandling,handlingNotes
+SHIP-DEMO-001,2026-07-22,Fabrikam Demo Imports,"[{""sku"":""DEMO-A100"",""description"":""Sample fastener kit"",""cartons"":3,""netWeight"":42.5,""grossWeight"":46.2},{""sku"":""DEMO-B200"",""description"":""Sample tool case"",""cartons"":2,""netWeight"":27,""grossWeight"":30.4}]",5,76.6,true,Keep dry; demonstration instruction only
