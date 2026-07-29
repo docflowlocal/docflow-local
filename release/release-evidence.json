@@ -5,8 +5,8 @@
     "reference": ""
   },
   "githubSplitRepositories": {
-    "status": "pending",
-    "reference": ""
+    "status": "complete",
+    "reference": "https://github.com/docflowlocal/docflow-local/pull/2#issuecomment-5116076361"
   },
   "npmScopeTwoFactorAuthentication": {
     "status": "pending",
