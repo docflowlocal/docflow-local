@@ -7,7 +7,13 @@ if (-not (Test-Path -LiteralPath $appPath -PathType Leaf)) {
   throw "Packaged Windows application not found: $appPath"
 }
 
-& $appPath "--docflow-release-smoke"
-if ($LASTEXITCODE -ne 0) {
-  throw "Packaged Windows release smoke failed with exit code $LASTEXITCODE"
+$process = Start-Process `
+  -FilePath $appPath `
+  -ArgumentList "--docflow-release-smoke" `
+  -NoNewWindow `
+  -PassThru `
+  -Wait
+
+if ($process.ExitCode -ne 0) {
+  throw "Packaged Windows release smoke failed with exit code $($process.ExitCode)"
 }
