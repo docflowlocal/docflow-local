@@ -12,6 +12,7 @@ const test = require("node:test");
 const {
   FORBIDDEN_DIRECTORY_NAMES,
   MANIFEST_FILENAME,
+  PUBLIC_PACKAGE_BOOTSTRAP_REF,
   SOURCE_ROOT,
   buildExportPlan,
   canonicalJson,
@@ -129,14 +130,26 @@ test("export writes verified trees, preserves metadata, and rejects a dirty reru
     );
   }
 
-  const corePackage = JSON.parse(
-    await fs.promises.readFile(path.join(SOURCE_ROOT, "packages/core/package.json"))
-  );
-  const verifierPackage = JSON.parse(
-    await fs.promises.readFile(path.join(SOURCE_ROOT, "packages/license-verifier/package.json"))
-  );
+  const [contractsPackage, corePackage, verifierPackage] = await Promise.all([
+    fs.promises.readFile(
+      path.join(SOURCE_ROOT, "packages/contracts/package.json"),
+      "utf8"
+    ).then(JSON.parse),
+    fs.promises.readFile(
+      path.join(SOURCE_ROOT, "packages/core/package.json"),
+      "utf8"
+    ).then(JSON.parse),
+    fs.promises.readFile(
+      path.join(SOURCE_ROOT, "packages/license-verifier/package.json"),
+      "utf8"
+    ).then(JSON.parse)
+  ]);
   const desktopPackage = JSON.parse(
     await fs.promises.readFile(path.join(output, "docflow-desktop/package.json"))
+  );
+  assert.equal(
+    desktopPackage.dependencies["@docflow-local/contracts"],
+    contractsPackage.version
   );
   assert.equal(desktopPackage.dependencies["@docflow-local/core"], corePackage.version);
   assert.equal(
@@ -178,6 +191,51 @@ test("export writes verified trees, preserves metadata, and rejects a dirty reru
       packageJson.homepage,
       `https://github.com/docflowlocal/${repository}#readme`
     );
+    if (repository !== "docs") {
+      assert.equal(packageJson.overrides?.["brace-expansion"], "5.0.8");
+      assert.equal(packageJson.overrides?.uuid, "11.1.1");
+    }
+    if (["docflow-desktop", "templates", "plugins", "examples"].includes(repository)) {
+      assert.equal(
+        packageJson.dependencies["@docflow-local/contracts"],
+        contractsPackage.version
+      );
+      assert.equal(packageJson.dependencies["@docflow-local/core"], corePackage.version);
+    }
+    const workflow = await fs.promises.readFile(
+      path.join(output, repository, ".github/workflows/ci.yml"),
+      "utf8"
+    );
+    assert.match(workflow, /permissions:\n  contents: read/);
+    assert.match(workflow, /actions\/checkout@v7/);
+    assert.match(workflow, /actions\/setup-node@v7/);
+    if (["docflow-desktop", "templates", "plugins", "examples"].includes(repository)) {
+      assert.match(workflow, new RegExp(`ref: ${PUBLIC_PACKAGE_BOOTSTRAP_REF}`));
+      assert.doesNotMatch(workflow, /ref: main/);
+      assert.match(workflow, /npm pack \.\/packages\/core/);
+      assert.match(workflow, /Verify reviewed dependency versions/);
+      assert.match(workflow, /@docflow-local\/contracts/);
+      assert.match(workflow, /@docflow-local\/core/);
+      assert(
+        workflow.indexOf("Verify reviewed dependency versions") <
+          workflow.indexOf("Install dependencies from reviewed tarballs")
+      );
+      assert.match(workflow, /--save-exact/);
+      assert.match(workflow, /--package-lock=true/);
+      assert.match(workflow, /npm ls --all/);
+      assert.match(workflow, /npm audit --audit-level=high/);
+      assert.doesNotMatch(workflow, /npm audit --omit=dev/);
+      assert.match(workflow, /git checkout -- package\.json/);
+      assert.match(workflow, /rm -f package-lock\.json/);
+    }
+    if (repository === "docflow-desktop") {
+      assert.match(workflow, /os: \[ubuntu-latest, macos-latest, windows-latest\]/);
+      assert.match(workflow, /npm ci --ignore-scripts/);
+      assert.match(workflow, /release-readiness\.js --lockfile-only/);
+      assert.match(workflow, /hashFiles\('package-lock\.json'\) != ''/);
+      assert.match(workflow, /hashFiles\('project\/package-lock\.json'\) == ''/);
+      assert.match(workflow, /@docflow-local\/license-verifier/);
+    }
   }
 
   const packageFiles = result.manifest.repositories.flatMap(repository => (
@@ -215,6 +273,12 @@ test("export writes verified trees, preserves metadata, and rejects a dirty reru
   assert.match(desktopReleaseResult.stdout, /DocFlow release readiness \(internal\)/);
   assert.match(desktopReleaseResult.stdout, /PASS SPLIT_DESKTOP_DEPENDENCIES/);
   assert.match(desktopReleaseResult.stdout, /WARN LOCKFILE_SUPPLY_CHAIN/);
+
+  const docsResult = await execFileAsync(npmCommand, ["test"], {
+    cwd: path.join(output, "docs"),
+    encoding: "utf8"
+  });
+  assert.match(docsResult.stdout, /validated \d+ Markdown files and \d+ relative links/);
 
   const desktopRoot = path.join(output, "docflow-desktop");
   const desktopLockPath = path.join(desktopRoot, "package-lock.json");
@@ -260,24 +324,97 @@ test("export writes verified trees, preserves metadata, and rejects a dirty reru
   assert(linkedResult.errors.some(error => /local or linked/.test(error)));
   assert(linkedResult.errors.some(error => /integrity/.test(error)));
 
+  const transitionLock = JSON.parse(
+    await fs.promises.readFile(path.join(SOURCE_ROOT, "package-lock.json"), "utf8")
+  );
+  const completeRegistryPackages = {};
+  for (const [packagePath, lockedPackage] of Object.entries(
+    transitionLock.packages || {}
+  )) {
+    if (
+      packagePath.startsWith("node_modules/") &&
+      lockedPackage.link !== true
+    ) {
+      completeRegistryPackages[packagePath] = structuredClone(lockedPackage);
+    }
+  }
+  const fixtureIntegrity = `sha512-${Buffer.alloc(64, 23).toString("base64")}`;
+  completeRegistryPackages["node_modules/@docflow-local/contracts"] = {
+    version: contractsPackage.version,
+    resolved: `https://registry.npmjs.org/@docflow-local/contracts/-/contracts-${contractsPackage.version}.tgz`,
+    integrity: fixtureIntegrity
+  };
+  completeRegistryPackages["node_modules/@docflow-local/core"] = {
+    version: corePackage.version,
+    resolved: `https://registry.npmjs.org/@docflow-local/core/-/core-${corePackage.version}.tgz`,
+    integrity: fixtureIntegrity,
+    dependencies: {
+      "@docflow-local/contracts": contractsPackage.version
+    }
+  };
+  completeRegistryPackages["node_modules/@docflow-local/license-verifier"] = {
+    version: verifierPackage.version,
+    resolved: `https://registry.npmjs.org/@docflow-local/license-verifier/-/license-verifier-${verifierPackage.version}.tgz`,
+    integrity: fixtureIntegrity
+  };
   const registryLock = {
     name: desktopPackage.name,
     version: desktopPackage.version,
     lockfileVersion: 3,
     packages: {
       "": lockedRoot,
-      "node_modules/@docflow-local/core": {
-        version: corePackage.version,
-        resolved: `https://registry.npmjs.org/@docflow-local/core/-/core-${corePackage.version}.tgz`,
-        integrity: "sha512-ZmFrZS1pbnRlZ3JpdHk="
-      },
-      "node_modules/@docflow-local/license-verifier": {
-        version: verifierPackage.version,
-        resolved: `https://registry.npmjs.org/@docflow-local/license-verifier/-/license-verifier-${verifierPackage.version}.tgz`,
-        integrity: "sha512-ZmFrZS1pbnRlZ3JpdHk="
-      }
+      ...completeRegistryPackages
     }
   };
+  const missingDirectLock = structuredClone(registryLock);
+  delete missingDirectLock.packages["node_modules/pdf-lib"];
+  await fs.promises.writeFile(desktopLockPath, canonicalJson(missingDirectLock));
+  const missingDirectResult = exportedReadiness.validateReleaseLockfile(desktopRoot, {
+    requireRegistryPackages: true
+  });
+  assert.strictEqual(missingDirectResult.valid, false);
+  assert(missingDirectResult.errors.some(error => /node_modules\/pdf-lib is missing/.test(error)));
+
+  const missingTransitiveLock = structuredClone(registryLock);
+  delete missingTransitiveLock.packages["node_modules/pako"];
+  await fs.promises.writeFile(desktopLockPath, canonicalJson(missingTransitiveLock));
+  const missingTransitiveResult = exportedReadiness.validateReleaseLockfile(desktopRoot, {
+    requireRegistryPackages: true
+  });
+  assert.strictEqual(missingTransitiveResult.valid, false);
+  assert(missingTransitiveResult.errors.some(
+    error => /node_modules\/pdf-lib dependencies\.pako cannot resolve/.test(error)
+  ));
+
+  const maliciousHostLock = structuredClone(registryLock);
+  maliciousHostLock.packages["node_modules/@docflow-local/core"].resolved =
+    `https://packages.example.invalid/@docflow-local/core/-/core-${corePackage.version}.tgz`;
+  await fs.promises.writeFile(desktopLockPath, canonicalJson(maliciousHostLock));
+  const maliciousHostResult = exportedReadiness.validateReleaseLockfile(desktopRoot, {
+    requireRegistryPackages: true
+  });
+  assert.strictEqual(maliciousHostResult.valid, false);
+  assert(maliciousHostResult.errors.some(error => /trusted registry\.npmjs\.org/.test(error)));
+
+  const maliciousPathLock = structuredClone(registryLock);
+  maliciousPathLock.packages["node_modules/@docflow-local/core"].resolved =
+    `https://registry.npmjs.org/@docflow-local/license-verifier/-/license-verifier-${corePackage.version}.tgz`;
+  await fs.promises.writeFile(desktopLockPath, canonicalJson(maliciousPathLock));
+  const maliciousPathResult = exportedReadiness.validateReleaseLockfile(desktopRoot, {
+    requireRegistryPackages: true
+  });
+  assert.strictEqual(maliciousPathResult.valid, false);
+  assert(maliciousPathResult.errors.some(error => /tarball path does not match/.test(error)));
+
+  const shortSriLock = structuredClone(registryLock);
+  shortSriLock.packages["node_modules/@docflow-local/core"].integrity = "sha512-eA==";
+  await fs.promises.writeFile(desktopLockPath, canonicalJson(shortSriLock));
+  const shortSriResult = exportedReadiness.validateReleaseLockfile(desktopRoot, {
+    requireRegistryPackages: true
+  });
+  assert.strictEqual(shortSriResult.valid, false);
+  assert(shortSriResult.errors.some(error => /valid package integrity hash/.test(error)));
+
   await fs.promises.writeFile(desktopLockPath, canonicalJson(registryLock));
   const registryResult = exportedReadiness.validateReleaseLockfile(desktopRoot, {
     requireRegistryPackages: true
@@ -287,6 +424,27 @@ test("export writes verified trees, preserves metadata, and rejects a dirty reru
     path.join(desktopRoot, "scripts", "generate-release-metadata.js")
   );
   assert.strictEqual(exportedMetadata.requirePackageLock(desktopRoot), desktopLockPath);
+  const lockGateResult = await execFileAsync(
+    process.execPath,
+    ["scripts/release-readiness.js", "--lockfile-only"],
+    {
+      cwd: desktopRoot,
+      encoding: "utf8"
+    }
+  );
+  assert.match(lockGateResult.stdout, /PASS RELEASE_LOCKFILE/);
+  const bootstrappedReleaseTest = await execFileAsync(
+    process.execPath,
+    ["scripts/release-readiness-test.js"],
+    {
+      cwd: desktopRoot,
+      encoding: "utf8"
+    }
+  );
+  assert.match(
+    bootstrappedReleaseTest.stdout,
+    /DocFlow release readiness tests passed/
+  );
   await fs.promises.rm(desktopLockPath);
 
   await assert.rejects(

@@ -12,6 +12,8 @@ const TOOL_NAME = "docflow-repository-export";
 const TOOL_VERSION = 1;
 const MANIFEST_FILENAME = "export-manifest.json";
 const SOURCE_ROOT = path.resolve(__dirname, "..");
+const PUBLIC_PACKAGE_BOOTSTRAP_REF =
+  "d49835883200da227d643745d5a46dec0807f338";
 const FORBIDDEN_DIRECTORY_NAMES = Object.freeze([
   ".git",
   ".wrangler",
@@ -206,6 +208,24 @@ async function generatedRepositoryPackage(sourceRoot, sourcePath, repositoryName
   return Buffer.from(canonicalJson(transform ? await transform(located, sourceRoot) : located));
 }
 
+async function withExactPublicDependencies(packageJson, sourceRoot, directories) {
+  const packageManifests = await Promise.all(
+    directories.map(directory => (
+      readJson(path.join(sourceRoot, "packages", directory, "package.json"))
+    ))
+  );
+  return {
+    ...packageJson,
+    dependencies: {
+      ...(packageJson.dependencies || {}),
+      ...Object.fromEntries(packageManifests.map(manifest => [
+        manifest.name,
+        manifest.version
+      ]))
+    }
+  };
+}
+
 async function rewrittenSource(sourceRoot, sourcePath, transform) {
   const source = await fs.promises.readFile(
     path.join(sourceRoot, ...sourcePath.split("/")),
@@ -214,8 +234,213 @@ async function rewrittenSource(sourceRoot, sourcePath, transform) {
   return Buffer.from(transform(source));
 }
 
+function npmTarballName(packageJson) {
+  return `${packageJson.name.replace(/^@/, "").replace("/", "-")}-${packageJson.version}.tgz`;
+}
+
+async function generatedCiWorkflow(sourceRoot, repositoryName) {
+  const header = [
+    "name: CI",
+    "",
+    "on:",
+    "  push:",
+    "    branches: [main]",
+    "  pull_request:",
+    "",
+    "permissions:",
+    "  contents: read",
+    ""
+  ];
+  if (repositoryName === "docflow") {
+    return Buffer.from(`${[
+      ...header,
+      "jobs:",
+      "  test:",
+      "    runs-on: ubuntu-latest",
+      "    steps:",
+      "      - uses: actions/checkout@v7",
+      "        with:",
+      "          fetch-depth: 0",
+      "      - uses: actions/setup-node@v7",
+      "        with:",
+      "          node-version: 22",
+      "      - run: npm install --ignore-scripts --package-lock=true",
+      "      - run: npm audit --audit-level=high",
+      "      - run: npm test",
+      "      - run: npm run test:licenses"
+    ].join("\n")}\n`);
+  }
+  if (repositoryName === "docs") {
+    return Buffer.from(`${[
+      ...header,
+      "jobs:",
+      "  documentation:",
+      "    runs-on: ubuntu-latest",
+      "    steps:",
+      "      - uses: actions/checkout@v7",
+      "      - uses: actions/setup-node@v7",
+      "        with:",
+      "          node-version: 22",
+      "      - run: npm test"
+    ].join("\n")}\n`);
+  }
+
+  const packageDirectories = repositoryName === "docflow-desktop"
+    ? ["contracts", "core", "license-verifier"]
+    : ["contracts", "core"];
+  const tarballs = [];
+  for (const directory of packageDirectories) {
+    const packageJson = await readJson(
+      path.join(sourceRoot, "packages", directory, "package.json")
+    );
+    tarballs.push({
+      directory,
+      filename: npmTarballName(packageJson),
+      name: packageJson.name,
+      version: packageJson.version
+    });
+  }
+  const targetCommands = {
+    "docflow-desktop": [
+      "npm run test:syntax",
+      "npm test",
+      "npm run test:api",
+      "npm run test:release"
+    ],
+    templates: ["npm test"],
+    plugins: ["npm test"],
+    examples: ["npm test"]
+  }[repositoryName];
+  if (!targetCommands) {
+    throw new RepositoryExportError(
+      "DOCFLOW_EXPORT_CI_UNKNOWN",
+      `No CI workflow is defined for ${repositoryName}`
+    );
+  }
+  const packCommands = tarballs.map(({ directory }) => (
+    `          npm pack ./packages/${directory} --ignore-scripts --pack-destination "$RUNNER_TEMP/docflow-packages"`
+  ));
+  const installTarballs = tarballs.map(({ filename }) => (
+    `"$RUNNER_TEMP/docflow-packages/${filename}"`
+  )).join(" ");
+  const expectedDependencies = Object.fromEntries(
+    tarballs.map(({ name, version }) => [name, version])
+  );
+  const dependencyCheckSource = [
+    `const expected=${JSON.stringify(expectedDependencies)};`,
+    'const packageJson=require("./package.json");',
+    "for(const [name,version] of Object.entries(expected)){",
+    "const actual=packageJson.dependencies?.[name];",
+    "if(actual!==version){",
+    'throw new Error(name+" must equal reviewed package version "+version+" (found "+actual+")");',
+    "}",
+    "}"
+  ].join("");
+  const dependencyCheckCommand = `node -e ${JSON.stringify(dependencyCheckSource)}`;
+  const desktopMatrix = repositoryName === "docflow-desktop"
+    ? [
+        "  committed-lock:",
+        "    name: Committed lock (${{ matrix.os }})",
+        "    strategy:",
+        "      fail-fast: false",
+        "      matrix:",
+        "        os: [ubuntu-latest, macos-latest, windows-latest]",
+        "    runs-on: ${{ matrix.os }}",
+        "    steps:",
+        "      - uses: actions/checkout@v7",
+        "      - uses: actions/setup-node@v7",
+        "        if: ${{ hashFiles('package-lock.json') != '' }}",
+        "        with:",
+        "          node-version: 22",
+        "      - name: Validate release lock",
+        "        if: ${{ hashFiles('package-lock.json') != '' }}",
+        "        run: node scripts/release-readiness.js --lockfile-only",
+        "      - name: Install committed lock without lifecycle scripts",
+        "        if: ${{ hashFiles('package-lock.json') != '' }}",
+        "        run: npm ci --ignore-scripts",
+        "      - name: Verify installed dependency tree",
+        "        if: ${{ hashFiles('package-lock.json') != '' }}",
+        "        run: npm ls --all",
+        "      - name: Audit production and build dependencies",
+        "        if: ${{ hashFiles('package-lock.json') != '' }}",
+        "        run: npm audit --audit-level=high",
+        ...targetCommands.flatMap(command => [
+          `      - run: ${command}`,
+          "        if: ${{ hashFiles('package-lock.json') != '' }}"
+        ])
+      ]
+    : [];
+  const bootstrapIf = repositoryName === "docflow-desktop"
+    ? ["        if: ${{ hashFiles('project/package-lock.json') == '' }}"]
+    : [];
+  return Buffer.from(`${[
+    ...header,
+    "jobs:",
+    ...desktopMatrix,
+    "  bootstrap:",
+    "    runs-on: ubuntu-latest",
+    "    steps:",
+      "      - uses: actions/checkout@v7",
+    "        with:",
+    "          path: project",
+    "      - name: Check out reviewed DocFlow packages",
+    ...bootstrapIf,
+    "        uses: actions/checkout@v7",
+    "        with:",
+    "          repository: docflowlocal/docflow",
+    `          ref: ${PUBLIC_PACKAGE_BOOTSTRAP_REF}`,
+    "          path: docflow-source",
+    "          persist-credentials: false",
+    "      - uses: actions/setup-node@v7",
+    ...bootstrapIf,
+    "        with:",
+    "          node-version: 22",
+    "      - name: Pack reviewed public dependencies",
+    ...bootstrapIf,
+    "        working-directory: docflow-source",
+    "        run: |",
+    "          mkdir -p \"$RUNNER_TEMP/docflow-packages\"",
+    ...packCommands,
+    "      - name: Verify reviewed dependency versions",
+    ...bootstrapIf,
+    "        working-directory: project",
+    `        run: ${dependencyCheckCommand}`,
+    "      - name: Install dependencies from reviewed tarballs",
+    ...bootstrapIf,
+    "        working-directory: project",
+    `        run: npm install --ignore-scripts --save-exact --package-lock=true ${installTarballs}`,
+    "      - name: Verify installed dependency tree",
+    ...bootstrapIf,
+    "        working-directory: project",
+    "        run: npm ls --all",
+    "      - name: Audit production and build dependencies",
+    ...bootstrapIf,
+    "        run: npm audit --audit-level=high",
+    "        working-directory: project",
+    "      - name: Restore reviewed package metadata",
+    ...bootstrapIf,
+    "        working-directory: project",
+    "        run: |",
+    "          git checkout -- package.json",
+    "          rm -f package-lock.json",
+    ...targetCommands.flatMap(command => [
+      `      - run: ${command}`,
+      ...bootstrapIf,
+      "        working-directory: project"
+    ])
+  ].join("\n")}\n`);
+}
+
+function ciWorkflowEntry(repositoryName) {
+  return generatedEntry(
+    ".github/workflows/ci.yml",
+    `generated:${repositoryName}/.github/workflows/ci.yml`,
+    sourceRoot => generatedCiWorkflow(sourceRoot, repositoryName)
+  );
+}
+
 function commonMetadataEntries(repositoryName) {
-  return COMMON_METADATA.map(filename => {
+  const metadata = COMMON_METADATA.map(filename => {
     if (filename !== "CONTRIBUTING.md") return sourceEntry(filename);
     return generatedEntry(
       filename,
@@ -227,7 +452,7 @@ function commonMetadataEntries(repositoryName) {
           templates: "npm install\nnpm test",
           plugins: "npm install\nnpm test",
           examples: "npm install\nnpm test",
-          docs: "Edit the Markdown sources and verify their links before opening a pull request."
+          docs: "npm test"
         };
         const development = repositoryName === "docs"
           ? `## Development\n\n${commands[repositoryName]}`
@@ -241,6 +466,7 @@ function commonMetadataEntries(repositoryName) {
       })
     );
   });
+  return [...metadata, ciWorkflowEntry(repositoryName)];
 }
 
 function generatedNotice(repositoryName) {
@@ -421,7 +647,11 @@ if (packageJson.license !== "AGPL-3.0-or-later") {
 for (const relative of ["LICENSE", "LICENSES/MPL-2.0.txt", "NOTICE.md"]) {
   if (!fs.existsSync(path.join(root, relative))) throw new Error(\`Missing \${relative}\`);
 }
-for (const dependency of ["@docflow-local/core", "@docflow-local/license-verifier"]) {
+for (const dependency of [
+  "@docflow-local/contracts",
+  "@docflow-local/core",
+  "@docflow-local/license-verifier"
+]) {
   const specifier = String(packageJson.dependencies?.[dependency] || "");
   if (!/^\\d+\\.\\d+\\.\\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(specifier)) {
     throw new Error(\`\${dependency} must use an exact published version\`);
@@ -457,7 +687,10 @@ function repositoryDefinitions() {
           )
         ),
         generatedEntry("package.json", "generated:docflow/package.json", async sourceRoot => {
-          const corePackage = await readJson(path.join(sourceRoot, "packages/core/package.json"));
+          const [corePackage, rootPackage] = await Promise.all([
+            readJson(path.join(sourceRoot, "packages/core/package.json")),
+            readJson(path.join(sourceRoot, "package.json"))
+          ]);
           return Buffer.from(canonicalJson({
             name: "docflow-source-workspace",
             version: corePackage.version,
@@ -482,11 +715,13 @@ function repositoryDefinitions() {
               test: "npm --workspaces test",
               "test:licenses": "node scripts/check-license-boundaries.js --exported-source"
             },
+            overrides: rootPackage.overrides,
             engines: corePackage.engines
           }));
         })
       ]),
       requiredFiles: Object.freeze([
+        ".github/workflows/ci.yml",
         "LICENSE",
         "NOTICE.md",
         "README.md",
@@ -603,9 +838,10 @@ function repositoryDefinitions() {
             "package.json",
             "docflow-desktop",
             async (packageJson, root) => {
-              const corePackage = await readJson(path.join(root, "packages/core/package.json"));
-              const verifierPackage = await readJson(
-                path.join(root, "packages/license-verifier/package.json")
+              const generatedDependencies = await withExactPublicDependencies(
+                packageJson,
+                root,
+                ["contracts", "core", "license-verifier"]
               );
               const allowedScript = name => (
                 name === "benchmark:engine"
@@ -681,13 +917,8 @@ function repositoryDefinitions() {
               scripts["release:metadata:win"] =
                 "node scripts/generate-release-metadata.js --channel internal --platform windows --arch x64";
               const generated = {
-                ...packageJson,
+                ...generatedDependencies,
                 name: "docflow-desktop",
-                dependencies: {
-                  ...(packageJson.dependencies || {}),
-                  "@docflow-local/core": corePackage.version,
-                  "@docflow-local/license-verifier": verifierPackage.version
-                },
                 scripts
               };
               delete generated.workspaces;
@@ -705,6 +936,7 @@ function repositoryDefinitions() {
         )
       ]),
       requiredFiles: Object.freeze([
+        ".github/workflows/ci.yml",
         "LICENSE",
         "NOTICE.md",
         "README.md",
@@ -721,11 +953,23 @@ function repositoryDefinitions() {
         ...commonMetadataEntries("templates"),
         sourceEntry("templates", ".", { exclude: ["package.json"] }),
         sourceEntry("templates/NOTICE.md", "LICENSE"),
-        generatedEntry("package.json", "generated:templates/package.json", sourceRoot => (
-          generatedRepositoryPackage(sourceRoot, "templates/package.json", "templates")
-        ))
+        generatedEntry(
+          "package.json",
+          "generated:templates/package.json",
+          sourceRoot => generatedRepositoryPackage(
+            sourceRoot,
+            "templates/package.json",
+            "templates",
+            (packageJson, root) => withExactPublicDependencies(
+              packageJson,
+              root,
+              ["contracts", "core"]
+            )
+          )
+        )
       ]),
       requiredFiles: Object.freeze([
+        ".github/workflows/ci.yml",
         "LICENSE",
         "NOTICE.md",
         "README.md",
@@ -741,11 +985,23 @@ function repositoryDefinitions() {
         generatedEntry("NOTICE.md", "generated:plugins/NOTICE.md", () => (
           generatedNotice("plugins")
         )),
-        generatedEntry("package.json", "generated:plugins/package.json", sourceRoot => (
-          generatedRepositoryPackage(sourceRoot, "plugins/package.json", "plugins")
-        ))
+        generatedEntry(
+          "package.json",
+          "generated:plugins/package.json",
+          sourceRoot => generatedRepositoryPackage(
+            sourceRoot,
+            "plugins/package.json",
+            "plugins",
+            (packageJson, root) => withExactPublicDependencies(
+              packageJson,
+              root,
+              ["contracts", "core"]
+            )
+          )
+        )
       ]),
       requiredFiles: Object.freeze([
+        ".github/workflows/ci.yml",
         "LICENSE",
         "NOTICE.md",
         "README.md",
@@ -761,11 +1017,23 @@ function repositoryDefinitions() {
         generatedEntry("NOTICE.md", "generated:examples/NOTICE.md", () => (
           generatedNotice("examples")
         )),
-        generatedEntry("package.json", "generated:examples/package.json", sourceRoot => (
-          generatedRepositoryPackage(sourceRoot, "examples/package.json", "examples")
-        ))
+        generatedEntry(
+          "package.json",
+          "generated:examples/package.json",
+          sourceRoot => generatedRepositoryPackage(
+            sourceRoot,
+            "examples/package.json",
+            "examples",
+            (packageJson, root) => withExactPublicDependencies(
+              packageJson,
+              root,
+              ["contracts", "core"]
+            )
+          )
+        )
       ]),
       requiredFiles: Object.freeze([
+        ".github/workflows/ci.yml",
         "LICENSE",
         "NOTICE.md",
         "README.md",
@@ -813,6 +1081,12 @@ function repositoryDefinitions() {
             private: true,
             description: "Public DocFlow product and developer documentation",
             license: rootPackage.license,
+            scripts: {
+              test: "node scripts/validate-content.js"
+            },
+            engines: {
+              node: ">=22"
+            },
             homepage: "https://github.com/docflowlocal/docs#readme",
             repository: {
               type: "git",
@@ -825,10 +1099,12 @@ function repositoryDefinitions() {
         })
       ]),
       requiredFiles: Object.freeze([
+        ".github/workflows/ci.yml",
         "LICENSE",
         "NOTICE.md",
         "README.md",
-        "package.json"
+        "package.json",
+        "scripts/validate-content.js"
       ])
     })
   ]);
@@ -1571,6 +1847,7 @@ module.exports = {
   FORBIDDEN_DIRECTORY_NAMES,
   HELP,
   MANIFEST_FILENAME,
+  PUBLIC_PACKAGE_BOOTSTRAP_REF,
   RepositoryExportError,
   SOURCE_ROOT,
   TOOL_NAME,

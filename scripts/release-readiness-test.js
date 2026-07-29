@@ -42,6 +42,7 @@ assert.strictEqual(parsed.channel, "public");
 assert.strictEqual(parsed.sourceOnly, true);
 assert.strictEqual(parsed.json, true);
 assert(["arm64", "x64"].includes(parsed.arch));
+assert.strictEqual(parseArguments(["--lockfile-only"]).lockfileOnly, true);
 assert.match(formatHumanReport(internal), /DocFlow release readiness \(internal\)/);
 
 const internalWindows = assessRelease({
@@ -100,13 +101,25 @@ assert.strictEqual(parsedWindowsMetadata.platform, "windows");
 
 const inventory = packageInventory(rootDir);
 assert(inventory.some(item => item.name === "docflow-local" || item.name === "docflow-desktop"));
-if (fs.existsSync(path.join(rootDir, "packages", "core", "package.json"))) {
-  assert.strictEqual(requirePackageLock(rootDir), path.join(rootDir, "package-lock.json"));
+const coreWorkspacePresent = fs.existsSync(
+  path.join(rootDir, "packages", "core", "package.json")
+);
+const packageLockPath = path.join(rootDir, "package-lock.json");
+if (coreWorkspacePresent || fs.existsSync(packageLockPath)) {
+  assert.strictEqual(requirePackageLock(rootDir), packageLockPath);
 } else {
   assert(inventory.some(item => item.name === "@docflow-local/core" && item.external === true));
   assert.throws(
     () => requirePackageLock(rootDir),
     /package-lock\.json is required/
+  );
+}
+if (!coreWorkspacePresent) {
+  const lockfileCheck = internal.checks.find(check => check.id === "LOCKFILE_SUPPLY_CHAIN");
+  assert(lockfileCheck);
+  assert.strictEqual(
+    lockfileCheck.status,
+    fs.existsSync(packageLockPath) ? "pass" : "warning"
   );
 }
 

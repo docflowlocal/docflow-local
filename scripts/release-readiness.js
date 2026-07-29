@@ -45,6 +45,17 @@ const SKIPPED_SCAN_DIRECTORIES = new Set([
 ]);
 const PRIVATE_KEY_FILE_PATTERN =
   /\.(?:p12|pfx|jks|keystore|mobileprovision|pem|key)$/i;
+const LOCK_DEPENDENCY_FIELDS = Object.freeze([
+  "dependencies",
+  "devDependencies",
+  "optionalDependencies",
+  "peerDependencies"
+]);
+const SRI_DIGEST_LENGTHS = Object.freeze({
+  sha256: 32,
+  sha384: 48,
+  sha512: 64
+});
 
 function parseArguments(argv) {
   let archProvided = false;
@@ -54,6 +65,7 @@ function parseArguments(argv) {
     platform: process.platform === "win32" ? "windows" : "macOS",
     arch: process.arch === "arm64" ? "arm64" : "x64",
     sourceOnly: false,
+    lockfileOnly: false,
     json: false
   };
 
@@ -70,6 +82,8 @@ function parseArguments(argv) {
       archProvided = true;
     } else if (argument === "--source-only") {
       options.sourceOnly = true;
+    } else if (argument === "--lockfile-only") {
+      options.lockfileOnly = true;
     } else if (argument === "--json") {
       options.json = true;
     } else if (argument === "--help" || argument === "-h") {
@@ -144,6 +158,110 @@ function listPrivateKeyFiles(rootDir) {
   return matches.sort();
 }
 
+function isRecord(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function packageNameFromLockPath(packagePath) {
+  const segments = String(packagePath).split("/");
+  let index = 0;
+  let packageName = null;
+  while (index < segments.length) {
+    if (segments[index] !== "node_modules") return null;
+    index += 1;
+    const first = segments[index];
+    if (!first || first === "." || first === ".." || first.includes("\\")) return null;
+    if (first.startsWith("@")) {
+      const second = segments[index + 1];
+      if (
+        first.length < 2 ||
+        !second ||
+        second === "." ||
+        second === ".." ||
+        second.includes("\\")
+      ) {
+        return null;
+      }
+      packageName = `${first}/${second}`;
+      index += 2;
+    } else {
+      packageName = first;
+      index += 1;
+    }
+  }
+  return packageName;
+}
+
+function parentPackagePath(packagePath) {
+  if (!packagePath) return null;
+  const segments = packagePath.split("/");
+  const nodeModulesIndex = segments.lastIndexOf("node_modules");
+  if (nodeModulesIndex <= 0) return "";
+  return segments.slice(0, nodeModulesIndex).join("/");
+}
+
+function resolveLockedDependency(packages, packagePath, dependencyName) {
+  let currentPath = packagePath;
+  while (currentPath !== null) {
+    const candidate = currentPath
+      ? `${currentPath}/node_modules/${dependencyName}`
+      : `node_modules/${dependencyName}`;
+    if (Object.prototype.hasOwnProperty.call(packages, candidate)) return candidate;
+    currentPath = parentPackagePath(currentPath);
+  }
+  return null;
+}
+
+function hasValidSriDigest(integrity) {
+  const match = /^(sha256|sha384|sha512)-([A-Za-z0-9+/]+={0,2})$/.exec(
+    String(integrity || "")
+  );
+  if (!match) return false;
+  const [, algorithm, encodedDigest] = match;
+  const digest = Buffer.from(encodedDigest, "base64");
+  const canonicalDigest = digest.toString("base64").replace(/=+$/, "");
+  return (
+    digest.length === SRI_DIGEST_LENGTHS[algorithm] &&
+    canonicalDigest === encodedDigest.replace(/=+$/, "")
+  );
+}
+
+function registryResolutionError(packagePath, packageName, lockedPackage) {
+  const version = String(lockedPackage.version || "");
+  let resolvedUrl;
+  try {
+    resolvedUrl = new URL(String(lockedPackage.resolved || ""));
+  } catch {
+    return `${packagePath} is not resolved from trusted registry.npmjs.org`;
+  }
+  if (
+    resolvedUrl.protocol !== "https:" ||
+    resolvedUrl.hostname.toLowerCase() !== "registry.npmjs.org" ||
+    resolvedUrl.port ||
+    resolvedUrl.username ||
+    resolvedUrl.password ||
+    resolvedUrl.search ||
+    resolvedUrl.hash
+  ) {
+    return `${packagePath} is not resolved from trusted registry.npmjs.org`;
+  }
+  if (!version) return `${packagePath} is missing a locked package version`;
+  const tarballName = packageName.startsWith("@")
+    ? packageName.slice(packageName.indexOf("/") + 1)
+    : packageName;
+  const expectedPath = `/${packageName}/-/${tarballName}-${version}.tgz`;
+  let resolvedPath;
+  try {
+    resolvedPath = decodeURIComponent(resolvedUrl.pathname);
+  } catch {
+    return `${packagePath} has an invalid registry tarball path`;
+  }
+  if (resolvedPath !== expectedPath) {
+    return `${packagePath} registry tarball path does not match ${packageName}@${version}`;
+  }
+  return null;
+}
+
 function validateReleaseLockfile(rootDir, { requireRegistryPackages = false } = {}) {
   const errors = [];
   const packageLockPath = path.join(rootDir, "package-lock.json");
@@ -158,19 +276,22 @@ function validateReleaseLockfile(rootDir, { requireRegistryPackages = false } = 
   try {
     const packageJson = readJson(rootDir, "package.json");
     const packageLock = readJson(rootDir, "package-lock.json");
-    const lockedRoot = packageLock.packages?.[""];
-    if (packageLock.lockfileVersion < 2 || !lockedRoot) {
+    const packages = isRecord(packageLock.packages) ? packageLock.packages : null;
+    const lockedRoot = packages?.[""];
+    if (
+      !Number.isInteger(packageLock.lockfileVersion) ||
+      packageLock.lockfileVersion < 2 ||
+      !isRecord(lockedRoot)
+    ) {
       errors.push("lockfileVersion must use the packages-based npm format");
     } else {
+      if (packageLock.name !== packageJson.name || packageLock.version !== packageJson.version) {
+        errors.push("top-level lock name/version does not match package.json");
+      }
       if (lockedRoot.name !== packageJson.name || lockedRoot.version !== packageJson.version) {
         errors.push("root name/version does not match package.json");
       }
-      for (const field of [
-        "dependencies",
-        "devDependencies",
-        "optionalDependencies",
-        "peerDependencies"
-      ]) {
+      for (const field of LOCK_DEPENDENCY_FIELDS) {
         const expectedEntries = Object.entries(packageJson[field] || {})
           .sort(([left], [right]) => left.localeCompare(right));
         const actualEntries = Object.entries(lockedRoot[field] || {})
@@ -181,35 +302,111 @@ function validateReleaseLockfile(rootDir, { requireRegistryPackages = false } = 
       }
     }
 
-    if (requireRegistryPackages && lockedRoot) {
-      if (Array.isArray(lockedRoot.workspaces) && lockedRoot.workspaces.length > 0) {
+    if (requireRegistryPackages && isRecord(lockedRoot) && packages) {
+      if (Object.prototype.hasOwnProperty.call(lockedRoot, "workspaces")) {
         errors.push("split Desktop lockfile must not contain workspaces");
       }
-      for (const [packagePath, lockedPackage] of Object.entries(packageLock.packages || {})) {
+      const dependencyEdges = new Map();
+      for (const [packagePath, lockedPackage] of Object.entries(packages)) {
+        if (!isRecord(lockedPackage)) {
+          errors.push(`${packagePath || "root"} lock entry must be an object`);
+          continue;
+        }
+        const edges = [];
+        dependencyEdges.set(packagePath, edges);
+        for (const field of LOCK_DEPENDENCY_FIELDS) {
+          const declared = lockedPackage[field];
+          if (declared !== undefined && !isRecord(declared)) {
+            errors.push(`${packagePath || "root"} ${field} must be an object`);
+            continue;
+          }
+          for (const dependencyName of Object.keys(declared || {}).sort()) {
+            if (
+              packageNameFromLockPath(`node_modules/${dependencyName}`) !==
+              dependencyName
+            ) {
+              errors.push(
+                `${packagePath || "root"} ${field} contains invalid package name ${dependencyName}`
+              );
+              continue;
+            }
+            const dependencyPath = resolveLockedDependency(
+              packages,
+              packagePath,
+              dependencyName
+            );
+            const optionalPeer =
+              field === "peerDependencies" &&
+              lockedPackage.peerDependenciesMeta?.[dependencyName]?.optional === true;
+            if (!dependencyPath) {
+              if (optionalPeer) continue;
+              if (packagePath === "") {
+                errors.push(
+                  `node_modules/${dependencyName} is missing for a direct dependency`
+                );
+              } else {
+                errors.push(
+                  `${packagePath} ${field}.${dependencyName} cannot resolve through node_modules`
+                );
+              }
+              continue;
+            }
+            edges.push(dependencyPath);
+          }
+        }
         if (packagePath === "") continue;
         const resolved = String(lockedPackage.resolved || "");
-        if (!packagePath.startsWith("node_modules/")) {
-          errors.push(`${packagePath} is outside node_modules`);
+        const packageName = packageNameFromLockPath(packagePath);
+        if (!packageName) {
+          errors.push(`${packagePath} is not a valid node_modules package path`);
+          continue;
         }
         if (
           lockedPackage.link === true ||
-          /^(?:file:|link:|workspace:|\.{1,2}[\\/]|\/|[A-Za-z]:[\\/])/i.test(resolved)
+          /^(?:file:|git\+file:|link:|workspace:|\.{1,2}[\\/]|\/|[A-Za-z]:[\\/])/i.test(resolved)
         ) {
           errors.push(`${packagePath} resolves to a local or linked package`);
         }
+        if (lockedPackage.name && lockedPackage.name !== packageName) {
+          errors.push(`${packagePath} declares mismatched package name ${lockedPackage.name}`);
+        }
+        const resolutionError = registryResolutionError(
+          packagePath,
+          packageName,
+          lockedPackage
+        );
+        if (resolutionError) errors.push(resolutionError);
+        if (!hasValidSriDigest(lockedPackage.integrity)) {
+          errors.push(`${packagePath} is missing a valid package integrity hash`);
+        }
       }
-      for (const name of ["@docflow-local/core", "@docflow-local/license-verifier"]) {
+
+      const reachable = new Set([""]);
+      const pending = [""];
+      while (pending.length > 0) {
+        const currentPath = pending.shift();
+        for (const dependencyPath of dependencyEdges.get(currentPath) || []) {
+          if (reachable.has(dependencyPath)) continue;
+          reachable.add(dependencyPath);
+          pending.push(dependencyPath);
+        }
+      }
+      for (const packagePath of Object.keys(packages).sort()) {
+        if (packagePath && !reachable.has(packagePath)) {
+          errors.push(`${packagePath} is unreachable from the root dependency graph`);
+        }
+      }
+
+      for (const name of [
+        "@docflow-local/contracts",
+        "@docflow-local/core",
+        "@docflow-local/license-verifier"
+      ]) {
         const expectedVersion = packageJson.dependencies?.[name];
-        const lockedPackage = packageLock.packages?.[`node_modules/${name}`];
+        if (expectedVersion === undefined) continue;
+        const lockedPackage = packages[`node_modules/${name}`];
         if (!lockedPackage || lockedPackage.link === true || lockedPackage.version !== expectedVersion) {
           errors.push(`${name} does not resolve to exact version ${expectedVersion}`);
-          continue;
-        }
-        if (!/^https:\/\//i.test(String(lockedPackage.resolved || ""))) {
-          errors.push(`${name} is not resolved from an HTTPS package registry`);
-        }
-        if (!/^sha(?:256|384|512)-/i.test(String(lockedPackage.integrity || ""))) {
-          errors.push(`${name} is missing a package integrity hash`);
         }
       }
     }
@@ -404,6 +601,7 @@ function assessRelease({
   } else {
     const exactVersionPattern = /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/;
     const dependencyErrors = [
+      "@docflow-local/contracts",
       "@docflow-local/core",
       "@docflow-local/license-verifier"
     ].filter(dependency => (
@@ -771,6 +969,7 @@ Options:
   --platform macOS|windows   Select the target release platform.
   --arch arm64|x64           Select the macOS artifact architecture.
   --source-only              Skip installer presence and signature inspection.
+  --lockfile-only            Validate the standalone registry lockfile and exit.
   --root PATH                Inspect another exported repository root.
   --json                     Emit the full machine-readable report.
   -h, --help                 Show this help.
@@ -783,6 +982,20 @@ if (require.main === module) {
     if (options.help) {
       printHelp();
       process.exitCode = 0;
+    } else if (options.lockfileOnly) {
+      const lockfile = validateReleaseLockfile(options.rootDir, {
+        requireRegistryPackages: true
+      });
+      process.stdout.write(
+        options.json
+          ? `${JSON.stringify(lockfile, null, 2)}\n`
+          : `${lockfile.valid ? "PASS" : "BLOCK"} RELEASE_LOCKFILE: ${
+            lockfile.valid
+              ? "Registry lockfile is structurally complete and trusted."
+              : lockfile.errors.join("; ")
+          }\n`
+      );
+      process.exitCode = lockfile.valid ? 0 : 2;
     } else {
       const report = assessRelease(options);
       process.stdout.write(
