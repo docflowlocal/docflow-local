@@ -10,7 +10,7 @@ const dist = join(siteRoot, 'dist');
 const siteUrl = 'https://docflowlocal.com';
 const repoUrl = 'https://github.com/docflowlocal/docflow-local';
 const gaMeasurementId = 'G-77MP7J9XFT';
-const lastModified = '2026-07-29';
+const lastModified = '2026-07-30';
 const indexNowKey = '62a1c4ddd5abb4809935e193aa22fd73';
 const socialImageUrl = `${siteUrl}/assets/docflow-local-og.png`;
 const betaEmail = {
@@ -20,6 +20,13 @@ const betaEmail = {
 const contactEmail = {
   en: 'mailto:support@willgo.tech?subject=DocFlow%20Local',
   zh: 'mailto:support@roboai.tech?subject=DocFlow%20Local'
+};
+const desktopRelease = {
+  version: '0.5.0',
+  page: 'https://github.com/docflowlocal/docflow-desktop/releases/tag/v0.5.0',
+  macPkg: 'https://github.com/docflowlocal/docflow-desktop/releases/download/v0.5.0/DocFlow-Local-0.5.0-macOS-arm64.pkg',
+  macZip: 'https://github.com/docflowlocal/docflow-desktop/releases/download/v0.5.0/DocFlow-Local-0.5.0-macOS-arm64.zip',
+  macPkgSha256: 'e0a5911414e5d0c3c21ffa1b20638db0d1fdf77725714ddbc47b5b394ed6c425'
 };
 
 const locales = {
@@ -66,7 +73,7 @@ const pages = {
     pricing: { path: '/pricing/', title: 'Document Automation Software Pricing | DocFlow Local', description: 'Compare the planned open-source Community edition, Pro workflow features, industry template packs, and business implementation options.' },
     security: { path: '/security/', title: 'Offline Document Automation & Privacy | DocFlow Local', description: 'Learn how DocFlow Local processes Excel, Word, PDF, signatures, and customer data on your computer without uploading source files.' },
     templates: { path: '/templates/', title: 'Excel, Word & PDF Automation Templates | DocFlow Local', description: 'Explore document automation template packs for trade quotations, engineering handover, HR onboarding, compliance, education, and property.' },
-    download: { path: '/download/', title: 'DocFlow Local Beta for Windows & macOS', description: 'Join the DocFlow Local desktop beta for Windows or macOS, or follow the open-source Community edition on GitHub.' },
+    download: { path: '/download/', title: 'Download DocFlow Local for macOS | Community 0.5.0', description: 'Download the signed and Apple-notarized DocFlow Local 0.5.0 Community installer for Apple Silicon Macs, or follow the open-source project on GitHub.' },
     batch: { path: '/features/excel-to-word-pdf/', title: 'Batch Generate Word & PDF from Excel | DocFlow Local', description: 'Use Excel or CSV rows with Word and PDF templates to batch-generate named, validated document packages entirely on your computer.' },
     trade: { path: '/industries/trade-quotation/', title: 'Excel Quotation & Proforma Generator | DocFlow Local', description: 'Batch-generate quotations, proforma invoices, packing lists, and customer delivery folders from Excel without uploading customer data.' },
     engineering: { path: '/industries/engineering-delivery/', title: 'Engineering Handover Package Generator | DocFlow Local', description: 'Generate project transmittals, cover sheets, document registers, acceptance forms, and structured handover packages locally.' },
@@ -78,7 +85,7 @@ const pages = {
     pricing: { path: '/zh/pricing/', title: '本地文档自动化软件价格 | DocFlow Local', description: '比较免费社区版、规划中的专业版功能、行业模板包与企业实施服务，按文档工作流价值选择方案。' },
     security: { path: '/zh/security/', title: '本地文档处理与数据安全 | DocFlow Local', description: '了解 DocFlow Local 如何在电脑本机处理 Excel、Word、PDF、签名和客户数据，不上传源文件。' },
     templates: { path: '/zh/templates/', title: 'Word/PDF 批量生成行业模板 | DocFlow Local', description: '查看贸易报价、工程交付、HR 入职、教育证书、合规认证和房产资料的文档自动化模板包。' },
-    download: { path: '/zh/download/', title: '下载 DocFlow Local Windows/macOS 公测版', description: '申请 DocFlow Local Windows 或 macOS 桌面客户端公测，或在 GitHub 关注开源社区版。' },
+    download: { path: '/zh/download/', title: '下载 DocFlow Local macOS 社区版 0.5.0', description: '下载适用于 Apple Silicon Mac 的已签名、已公证 DocFlow Local 0.5.0 社区版安装器，或在 GitHub 关注开源项目。' },
     batch: { path: '/zh/features/excel-to-word-pdf/', title: 'Excel 批量生成 Word/PDF 文档 | DocFlow Local', description: '把 Excel/CSV 每行数据绑定到 Word 和 PDF 模板，在本机批量生成、命名、校验并整理文档包。' },
     trade: { path: '/zh/industries/trade-quotation/', title: 'Excel 批量生成报价单与形式发票 | DocFlow Local', description: '从 Excel 批量生成报价单、形式发票、装箱单和客户交付目录，客户数据无需上传。' },
     engineering: { path: '/zh/industries/engineering-delivery/', title: '工程资料与项目交付包自动化 | DocFlow Local', description: '在本地批量生成项目传递单、封面、文件清单、验收表与结构化竣工交付包。' },
@@ -566,8 +573,8 @@ function templatesPage(locale) {
 
 function downloadPage(locale) {
   const zh = locale === 'zh';
-  const body = `${pageHero(locale,zh?'公开测试准备中':'PUBLIC BETA IN PREPARATION',zh?'选择适合你的开始方式':'Choose how you want to get started',zh?'社区版源代码将通过 GitHub 发布；经过签名和公证的 Windows/macOS 安装包将在公测页提供。':'Community source will be published on GitHub. Signed and notarized Windows/macOS installers will follow on the beta page.',false)}
-  <section class="section"><div class="container"><div class="download-grid"><article class="download-card"><span class="os-icon">⌘</span><h2>macOS</h2><p>${zh?'面向 Apple Silicon 的签名安装包正在准备，Intel 兼容性将根据公测反馈确认。':'A signed Apple Silicon installer is being prepared. Intel support will be confirmed from beta demand.'}</p><a class="button primary" href="${betaEmail[locale]}">${zh?'加入 macOS 公测':'Join macOS beta'} ${icon('arrow')}</a></article><article class="download-card"><span class="os-icon">⊞</span><h2>Windows</h2><p>${zh?'Windows 10/11 安装包正在适配与签名流程中。':'The Windows 10/11 build is going through packaging and signing preparation.'}</p><a class="button primary" href="${betaEmail[locale]}">${zh?'加入 Windows 公测':'Join Windows beta'} ${icon('arrow')}</a></article></div><div class="download-note"><strong>${zh?'为什么暂不直接放未签名安装包？':'Why not publish an unsigned installer now?'}</strong><br>${zh?'文档工具会接触敏感业务文件，安装包来源与完整性同样重要。正式公测包会附版本号、校验值、签名状态和清晰的发布说明。':'A document tool touches sensitive business files, so installer provenance matters. Public beta builds will include a version, checksum, signing status, and clear release notes.'}</div></div></section>
+  const body = `${pageHero(locale,zh?'macOS 社区版现已发布':'macOS COMMUNITY EDITION AVAILABLE',zh?'下载已签名、已公证的本地文档自动化工具':'Download signed, notarized local document automation',zh?'DocFlow Local 0.5.0 Community 现已提供 Apple Silicon macOS 安装包；Windows 版本将在完成 Authenticode 签名后发布。':'DocFlow Local 0.5.0 Community is now available for Apple Silicon Macs. Windows will follow after Authenticode signing is complete.',false)}
+  <section class="section"><div class="container"><div class="download-grid"><article class="download-card"><span class="os-icon">⌘</span><h2>macOS</h2><p>${zh?'适用于 Apple Silicon（M 系列芯片），已使用 Apple Developer ID 签名并完成 Apple 公证。':'For Apple Silicon (M-series chips), signed with Apple Developer ID and notarized by Apple.'}</p><a class="button primary" href="${desktopRelease.macPkg}">${zh?'下载 0.5.0 安装器':'Download 0.5.0 installer'} ${icon('arrow')}</a></article><article class="download-card"><span class="os-icon">⊞</span><h2>Windows</h2><p>${zh?'Windows 10/11 安装包正在进行 Authenticode 代码签名准备；不会发布未签名版本。':'The Windows 10/11 installer is being prepared for Authenticode signing; no unsigned build will be published.'}</p><a class="button primary" href="${betaEmail[locale]}">${zh?'申请 Windows 内测':'Join Windows beta'} ${icon('arrow')}</a></article></div><div class="download-note"><strong>${zh?'macOS 0.5.0 发布信息':'macOS 0.5.0 release information'}</strong><br>${zh?'标准安装请下载 .pkg；如需便携归档可下载 .zip。安装包已完成 Apple 公证。PKG SHA-256：':'Download the .pkg for the standard installation flow or the .zip for a portable archive. The app is Apple notarized. PKG SHA-256: '}<code>${desktopRelease.macPkgSha256}</code><br><a href="${desktopRelease.page}">${zh?'查看发布说明、ZIP、SBOM 与完整校验信息':'View release notes, ZIP, SBOM, and full verification details'}</a></div></div></section>
   <section class="section alt"><div class="container"><div class="section-heading"><p class="eyebrow">${zh?'开发者入口':'FOR DEVELOPERS'}</p><h2>${zh?'从社区版源代码开始':'Start from the community source'}</h2><p>${zh?'模块化 0.5 源码发布后，可按 README 运行桌面端，也可直接使用 Core 的 CLI、本地 API 与插件接口。':'When the modular 0.5 source is published, follow the README to run Desktop Community or use the Core CLI, local API, and plugin contracts directly.'}</p></div><div class="code-card"><div class="code-card-top"><span><i></i> docflow-local</span><span>COMMUNITY</span></div><pre><span class="accent">$</span> git clone ${repoUrl}.git
 <span class="accent">$</span> cd docflow-local
 <span class="accent">$</span> npm ci
