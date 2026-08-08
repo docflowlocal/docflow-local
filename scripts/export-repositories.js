@@ -13,7 +13,7 @@ const TOOL_VERSION = 1;
 const MANIFEST_FILENAME = "export-manifest.json";
 const SOURCE_ROOT = path.resolve(__dirname, "..");
 const PUBLIC_PACKAGE_BOOTSTRAP_REF =
-  "d49835883200da227d643745d5a46dec0807f338";
+  "9553251ffec02c08a5cf01b242dfcd8f5be30302";
 const FORBIDDEN_DIRECTORY_NAMES = Object.freeze([
   ".git",
   ".wrangler",

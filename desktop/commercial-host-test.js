@@ -1,6 +1,7 @@
 "use strict";
 
 const assert = require("assert");
+const path = require("path");
 const { test } = require("node:test");
 
 const {
@@ -189,7 +190,8 @@ test("adapter contract is exact and license import remains atomic inside the ada
   assert.strictEqual(before.license.remainingDays, 14);
   assert.strictEqual(Object.hasOwn(before.license, "issuedAt"), false);
   assert.strictEqual(Object.hasOwn(before.license, "daysRemaining"), false);
-  const imported = await host.importLicenseFromPath("/Users/customer/private/older-license.json");
+  const sourcePath = path.resolve("/Users/customer/private/older-license.json");
+  const imported = await host.importLicenseFromPath(sourcePath);
   const after = await host.getState();
   assert.deepStrictEqual(imported, {
     ok: false,
@@ -197,11 +199,11 @@ test("adapter contract is exact and license import remains atomic inside the ada
     message: "The license was not accepted."
   });
   assert.deepStrictEqual(after.license, before.license);
-  assert.strictEqual(JSON.stringify(imported).includes("/Users/customer"), false);
+  assert.strictEqual(JSON.stringify(imported).includes(sourcePath), false);
   assert.strictEqual(JSON.stringify(before).includes("private@example.test"), false);
   assert.deepStrictEqual(
     fixture.calls.find(call => call[0] === "importLicense")[1],
-    { sourcePath: "/Users/customer/private/older-license.json" }
+    { sourcePath }
   );
   assert.strictEqual((await host.importLicenseFromPath("relative-license.json")).code, "INPUT_INVALID");
 });
