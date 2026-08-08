@@ -5,6 +5,7 @@
 - [Core quick start](core-quickstart.md) — CLI, JavaScript API, and loopback HTTP API
 - [Template syntax](template-syntax.md) — fields, loops, conditions, formatters, and assets
 - [Plugin security](plugin-security.md) — trusted-code model and review checklist
+- [Activation and telemetry contract](activation-and-telemetry.md) — Community/Pro boundaries, activation, PQL, trial, and privacy allowlists
 - [Starter templates](https://github.com/docflowlocal/templates)
 - [Runnable examples](https://github.com/docflowlocal/examples)
 

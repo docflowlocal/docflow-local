@@ -23,8 +23,7 @@ const PUBLIC_PACKAGES = [
 const COMMON_RELEASE_EVIDENCE_KEYS = [
   "legalProvenanceReview",
   "githubSplitRepositories",
-  "npmScopeTwoFactorAuthentication",
-  "productionLicenseKeyring"
+  "npmScopeTwoFactorAuthentication"
 ];
 const PLATFORM_RELEASE_EVIDENCE_KEYS = {
   macOS: [

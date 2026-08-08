@@ -13,7 +13,14 @@ const {
 } = require("./feature-policy");
 
 const ENVELOPE_SCHEMA = "docflow-license-envelope/v1";
+// Keep CLAIMS_SCHEMA as the v1 compatibility constant because existing issuer
+// integrations import it. New issuers must use CURRENT_CLAIMS_SCHEMA so every
+// newly signed entitlement states its commercial type explicitly.
 const CLAIMS_SCHEMA = "docflow-license-claims/v1";
+const CURRENT_CLAIMS_SCHEMA = "docflow-license-claims/v2";
+const SUPPORTED_CLAIMS_SCHEMAS = Object.freeze([CLAIMS_SCHEMA, CURRENT_CLAIMS_SCHEMA]);
+const LICENSE_TYPES = Object.freeze(["trial", "subscription", "perpetual"]);
+const LEGACY_LICENSE_TYPE = "subscription";
 const PRODUCT = "docflow-local";
 
 const MAX_ENVELOPE_BYTES = 32 * 1024;
@@ -21,6 +28,7 @@ const MAX_PAYLOAD_BYTES = 16 * 1024;
 const MAX_KEY_ID_LENGTH = 64;
 const MAX_LICENSE_ID_LENGTH = 128;
 const MAX_INSTALLATIONS = 128;
+const TRIAL_MAX_DURATION_MS = 21 * 24 * 60 * 60 * 1_000;
 const VERIFIED_RESULTS = new WeakSet();
 
 // Intentionally empty until a controlled vendor signing key exists. Production
@@ -30,7 +38,7 @@ const VERIFIED_RESULTS = new WeakSet();
 const DEFAULT_KEYRING = Object.freeze(Object.create(null));
 
 const ENVELOPE_KEYS = Object.freeze(["keyId", "payload", "schema", "signature"]);
-const CLAIM_REQUIRED_KEYS = Object.freeze([
+const V1_CLAIM_REQUIRED_KEYS = Object.freeze([
   "edition",
   "expiresAt",
   "features",
@@ -42,7 +50,20 @@ const CLAIM_REQUIRED_KEYS = Object.freeze([
   "product",
   "schema"
 ]);
-const CLAIM_OPTIONAL_KEYS = Object.freeze(["graceUntil"]);
+const V1_CLAIM_OPTIONAL_KEYS = Object.freeze(["graceUntil"]);
+const V2_CLAIM_REQUIRED_KEYS = Object.freeze([
+  "edition",
+  "features",
+  "installationHashes",
+  "issuedAt",
+  "licenseId",
+  "licenseType",
+  "maxMajorVersion",
+  "notBefore",
+  "product",
+  "schema"
+]);
+const V2_CLAIM_OPTIONAL_KEYS = Object.freeze(["expiresAt", "graceUntil"]);
 const DANGEROUS_KEYS = new Set(["__proto__", "constructor", "prototype"]);
 
 const STATUS = Object.freeze({
@@ -187,11 +208,23 @@ function parseTimestamp(value) {
 }
 
 function validateClaims(claims) {
-  if (!ownKeysExactly(claims, CLAIM_REQUIRED_KEYS, CLAIM_OPTIONAL_KEYS)) {
+  if (!isSafePlainObject(claims)) {
+    return { ok: false, code: "claims_object_invalid" };
+  }
+  if (!SUPPORTED_CLAIMS_SCHEMAS.includes(claims.schema)) {
+    return { ok: false, code: "claims_schema_unsupported" };
+  }
+  const legacy = claims.schema === CLAIMS_SCHEMA;
+  if (legacy) {
+    if (!ownKeysExactly(claims, V1_CLAIM_REQUIRED_KEYS, V1_CLAIM_OPTIONAL_KEYS)) {
+      return { ok: false, code: "claims_schema_invalid" };
+    }
+  } else if (!ownKeysExactly(claims, V2_CLAIM_REQUIRED_KEYS, V2_CLAIM_OPTIONAL_KEYS)) {
     return { ok: false, code: "claims_schema_invalid" };
   }
-  if (claims.schema !== CLAIMS_SCHEMA) {
-    return { ok: false, code: "claims_schema_unsupported" };
+  const licenseType = legacy ? LEGACY_LICENSE_TYPE : claims.licenseType;
+  if (!LICENSE_TYPES.includes(licenseType)) {
+    return { ok: false, code: "license_type_invalid" };
   }
   if (
     typeof claims.licenseId !== "string"
@@ -236,25 +269,45 @@ function validateClaims(claims) {
 
   const issuedAt = parseTimestamp(claims.issuedAt);
   const notBefore = parseTimestamp(claims.notBefore);
-  const expiresAt = parseTimestamp(claims.expiresAt);
-  const graceUntil = Object.prototype.hasOwnProperty.call(claims, "graceUntil")
+  const hasExpiresAt = Object.prototype.hasOwnProperty.call(claims, "expiresAt");
+  const hasGraceUntil = Object.prototype.hasOwnProperty.call(claims, "graceUntil");
+  const expiresAt = hasExpiresAt ? parseTimestamp(claims.expiresAt) : null;
+  const graceUntil = hasGraceUntil
     ? parseTimestamp(claims.graceUntil)
     : null;
   if (issuedAt === null) return { ok: false, code: "issued_at_invalid" };
   if (notBefore === null) return { ok: false, code: "not_before_invalid" };
-  if (expiresAt === null) return { ok: false, code: "expires_at_invalid" };
-  if (Object.prototype.hasOwnProperty.call(claims, "graceUntil") && graceUntil === null) {
+  if (licenseType === "perpetual" && (hasExpiresAt || hasGraceUntil)) {
+    return { ok: false, code: "license_type_dates_invalid" };
+  }
+  if (licenseType !== "perpetual" && expiresAt === null) {
+    return { ok: false, code: "expires_at_invalid" };
+  }
+  if (hasGraceUntil && graceUntil === null) {
     return { ok: false, code: "grace_until_invalid" };
   }
-  if (issuedAt > notBefore || notBefore >= expiresAt) {
+  if (licenseType === "trial" && hasGraceUntil) {
+    return { ok: false, code: "license_type_dates_invalid" };
+  }
+  if (issuedAt > notBefore || (expiresAt !== null && notBefore >= expiresAt)) {
     return { ok: false, code: "date_order_invalid" };
   }
-  if (graceUntil !== null && graceUntil <= expiresAt) {
+  if (graceUntil !== null && (expiresAt === null || graceUntil <= expiresAt)) {
     return { ok: false, code: "grace_order_invalid" };
+  }
+  if (licenseType === "trial") {
+    if (claims.installationHashes.length === 0) {
+      return { ok: false, code: "trial_installation_required" };
+    }
+    if (expiresAt - notBefore > TRIAL_MAX_DURATION_MS) {
+      return { ok: false, code: "trial_duration_invalid" };
+    }
   }
 
   return {
     ok: true,
+    legacy,
+    licenseType,
     times: Object.freeze({ issuedAt, notBefore, expiresAt, graceUntil })
   };
 }
@@ -360,6 +413,9 @@ function verifyLicense(input, {
 
   const claims = Object.freeze({
     ...parsedPayload.claims,
+    // v1 did not carry a commercial type. It is interpreted conservatively as
+    // a time-bounded subscription so existing signed licenses remain valid.
+    licenseType: claimValidation.licenseType,
     features: Object.freeze([...parsedPayload.claims.features]),
     installationHashes: Object.freeze([...parsedPayload.claims.installationHashes])
   });
@@ -372,7 +428,11 @@ function verifyLicense(input, {
 
   const { notBefore, expiresAt, graceUntil } = claimValidation.times;
   if (nowMs < notBefore) return trusted("license_not_active", STATUS.NOT_ACTIVE);
-  if (nowMs >= expiresAt && (graceUntil === null || nowMs >= graceUntil)) {
+  if (
+    expiresAt !== null
+    && nowMs >= expiresAt
+    && (graceUntil === null || nowMs >= graceUntil)
+  ) {
     return trusted("license_expired", STATUS.EXPIRED);
   }
   if (appMajor > claims.maxMajorVersion) {
@@ -401,7 +461,7 @@ function verifyLicense(input, {
   } catch {
     return trusted("build_ceiling_invalid", STATUS.INVALID);
   }
-  const inGrace = nowMs >= expiresAt;
+  const inGrace = expiresAt !== null && nowMs >= expiresAt;
   return brandResult({
     valid: true,
     status: inGrace ? STATUS.GRACE : STATUS.ACTIVE,
@@ -414,7 +474,13 @@ function verifyLicense(input, {
 
 module.exports = Object.freeze({
   ENVELOPE_SCHEMA,
+  // CLAIMS_SCHEMA remains the v1 compatibility identifier. Use
+  // CURRENT_CLAIMS_SCHEMA for every newly issued license.
   CLAIMS_SCHEMA,
+  CURRENT_CLAIMS_SCHEMA,
+  SUPPORTED_CLAIMS_SCHEMAS,
+  LICENSE_TYPES,
+  LEGACY_LICENSE_TYPE,
   PRODUCT,
   DEFAULT_KEYRING,
   STATUS,
@@ -423,7 +489,8 @@ module.exports = Object.freeze({
     payloadBytes: MAX_PAYLOAD_BYTES,
     keyIdLength: MAX_KEY_ID_LENGTH,
     licenseIdLength: MAX_LICENSE_ID_LENGTH,
-    installations: MAX_INSTALLATIONS
+    installations: MAX_INSTALLATIONS,
+    trialDurationMs: TRIAL_MAX_DURATION_MS
   }),
   parseEnvelope,
   validateClaims,

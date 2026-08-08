@@ -3,6 +3,49 @@
 All notable changes to DocFlow Local are documented here. The project uses
 semantic versioning after the modular repositories are published.
 
+## 0.6.0 — Release candidate
+
+### Added
+
+- Four in-app starter workflows for trade quotations, engineering handover,
+  HR onboarding, and compliance delivery, each with a guided missing-field fix.
+- Atomic local `.docflow` project save/open, recent projects, and reusable
+  mappings without uploading customer files.
+- Privacy-safe `.docflowrecipe` export/import containing only structure,
+  mappings, rules, and template requirements—not records, filenames, template
+  binaries, assets, or generated output.
+- A local-only activation and PQL ledger for guided activation, real batches,
+  repeat usage, multi-template use, and explicit Pro-feature intent.
+- A Community-side commercial host with strict IPC allowlists, opaque handles,
+  bounded inputs, and fail-closed adapter responses.
+- A Pro workbench surface for license status, an activation-gated 21-day trial,
+  one-off automation, watched folders, schedules, stops, and local history.
+
+### Changed
+
+- Community remains permanently useful without watermarks or document-count
+  limits; paid boundaries sit at unattended automation and governance.
+- A Pro trial starts only after a real project has completed preflight, saved a
+  delivery package, and saved the project, and only after the user opts in.
+- Trial, subscription, and perpetual license types are explicit in claims v2;
+  legacy claims remain safely verifiable.
+- Pro expiry disables new commercial operations without locking Community
+  projects, templates, or existing output.
+
+### Security and privacy
+
+- Customer data and operational paths never cross the commercial renderer
+  boundary; license and automation responses are recursively allowlisted.
+- Project recipes and activation exports are local, bounded, and intentionally
+  free of customer content.
+- The Community build contains no Pro implementation or signing private key.
+
+### Release status
+
+The Community and Pro source changes are implemented and tested locally. Public
+0.6.0 artifacts remain a release candidate until the dependency publication,
+clean-source, signing/notarization, and external account gates pass.
+
 ## 0.5.0 — Unreleased modular preview
 
 ### Added

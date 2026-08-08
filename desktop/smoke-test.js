@@ -86,6 +86,23 @@ async function main() {
   assert(renderedHtml.some(html => html.includes("<h1>Quotation</h1>")));
   assert(renderedHtml.some(html => html.includes("Delivery Appendix · Project Details")));
 
+  const hrBundle = await generateBundle({
+    locale: "en",
+    starterScenario: "hr",
+    rows: [{
+      "员工编号": "EMP-TEST", "员工姓名": "Example Employee", "部门": "Engineering", "职位": "Engineer",
+      "入职日期": "2026-08-31", "工作地点": "Shanghai", "联系邮箱": "employee@example.com", "月薪": 18000,
+      "年薪": 216000, "直属经理": "Example Manager", "材料齐全": "Yes", "需要补充材料": false
+    }],
+    requiredFields: ["员工编号", "员工姓名", "入职日期"],
+    templates: ["quote", "attachment"],
+    settings: { filenamePattern: "{{员工编号}}-{{员工姓名}}", folderPattern: "{{部门}}/{{员工编号}}" }
+  }, fakePdf);
+  const hrEntries = new AdmZip(hrBundle.buffer).getEntries().map(entry => entry.entryName);
+  assert(hrEntries.some(name => name.endsWith("-onboarding-checklist.pdf")));
+  assert(renderedHtml.some(html => html.includes("<h1>Employment Offer</h1>")));
+  assert(renderedHtml.some(html => html.includes("<h1>Onboarding Checklist</h1>")));
+
   await generateBundle({
     locale: "en",
     rows: [{ Company: "ACME Ltd", Quote: "Q-100", Quantity: 2, Price: 15 }],

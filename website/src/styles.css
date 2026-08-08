@@ -172,6 +172,7 @@ img, svg { display: block; }
 .feature-card h3, .industry-card h3, .detail-card h3 { margin: 22px 0 0; color: var(--navy-900); font-size: 20px; line-height: 1.25; }
 .feature-card p, .industry-card p, .detail-card p { margin: 11px 0 0; color: var(--muted); font-size: 14px; }
 .workflow-list { position: relative; display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; }
+.workflow-list.quickstart-list { grid-template-columns: repeat(3,1fr); }
 .workflow-list::before { content: ""; position: absolute; left: 9%; right: 9%; top: 30px; height: 1px; background: #cfdde2; }
 .workflow-item { position: relative; z-index: 2; padding: 0 12px; text-align: center; }
 .workflow-number { width: 61px; height: 61px; margin: 0 auto; border: 1px solid #c8d8dd; border-radius: 50%; display: grid; place-items: center; color: var(--teal); background: #fff; box-shadow: 0 0 0 8px var(--canvas); font-size: 13px; font-weight: 850; }
@@ -267,6 +268,7 @@ img, svg { display: block; }
 .template-card p { margin: 9px 0 0; color: var(--muted); font-size: 13px; }
 .template-meta { margin-top: 18px; display: flex; justify-content: space-between; color: var(--quiet); font-size: 11px; }
 .download-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.download-promises { margin: -28px 0 30px; justify-content: center; }
 .download-card { padding: 35px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: #fff; box-shadow: var(--shadow-soft); }
 .os-icon { width: 53px; height: 53px; border-radius: 16px; display: grid; place-items: center; color: var(--teal); background: var(--teal-pale); font-size: 19px; font-weight: 850; }
 .download-card h2 { margin: 22px 0 0; font-size: 25px; }
@@ -354,6 +356,7 @@ img, svg { display: block; }
   .hero h1, .page-hero h1 { letter-spacing: -2.3px; }
   .cards, .template-grid { grid-template-columns: 1fr 1fr; }
   .workflow-list { grid-template-columns: 1fr; gap: 14px; }
+  .workflow-list.quickstart-list { grid-template-columns: 1fr; }
   .workflow-list::before { left: 30px; right: auto; top: 30px; bottom: 30px; width: 1px; height: auto; }
   .workflow-item { display: grid; grid-template-columns: 61px 1fr; gap: 20px; text-align: left; }
   .workflow-number { grid-row: span 2; margin: 0; box-shadow: 0 0 0 6px var(--canvas); }

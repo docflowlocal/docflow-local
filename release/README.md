@@ -15,6 +15,12 @@ Do not put credentials, private keys, signing certificates, license payloads,
 customer data, or authentication tokens in this directory. References should
 be identifiers or URLs that are safe to publish.
 
+`productionLicenseKeyring` is intentionally not a Community release gate. The
+public Community binary contains no Pro adapter and no license-signing key.
+That evidence remains pending here until a separately reviewed private Pro
+combination build is prepared; the private Pro repository enforces its own
+keyring and commercial-distribution gates.
+
 Run the source and artifact checks with:
 
 ```bash

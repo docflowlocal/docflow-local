@@ -783,6 +783,7 @@ function repositoryDefinitions() {
           )
         ),
         sourceEntry("PRIVACY.md"),
+        sourceEntry("docs/activation-and-telemetry.md"),
         sourceEntry("PLATFORM_ARCHITECTURE.md"),
         generatedEntry(
           "RELEASE_CHECKLIST.md",
@@ -858,6 +859,7 @@ function repositoryDefinitions() {
                 || name === "test:api"
                 || name === "test:pdf"
                 || name === "test:ui"
+                || name === "test:pro-ui"
                 || name === "test:desktop"
                 || name === "desktop"
                 || name === "desktop:debug"
@@ -874,20 +876,38 @@ function repositoryDefinitions() {
                 "node desktop/smoke-test.js",
                 "node desktop/mvp-regression-test.js",
                 "node desktop/license-test.js",
-                "node desktop/project-format-test.js"
+                "node desktop/project-format-test.js",
+                "node desktop/project-io-test.js",
+                "node desktop/project-recipe-test.js",
+                "node desktop/activation-ledger-test.js",
+                "node desktop/commercial-host-test.js",
+                "node desktop/preload-p3-test.js",
+                "node desktop/preload-commercial-test.js"
               ].join(" && ");
               scripts["test:syntax"] = [
                 "node --check static/app.js",
                 "node --check static/i18n.js",
+                "node --check static/starter-scenarios.js",
                 "node --check desktop/expression.js",
                 "node --check desktop/template-engine.js",
                 "node --check desktop/engine.js",
                 "node --check desktop/main.js",
                 "node --check desktop/preload.js",
                 "node --check desktop/docx-render.js",
+                "node --check desktop/project-io.js",
+                "node --check desktop/project-io-test.js",
+                "node --check desktop/project-recipe.js",
+                "node --check desktop/project-recipe-test.js",
+                "node --check desktop/activation-ledger.js",
+                "node --check desktop/activation-ledger-test.js",
+                "node --check desktop/commercial-host.js",
+                "node --check desktop/commercial-host-test.js",
+                "node --check desktop/preload-p3-test.js",
+                "node --check desktop/preload-commercial-test.js",
                 "node --check desktop/release-smoke.js",
                 "node --check desktop/pdf-smoke.js",
                 "node --check desktop/ui-smoke.js",
+                "node --check desktop/pro-ui-smoke.js",
                 "node --check desktop/mvp-regression-test.js",
                 "node --check desktop/benchmark-engine.js",
                 "node --check desktop/electron-builder.release.cjs",
@@ -951,10 +971,13 @@ function repositoryDefinitions() {
         "NOTICE.md",
         "README.md",
         "package.json",
+        "docs/activation-and-telemetry.md",
+        "desktop/commercial-host.js",
         "desktop/main.js",
         "release/release-evidence.json",
         "scripts/generate-release-metadata.js",
-        "static/index.html"
+        "static/index.html",
+        "static/starter-scenarios.js"
       ])
     }),
     Object.freeze({

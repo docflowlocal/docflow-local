@@ -61,6 +61,23 @@ for (const file of htmlFiles) {
   if (!html.includes('property="og:image" content="https://docflowlocal.com/assets/docflow-local-og.png"')) errors.push(`${displayPath}: missing absolute og:image`);
   if (!html.includes('name="twitter:card" content="summary_large_image"')) errors.push(`${displayPath}: missing large Twitter card`);
 
+  const buttonLinks = [...html.matchAll(/<a class="button [^"]*"[^>]*>/g)].map(result => result[0]);
+  for (const [index, link] of buttonLinks.entries()) {
+    for (const attribute of ['data-analytics', 'data-cta-id', 'data-cta-location', 'data-page-type', 'data-locale', 'data-destination']) {
+      if (!link.includes(`${attribute}="`)) errors.push(`${displayPath}: button CTA ${index + 1} missing ${attribute}`);
+    }
+  }
+
+  if (html.includes('>Join beta') || html.includes('>申请内测')) errors.push(`${displayPath}: stale generic beta CTA remains`);
+  if ((path === '/' || path === '/zh/') && !html.includes(path === '/' ? 'Download Community free' : '免费下载 Community')) {
+    errors.push(`${displayPath}: homepage missing Community download CTA`);
+  }
+  if (path === '/download/' || path === '/zh/download/') {
+    for (const marker of ['download_mac_installer', 'quickstart-list', 'download_starter_trade', 'download_starter_engineering', 'download_starter_hr', 'download_starter_compliance']) {
+      if (!html.includes(marker)) errors.push(`${displayPath}: download onboarding missing ${marker}`);
+    }
+  }
+
   const schemaBlocks = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/gi)];
   if (schemaBlocks.length !== 1) {
     errors.push(`${displayPath}: expected one JSON-LD block, found ${schemaBlocks.length}`);

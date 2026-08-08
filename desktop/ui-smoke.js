@@ -59,6 +59,36 @@ async function rendererCheck(window) {
       assert(document.querySelectorAll(".template-card .file-thumb.pdf").length >= 2, "Built-in output formats are mislabeled");
       assert(document.querySelector("#includeSourceDocx").disabled, "Source DOCX option must be disabled without a custom DOCX");
       assert(document.querySelector("#recentPackageCount").hidden, "Recent package badge must start empty");
+      assert(document.querySelectorAll("#starterGrid .starter-card").length === 4, "Four industry starters must be available");
+      document.querySelector("#starterModal").hidden = true;
+      document.querySelector("#projectSwitch").click();
+      await waitFor(() => !document.querySelector("#projectModal").hidden, "project workspace");
+      assert(document.querySelector("#projectNameInput").value.trim(), "Project workspace has no project name");
+      assert(document.querySelector("#projectModal").textContent.includes("不保存数据记录") || document.querySelector("#projectModal").textContent.includes("never data rows"), "Project privacy boundary is not visible");
+      await waitFor(
+        () => !document.querySelector("#localActivitySummary").textContent.includes("正在读取")
+          && !document.querySelector("#localActivitySummary").textContent.includes("Reading"),
+        "local activity summary"
+      );
+      document.querySelector("#recipeExport").click();
+      await waitFor(() => !document.querySelector("#recipePreviewModal").hidden, "recipe privacy preview");
+      assert(document.querySelector("#recipePreviewSummary").textContent.trim(), "Recipe preview has no structural summary");
+      assert(document.querySelector("#recipePreviewModal").textContent.includes("不包含客户数据") || document.querySelector("#recipePreviewModal").textContent.includes("no customer data"), "Recipe privacy warning is missing");
+      document.querySelector("#recipePreviewModal [data-close-recipe-preview]").click();
+      await waitFor(() => document.querySelector("#recipePreviewModal").hidden, "close recipe preview");
+      document.querySelector("#projectModal [data-close-project-modal]").click();
+      await waitFor(() => document.querySelector("#projectModal").hidden, "close project workspace");
+      document.querySelector("#openPro").click();
+      await waitFor(() => !document.querySelector("#proModal").hidden, "Pro workbench");
+      await waitFor(() => state.commercialState !== null, "commercial state");
+      assert(
+        document.querySelector("#proStartTrial").disabled,
+        "Trial must not start before real activation: " + JSON.stringify({ commercial: state.commercialState, activation: state.activationSummary?.flags })
+      );
+      assert(document.querySelector("#proModal").textContent.includes("既有输出") || document.querySelector("#proModal").textContent.includes("existing output"), "Pro expiry must preserve Community projects and output");
+      assert(document.querySelector("#proSelectConfig").disabled, "Automation controls must be gated without a verified Pro license");
+      document.querySelector("#proModal [data-close-pro]").click();
+      await waitFor(() => document.querySelector("#proModal").hidden, "close Pro workbench");
 
       const initialLanguage = document.documentElement.lang;
       document.querySelector("#languageToggle").click();
@@ -120,6 +150,8 @@ async function rendererCheck(window) {
         bodyFontSize: getComputedStyle(document.body).fontSize,
         signatureRemoval: document.querySelector("#signatureRemove").hidden,
         validation: true,
+        recipePreview: true,
+        proGating: true,
         languageSwitch: true
       };
     })()

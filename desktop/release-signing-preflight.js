@@ -72,8 +72,7 @@ function validateReleaseEvidence(rootDir = ROOT_DIR) {
   const requiredBeforeSigning = [
     "legalProvenanceReview",
     "githubSplitRepositories",
-    "npmScopeTwoFactorAuthentication",
-    "productionLicenseKeyring"
+    "npmScopeTwoFactorAuthentication"
   ];
   const pending = requiredBeforeSigning.filter(
     key =>

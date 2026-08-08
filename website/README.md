@@ -20,6 +20,6 @@ The English site is served from `/`; Simplified Chinese pages are served from `/
 
 `npm run indexnow:dry` prints the exact IndexNow payload without sending it. Run `npm run indexnow` only after the generated site and verification key file are live.
 
-GA4 records an `ai_referral_landing` event for recognized visits from ChatGPT, Perplexity, Claude, Copilot, and Gemini. The event contains only the normalized AI source and landing-page path.
+GA4 records an `ai_referral_landing` event for recognized visits from ChatGPT, Perplexity, Claude, Copilot, and Gemini. Download, beta, source, pricing, and primary navigation CTAs carry a common event context (`cta_id`, `cta_location`, `page_type`, `locale`, and destination metadata). The historical `download_mac_installer` event remains active for reporting continuity.
 
-No website form collects personal data in the initial release. Sales and beta CTAs use project email addresses until a reviewed CRM or newsletter processor is configured.
+No website form collects personal data in the initial release. Community download CTAs lead to the signed release; Windows beta and sales CTAs use project email addresses until a reviewed CRM or newsletter processor is configured.

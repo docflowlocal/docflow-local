@@ -68,6 +68,8 @@ const BUILTIN_TEMPLATES = [
     fields: ["报价编号", "客户名称", "客户简称", "产品名称", "产品说明", "交付周期", "负责人", "备注"]
   }
 ];
+const STARTER_SCENARIOS = window.DOCFLOW_STARTER_SCENARIOS || { order: [], byId: {} };
+const DEFAULT_STARTER_SCENARIO_ID = STARTER_SCENARIOS.byId.trade ? "trade" : STARTER_SCENARIOS.order[0];
 
 const state = {
   filename: "客户报价清单_Q3.csv",
@@ -94,7 +96,30 @@ const state = {
   editingRule: null,
   sessionToken: "",
   sessionReady: !window.docflowDesktop?.isDesktop,
-  locale: DEFAULT_LOCALE
+  locale: DEFAULT_LOCALE,
+  scenarioId: DEFAULT_STARTER_SCENARIO_ID || "trade",
+  projectOrigin: "sample",
+  dataOrigin: "sample",
+  userTemplateCount: 0,
+  sampleIssueFixed: false,
+  sampleCompleted: false,
+  onboardingStartedAt: Date.now(),
+  projectName: "",
+  projectId: "",
+  projectCreatedAt: "",
+  projectToken: "",
+  projectFilename: "",
+  pendingTemplateRequirements: [],
+  pendingTemplateBindIndex: -1,
+  pendingRecipePayload: null,
+  activationProjectId: "",
+  activationProjectPromise: null,
+  activationSummary: null,
+  commercialState: null,
+  automationConfigToken: "",
+  proRuns: [],
+  foregroundActiveMs: 0,
+  foregroundStartedAt: document.visibilityState === "visible" ? Date.now() : null
 };
 
 const $ = selector => document.querySelector(selector);
@@ -105,6 +130,32 @@ function t(key, variables = {}) {
   return String(template).replace(/\{(\w+)\}/g, (match, name) => (
     Object.prototype.hasOwnProperty.call(variables, name) ? String(variables[name]) : match
   ));
+}
+
+function localized(value, locale = state.locale) {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return value[locale] ?? value["zh-CN"] ?? value.en ?? "";
+  }
+  return String(value ?? "");
+}
+
+function cloneSerializable(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function currentStarterScenario() {
+  return STARTER_SCENARIOS.byId[state.scenarioId]
+    || STARTER_SCENARIOS.byId[DEFAULT_STARTER_SCENARIO_ID]
+    || null;
+}
+
+function defaultFilenamePattern(locale = state.locale) {
+  const scenario = currentStarterScenario();
+  return localized(scenario?.filenamePattern, locale) || DEFAULT_FILENAME_PATTERNS[locale];
+}
+
+function defaultFolderPattern() {
+  return currentStarterScenario()?.folderPattern || "{{客户简称}}/{{报价编号}}";
 }
 
 function escapeHtml(value) {
@@ -408,6 +459,7 @@ function workflowPayload() {
     .filter(templateId => state.templates.has(templateId));
   const payload = {
     locale: state.locale,
+    starterScenario: state.scenarioId,
     rows: state.rows,
     sourceRows: state.sourceRows,
     requiredFields: currentRequiredFields(),
@@ -478,14 +530,32 @@ function templateAssetCount(template) {
 }
 
 function renderTemplateCards() {
-  $("#templateList").innerHTML = [...state.templateCatalog.values()].map(template => {
+  const templateCards = [...state.templateCatalog.values()].map(template => {
     const selected = state.templates.has(template.id);
     const isPdf = String(template.kind).toUpperCase() === "PDF";
-    const name = template.nameKey ? t(template.nameKey) : template.filename;
-    const shortName = template.shortKey ? t(template.shortKey) : t("toast.template");
-    const tag = template.tagKey ? t(template.tagKey) : t("toast.custom");
+    const name = template.name
+      ? localized(template.name)
+      : template.nameKey
+        ? t(template.nameKey)
+        : template.filename;
+    const shortName = template.short
+      ? localized(template.short)
+      : template.shortKey
+        ? t(template.shortKey)
+        : t("toast.template");
+    const tag = template.tag
+      ? localized(template.tag)
+      : template.tagKey
+        ? t(template.tagKey)
+        : t("toast.custom");
     let details;
-    if (template.detailKeys) {
+    if (template.details) {
+      const localizedDetails = template.details[state.locale]
+        || template.details["zh-CN"]
+        || template.details.en
+        || [];
+      details = localizedDetails.map(item => `<span>${escapeHtml(item)}</span>`).join("");
+    } else if (template.detailKeys) {
       details = template.detailKeys.map(key => `<span>${escapeHtml(t(key))}</span>`).join("");
     } else {
       const items = [
@@ -505,6 +575,13 @@ function renderTemplateCards() {
       ${action}<span class="selected-check">✓</span>
     </article>`;
   }).join("");
+  const pendingCards = state.pendingTemplateRequirements.map((requirement, index) => `
+    <article class="template-card recipe-template-required" data-recipe-requirement="${index}" role="button" tabindex="0">
+      <div class="file-thumb ${requirement.kind === "PDF" ? "pdf" : "word"}"><span>${requirement.kind === "PDF" ? "P" : "W"}</span><b>${escapeHtml(requirement.kind)}</b><small>${escapeHtml(requirement.kind)}</small></div>
+      <div class="template-info"><div><strong>${escapeHtml(t("recipe.bindTemplate", { kind: requirement.kind }))}</strong><span class="tag grey">${escapeHtml(t("mapping.confirm"))}</span></div><p><span>${escapeHtml(t("recipe.bindTemplateCopy"))}</span></p></div>
+      <span class="selected-check">＋</span>
+    </article>`).join("");
+  $("#templateList").innerHTML = templateCards + pendingCards;
   updateTemplateSummary();
 }
 
@@ -747,7 +824,965 @@ function showToast(title, copy = "") {
   showToast.timer = setTimeout(() => $("#toast").classList.remove("show"), 3600);
 }
 
+function renderStarterGrid() {
+  const grid = $("#starterGrid");
+  if (!grid) return;
+  grid.innerHTML = STARTER_SCENARIOS.order.map(id => {
+    const scenario = STARTER_SCENARIOS.byId[id];
+    const selected = id === state.scenarioId;
+    return `<button class="starter-card ${selected ? "selected" : ""}" type="button" data-scenario="${escapeHtml(id)}" aria-pressed="${selected}">
+      <span class="starter-card-icon">${escapeHtml(scenario.icon)}</span>
+      <span><strong>${escapeHtml(localized(scenario.title))}</strong><small>${escapeHtml(localized(scenario.description))}</small></span>
+      <em>${escapeHtml(t("starter.run"))} →</em>
+    </button>`;
+  }).join("");
+}
+
+function updateScenarioChrome() {
+  const scenario = currentStarterScenario();
+  if (!scenario) return;
+  const projectIcon = $("#projectSwitch .project-icon");
+  const projectName = $("#projectSwitch b");
+  const eyebrow = $(".topbar .eyebrow");
+  const heading = $(".topbar h1");
+  const subtitle = $(".topbar .subtitle");
+  if (projectIcon) projectIcon.textContent = scenario.icon;
+  const visibleProjectName = state.projectName || localized(scenario.projectName);
+  if (projectName) projectName.textContent = visibleProjectName;
+  if (eyebrow) eyebrow.textContent = localized(scenario.eyebrow);
+  if (heading) heading.textContent = visibleProjectName;
+  if (subtitle) subtitle.textContent = localized(scenario.subtitle);
+
+  const isSample = state.dataOrigin === "sample";
+  const badge = $("#starterProgress .starter-badge");
+  if (badge) badge.textContent = t(isSample ? "starter.sampleBadge" : "starter.realBadge");
+  $("#starterProgressTitle").textContent = t(isSample ? "starter.progressTitle" : "starter.realTitle");
+  $("#starterProgressCopy").textContent = t(isSample ? "starter.progressCopy" : "starter.realCopy");
+  $("#changeScenario").hidden = !isSample;
+}
+
+function applyStarterScenario(id, { persist = true, close = true, refresh = true } = {}) {
+  const scenario = STARTER_SCENARIOS.byId[id];
+  if (!scenario) return false;
+  const fields = cloneSerializable(scenario.fieldConfig);
+  const templates = cloneSerializable(scenario.templates).map((template, index) => ({
+    ...template,
+    fields: fields.map(field => field.template)
+  }));
+  BASE_FIELD_CONFIG.splice(0, BASE_FIELD_CONFIG.length, ...fields);
+  BUILTIN_TEMPLATES.splice(0, BUILTIN_TEMPLATES.length, ...templates);
+  state.filename = scenario.filename;
+  state.headers = Object.keys(scenario.rows[0] || {});
+  state.rows = cloneSerializable(scenario.rows);
+  state.sourceRows = state.rows.map((_row, index) => index + 2);
+  state.templates = new Set(templates.map(template => template.id));
+  state.templateCatalog = new Map(templates.map(template => [template.id, template]));
+  state.mappings = Object.fromEntries(fields.map(field => [field.template, field.source || field.template]));
+  state.requiredOverrides.clear();
+  state.computedFields = cloneSerializable(scenario.computedFields || []);
+  state.conditionalFields = cloneSerializable(scenario.conditionalFields || []);
+  state.validation = null;
+  state.assetFiles.clear();
+  state.signature = "";
+  state.signatureName = "";
+  state.scenarioId = id;
+  state.projectOrigin = "sample";
+  state.dataOrigin = "sample";
+  state.userTemplateCount = 0;
+  state.sampleIssueFixed = false;
+  state.sampleCompleted = false;
+  state.onboardingStartedAt = Date.now();
+  state.projectName = localized(scenario.projectName);
+  state.projectId = "";
+  state.projectCreatedAt = "";
+  state.projectToken = "";
+  state.projectFilename = "";
+  state.pendingTemplateRequirements = [];
+  state.pendingTemplateBindIndex = -1;
+  $("#filenamePattern").textContent = defaultFilenamePattern();
+  $("#folderPattern").textContent = defaultFolderPattern();
+  $("#skipBlank").checked = true;
+  $("#stopOnMissing").checked = true;
+  $("#validationReport").checked = true;
+  $("#includeSourceDocx").checked = false;
+  $("#mergePdfs").checked = false;
+  $("#flattenPdf").checked = true;
+  clearSignature(false);
+  if (persist) {
+    try {
+      localStorage.setItem("docflow-starter-scenario", id);
+      localStorage.setItem("docflow-onboarding-seen", "1");
+    } catch (_error) {
+      // Local persistence is optional.
+    }
+    state.activationProjectId = "";
+    startActivationProject(true).catch(() => {});
+  }
+  if (close) $("#starterModal").hidden = true;
+  if (refresh) {
+    applyLocale();
+    updateMetrics();
+  }
+  return true;
+}
+
+function openStarterModal() {
+  renderStarterGrid();
+  $("#starterModal").hidden = false;
+}
+
+function beginOwnFiles() {
+  $("#starterModal").hidden = true;
+  $("#sampleCompleteModal").hidden = true;
+  showToast(t("starter.chooseData"), t("starter.realCopy"));
+  $("#dataInput").click();
+}
+
+async function applySampleFix() {
+  const scenario = currentStarterScenario();
+  const fix = scenario?.missingFix;
+  if (!fix || state.dataOrigin !== "sample" || !state.rows[fix.rowIndex]) return;
+  state.rows[fix.rowIndex][fix.field] = fix.value;
+  state.sampleIssueFixed = true;
+  state.validation = null;
+  recordActivationEvent("guided_issue_resolved").catch(() => {});
+  $("#validationModal").hidden = true;
+  updateMetrics();
+  showToast(t("starter.fixed"), t("starter.fixedCopy"));
+  await runValidation(true).catch(() => {});
+}
+
+function showSampleCompletion(generatedCount) {
+  state.sampleCompleted = true;
+  $("#sampleCompleteSummary").textContent = t("starter.completeSummary", {
+    count: generatedCount,
+    seconds: Math.max(1, Math.round((Date.now() - state.onboardingStartedAt) / 1000))
+  });
+  try {
+    localStorage.setItem(`docflow-sample-completed:${state.scenarioId}`, new Date().toISOString());
+  } catch (_error) {
+    // Completion remains usable when localStorage is disabled.
+  }
+  $("#sampleCompleteModal").hidden = false;
+}
+
+function projectKeyForTemplate(template) {
+  if (template.builtIn) return `builtin.${template.id}`;
+  if (/^[a-z0-9][a-z0-9._-]{7,79}$/i.test(template.projectKey || "")) return template.projectKey;
+  const suffix = String(template.id || "template")
+    .replace(/^template-/, "")
+    .replace(/[^a-z0-9_-]/gi, "")
+    .slice(0, 48) || "template";
+  template.projectKey = `custom.${suffix}`;
+  return template.projectKey;
+}
+
+function projectScopeForRuntime(scope) {
+  if (!scope || ["quote", "attachment"].includes(scope)) return scope;
+  const template = state.templateCatalog.get(scope);
+  return template ? projectKeyForTemplate(template) : scope;
+}
+
+function randomProjectId() {
+  const bytes = new Uint8Array(12);
+  crypto.getRandomValues(bytes);
+  return `prj_${[...bytes].map(value => value.toString(16).padStart(2, "0")).join("")}`;
+}
+
+function buildProjectRequest({ newIdentity = false } = {}) {
+  const now = new Date().toISOString();
+  const requestedName = String(state.projectName || "").trim();
+  const project = {
+    id: newIdentity || !state.projectId ? randomProjectId() : state.projectId,
+    name: (requestedName || localized(currentStarterScenario()?.projectName) || "DocFlow Project").slice(0, 120),
+    createdAt: newIdentity ? now : state.projectCreatedAt || now,
+    updatedAt: now
+  };
+  const templateEntries = [...state.templateCatalog.values()].map((template, order) => ({
+    projectKey: projectKeyForTemplate(template),
+    builtIn: Boolean(template.builtIn),
+    ...(template.builtIn ? {} : { filename: template.filename, kind: template.kind }),
+    selected: state.templates.has(template.id),
+    order
+  }));
+  const manifest = {
+    schemaVersion: 1,
+    project,
+    workflow: {
+      expectedHeaders: [...state.headers],
+      mappings: currentMappings(),
+      requiredFields: currentRequiredFields(),
+      unconfirmedFields: [...new Set(mappingWarnings().map(field => field.template))],
+      requiredOverrides: Object.fromEntries(state.requiredOverrides),
+      computedFields: state.computedFields.map(rule => ({
+        ...rule,
+        ...(rule.scope ? { scope: projectScopeForRuntime(rule.scope) } : {})
+      })),
+      conditionalFields: state.conditionalFields.map(rule => ({
+        ...rule,
+        ...(rule.scope ? { scope: projectScopeForRuntime(rule.scope) } : {})
+      })),
+      templates: templateEntries,
+      settings: currentSettings()
+    },
+    privacy: {
+      containsCustomerData: false,
+      excluded: ["rows", "sourceRows", "signature", "assets"]
+    }
+  };
+  return {
+    projectToken: state.projectToken || undefined,
+    suggestedName: `${project.name}.docflow`,
+    manifest,
+    templates: [...state.templateCatalog.values()].map(template => ({
+      id: template.id,
+      projectKey: projectKeyForTemplate(template),
+      builtIn: Boolean(template.builtIn)
+    }))
+  };
+}
+
+function inferStarterScenario(headers = []) {
+  const set = new Set(headers);
+  if (set.has("员工编号")) return "hr";
+  if (set.has("项目编号") || set.has("文件编号")) return "engineering";
+  if (set.has("申报编号") || set.has("证书编号")) return "compliance";
+  return "trade";
+}
+
+function sourceMappingValue(value) {
+  if (typeof value === "string") return value;
+  if (!value || typeof value !== "object") return "";
+  if (value.kind === "literal") return value.value === "" ? IGNORE_MAPPING : "";
+  return value.source || "";
+}
+
+function applyOpenedProject(result) {
+  if (!result || result.cancelled) return false;
+  const manifest = result.manifest || {};
+  const workflow = manifest.workflow || {};
+  const scenarioId = inferStarterScenario(workflow.expectedHeaders);
+  applyStarterScenario(scenarioId, { persist: false, close: true, refresh: false });
+  state.projectName = manifest.project?.name || state.projectName;
+  state.projectId = manifest.project?.id || "";
+  state.projectCreatedAt = manifest.project?.createdAt || "";
+  state.projectToken = result.projectToken || "";
+  state.projectFilename = result.filename || "";
+  state.projectOrigin = "user";
+  state.dataOrigin = "project";
+  state.filename = t("project.noData");
+  state.headers = Array.isArray(workflow.expectedHeaders) ? [...workflow.expectedHeaders] : [];
+  state.rows = [];
+  state.sourceRows = [];
+  state.mappings = Object.fromEntries(Object.entries(workflow.mappings || {}).map(([field, value]) => [
+    field,
+    sourceMappingValue(value)
+  ]));
+  state.requiredOverrides = new Map(Object.entries(workflow.requiredOverrides || {}));
+  state.templateCatalog = new Map(BUILTIN_TEMPLATES.map(template => [template.id, template]));
+  for (const template of result.templates || []) {
+    state.templateCatalog.set(template.id, { ...template, builtIn: false });
+  }
+  const runtimeByProjectKey = new Map([
+    ["builtin.quote", "quote"],
+    ["builtin.attachment", "attachment"],
+    ["quote", "quote"],
+    ["attachment", "attachment"],
+    ...(result.templates || []).map(template => [template.projectKey, template.id])
+  ]);
+  state.templates = new Set((workflow.templates || [])
+    .filter(template => template.selected !== false)
+    .map(template => runtimeByProjectKey.get(template.projectKey))
+    .filter(templateId => state.templateCatalog.has(templateId)));
+  const restoreRules = rules => (rules || []).map(rule => ({
+    ...rule,
+    ...(rule.scope ? { scope: runtimeByProjectKey.get(rule.scope) || rule.scope } : {})
+  }));
+  state.computedFields = restoreRules(workflow.computedFields);
+  state.conditionalFields = restoreRules(workflow.conditionalFields);
+  state.userTemplateCount = (result.templates || []).length;
+  state.validation = null;
+  state.assetFiles.clear();
+  clearSignature(false);
+  const settings = workflow.settings || {};
+  $("#filenamePattern").textContent = settings.filenamePattern || defaultFilenamePattern();
+  $("#folderPattern").textContent = settings.folderPattern || defaultFolderPattern();
+  for (const [id, fallback] of Object.entries({
+    skipBlank: true,
+    stopOnMissing: true,
+    validationReport: true,
+    includeSourceDocx: false,
+    mergePdfs: false,
+    flattenPdf: true
+  })) {
+    $("#" + id).checked = settings[id] ?? fallback;
+  }
+  $("#projectNameInput").value = state.projectName;
+  $("#projectModal").hidden = true;
+  applyLocale();
+  updateMetrics();
+  state.activationProjectId = "";
+  startActivationProject(false).catch(() => {});
+  showToast(t("project.opened"), t("project.openedCopy"));
+  return true;
+}
+
+async function saveCurrentProject(forceSaveAs = false) {
+  if (!window.docflowDesktop?.saveProject) {
+    showToast(t("project.failed"), t("project.desktopOnly"));
+    return null;
+  }
+  try {
+    const request = buildProjectRequest({ newIdentity: forceSaveAs });
+    const result = forceSaveAs
+      ? await window.docflowDesktop.saveProjectAs(request)
+      : await window.docflowDesktop.saveProject(request);
+    if (!result || result.cancelled) return null;
+    state.projectToken = result.projectToken || "";
+    state.projectFilename = result.filename || "";
+    state.projectId = result.manifest?.project?.id || state.projectId;
+    state.projectCreatedAt = result.manifest?.project?.createdAt || state.projectCreatedAt;
+    state.projectName = result.manifest?.project?.name || state.projectName;
+    state.projectOrigin = "user";
+    await recordActivationEvent("project_saved");
+    $("#projectNameInput").value = state.projectName;
+    updateScenarioChrome();
+    await renderRecentProjects();
+    showToast(t("project.saved"), t("project.savedCopy", { name: state.projectFilename }));
+    return result;
+  } catch (error) {
+    showToast(t("project.failed"), error.message);
+    return null;
+  }
+}
+
+async function openProjectFile(recentId = "") {
+  if (!window.docflowDesktop?.openProject) {
+    showToast(t("project.failed"), t("project.desktopOnly"));
+    return;
+  }
+  try {
+    const result = recentId
+      ? await window.docflowDesktop.openRecentProject(recentId)
+      : await window.docflowDesktop.openProject();
+    if (result?.missing) {
+      await renderRecentProjects();
+      return;
+    }
+    applyOpenedProject(result);
+  } catch (error) {
+    showToast(t("project.failed"), error.message);
+  }
+}
+
+async function renderRecentProjects() {
+  const container = $("#recentProjectList");
+  if (!container) return;
+  if (!window.docflowDesktop?.getRecentProjects) {
+    container.innerHTML = `<div class="recent-project-empty">${escapeHtml(t("project.desktopOnly"))}</div>`;
+    return;
+  }
+  try {
+    const projects = await window.docflowDesktop.getRecentProjects();
+    container.innerHTML = projects.length ? projects.map(project => `
+      <button class="recent-project-item" type="button" data-recent-project="${escapeHtml(project.id)}">
+        <span><strong>${escapeHtml(project.projectName)}</strong><small>${escapeHtml(project.filename)} · ${escapeHtml(new Date(project.lastOpenedAt).toLocaleString(state.locale))}</small></span>
+        <em>${escapeHtml(t("project.openRecent"))} →</em>
+      </button>`).join("") : `<div class="recent-project-empty">${escapeHtml(t("project.emptyRecent"))}</div>`;
+  } catch (error) {
+    container.innerHTML = `<div class="recent-project-empty">${escapeHtml(error.message)}</div>`;
+  }
+}
+
+async function openProjectWorkspace() {
+  $("#projectNameInput").value = state.projectName || localized(currentStarterScenario()?.projectName);
+  $("#projectModal").hidden = false;
+  await Promise.all([renderRecentProjects(), refreshActivationSummary()]);
+}
+
+function templateAssetRequirements(template) {
+  return (Array.isArray(template.assets) ? template.assets : []).map(asset => ({
+    kind: "image",
+    ...(asset?.source || asset?.name ? { field: String(asset.source || asset.name) } : {}),
+    required: Boolean(asset?.required)
+  }));
+}
+
+function buildRecipePayload() {
+  const templateKeyByRuntime = new Map();
+  let customIndex = 0;
+  const templateRequirements = [...state.templateCatalog.values()].map((template, order) => {
+    const key = template.builtIn ? `builtin.${template.id}` : `template_${++customIndex}`;
+    templateKeyByRuntime.set(template.id, key);
+    return {
+      key,
+      kind: template.builtIn ? "BUILTIN" : String(template.kind || "DOCX").toUpperCase(),
+      ...(template.builtIn ? { builtInId: template.id } : {}),
+      selected: state.templates.has(template.id),
+      order,
+      fields: [...new Set((template.fields || []).map(String).filter(Boolean))],
+      assetRequirements: templateAssetRequirements(template)
+    };
+  });
+  for (const requirement of state.pendingTemplateRequirements) {
+    templateRequirements.push(cloneSerializable(requirement));
+  }
+  const mappings = {};
+  const ignoredFields = [];
+  for (const field of FIELD_CONFIG) {
+    if (field.formula || field.condition) continue;
+    const source = state.mappings[field.template];
+    if (source === IGNORE_MAPPING) {
+      ignoredFields.push(field.template);
+    } else if (typeof source === "string" && source) {
+      mappings[field.template] = source;
+    }
+  }
+  const scopedRules = rules => rules.map(rule => ({
+    ...rule,
+    ...(rule.scope ? { scope: templateKeyByRuntime.get(rule.scope) || rule.scope } : {})
+  }));
+  return {
+    scenario: STARTER_SCENARIOS.byId[state.scenarioId] ? state.scenarioId : "custom",
+    workflow: {
+      expectedHeaders: [...state.headers],
+      mappings,
+      requiredFields: currentRequiredFields(),
+      unconfirmedFields: [...new Set([
+        ...mappingWarnings().map(field => field.template),
+        ...ignoredFields
+      ])],
+      requiredOverrides: Object.fromEntries(state.requiredOverrides),
+      computedFields: scopedRules(state.computedFields),
+      conditionalFields: scopedRules(state.conditionalFields),
+      naming: {
+        filenamePattern: $("#filenamePattern").textContent.trim(),
+        folderPattern: $("#folderPattern").textContent.trim()
+      },
+      templateRequirements
+    }
+  };
+}
+
+async function previewRecipeExport() {
+  if (!window.docflowDesktop?.previewProjectRecipe) {
+    showToast(t("recipe.failed"), t("project.desktopOnly"));
+    return;
+  }
+  try {
+    const payload = buildRecipePayload();
+    const recipe = await window.docflowDesktop.previewProjectRecipe(payload);
+    state.pendingRecipePayload = payload;
+    const workflow = recipe.workflow || {};
+    $("#recipePreviewSummary").textContent = t("recipe.summary", {
+      fields: workflow.expectedHeaders?.length || 0,
+      mappings: Object.keys(workflow.mappings || {}).length,
+      rules: (workflow.computedFields?.length || 0) + (workflow.conditionalFields?.length || 0),
+      templates: workflow.templateRequirements?.length || 0
+    });
+    $("#recipePreviewModal").hidden = false;
+  } catch (error) {
+    showToast(t("recipe.failed"), error.message);
+  }
+}
+
+async function confirmRecipeExport() {
+  if (!state.pendingRecipePayload || !window.docflowDesktop?.exportProjectRecipe) return;
+  try {
+    const result = await window.docflowDesktop.exportProjectRecipe(state.pendingRecipePayload);
+    if (!result || result.cancelled) return;
+    state.pendingRecipePayload = null;
+    $("#recipePreviewModal").hidden = true;
+    showToast(t("recipe.exported"), t("recipe.exportedCopy"));
+  } catch (error) {
+    showToast(t("recipe.failed"), error.message);
+  }
+}
+
+function applyImportedRecipe(recipe) {
+  const workflow = recipe.workflow || {};
+  const scenarioId = STARTER_SCENARIOS.byId[recipe.scenario]
+    ? recipe.scenario
+    : inferStarterScenario(workflow.expectedHeaders);
+  applyStarterScenario(scenarioId, { persist: false, close: true, refresh: false });
+  state.projectName = t("recipe.projectName");
+  state.projectOrigin = "user";
+  state.dataOrigin = "project";
+  state.filename = t("project.noData");
+  state.headers = [...(workflow.expectedHeaders || [])];
+  state.rows = [];
+  state.sourceRows = [];
+  state.mappings = Object.fromEntries(Object.entries(workflow.mappings || {}).map(([field, mapping]) => [
+    field,
+    sourceMappingValue(mapping)
+  ]));
+  state.requiredOverrides = new Map(Object.entries(workflow.requiredOverrides || {}));
+  state.templateCatalog = new Map(BUILTIN_TEMPLATES.map(template => [template.id, template]));
+  state.templates.clear();
+  const requirements = [...(workflow.templateRequirements || [])].sort((left, right) => left.order - right.order);
+  const scopeMap = new Map();
+  state.pendingTemplateRequirements = [];
+  for (const requirement of requirements) {
+    if (requirement.kind === "BUILTIN" && state.templateCatalog.has(requirement.builtInId)) {
+      scopeMap.set(requirement.key, requirement.builtInId);
+      if (requirement.selected !== false) state.templates.add(requirement.builtInId);
+    } else if (["DOCX", "PDF"].includes(requirement.kind)) {
+      state.pendingTemplateRequirements.push(cloneSerializable(requirement));
+    }
+  }
+  const restoreRecipeRules = rules => (rules || []).map(rule => ({
+    ...rule,
+    ...(rule.scope ? { scope: scopeMap.get(rule.scope) || rule.scope } : {})
+  }));
+  state.computedFields = restoreRecipeRules(workflow.computedFields);
+  state.conditionalFields = restoreRecipeRules(workflow.conditionalFields);
+  state.userTemplateCount = 0;
+  state.validation = null;
+  $("#filenamePattern").textContent = workflow.naming?.filenamePattern || defaultFilenamePattern();
+  $("#folderPattern").textContent = workflow.naming?.folderPattern || defaultFolderPattern();
+  $("#projectModal").hidden = true;
+  applyLocale();
+  updateMetrics();
+  state.activationProjectId = "";
+  startActivationProject(false).catch(() => {});
+  showToast(t("recipe.imported"), t("recipe.importedCopy", {
+    templates: state.pendingTemplateRequirements.length
+  }));
+}
+
+async function importRecipeFile() {
+  if (!window.docflowDesktop?.importProjectRecipe) {
+    showToast(t("recipe.failed"), t("project.desktopOnly"));
+    return;
+  }
+  try {
+    const result = await window.docflowDesktop.importProjectRecipe();
+    if (!result || result.cancelled) return;
+    applyImportedRecipe(result.recipe);
+  } catch (error) {
+    showToast(t("recipe.failed"), error.message);
+  }
+}
+
+async function refreshActivationSummary() {
+  const target = $("#localActivitySummary");
+  if (!target) return null;
+  if (!window.docflowDesktop?.getActivationSummary) {
+    target.textContent = t("activity.unavailable");
+    return null;
+  }
+  try {
+    const summary = await window.docflowDesktop.getActivationSummary();
+    state.activationSummary = summary;
+    const now = new Date();
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7));
+    const currentWeek = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}T00:00:00.000Z`;
+    const weekly = summary.weeklyRealPackages?.find(entry => entry.weekStartedAt === currentWeek)?.count || 0;
+    target.textContent = t("activity.summary", {
+      batches: summary.counts?.realPackagesSaved || 0,
+      weekly,
+      activated: t(summary.flags?.realActivated ? "activity.yes" : "activity.no")
+    });
+    return summary;
+  } catch (_error) {
+    target.textContent = t("activity.unavailable");
+    return null;
+  }
+}
+
+async function exportActivationSummary() {
+  try {
+    const result = await window.docflowDesktop?.exportActivationSummary?.();
+    if (result && !result.cancelled) showToast(t("activity.exported"));
+  } catch (error) {
+    showToast(t("project.failed"), error.message);
+  }
+}
+
+async function clearActivationSummary() {
+  if (!window.confirm(t("activity.confirmClear"))) return;
+  try {
+    await window.docflowDesktop?.clearActivationLedger?.();
+    state.activationProjectId = "";
+    await startActivationProject(state.dataOrigin === "sample");
+    await refreshActivationSummary();
+    showToast(t("activity.cleared"));
+  } catch (error) {
+    showToast(t("project.failed"), error.message);
+  }
+}
+
+function commercialFallbackState() {
+  return {
+    moduleAvailable: false,
+    valid: false,
+    status: "community",
+    licenseType: null,
+    trialEligible: Boolean(state.activationSummary?.flags?.realActivated),
+    canStartTrial: false,
+    remainingDays: 0,
+    features: []
+  };
+}
+
+function localizedDate(value) {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return "—";
+  return new Intl.DateTimeFormat(state.locale, {
+    year: "numeric",
+    month: "short",
+    day: "numeric"
+  }).format(date);
+}
+
+function renderCommercialState() {
+  const commercial = state.commercialState || commercialFallbackState();
+  const eligible = commercial.trialEligible ?? Boolean(state.activationSummary?.flags?.realActivated);
+  const status = String(commercial.status || "community").toLowerCase();
+  const licenseType = String(commercial.licenseType || "").toLowerCase();
+  const valid = commercial.valid === true;
+  const proLicensed = valid && ["pro", "business"].includes(String(commercial.edition || "").toLowerCase());
+  const expired = ["expired", "license_expired", "grace_expired"].includes(status);
+  let badge = "COMMUNITY";
+  let titleKey = eligible ? "pro.eligibleTitle" : "pro.beforeTitle";
+  let copyKey = eligible ? "pro.eligibleCopy" : "pro.beforeCopy";
+  let copyVariables = {};
+
+  if (proLicensed && licenseType === "trial") {
+    badge = "PRO TRIAL";
+    titleKey = "pro.trialTitle";
+    copyKey = "pro.trialCopy";
+    copyVariables = { days: Math.max(0, Number(commercial.remainingDays) || 0) };
+  } else if (proLicensed && licenseType === "subscription") {
+    badge = "PRO";
+    titleKey = "pro.subscriptionTitle";
+    copyKey = "pro.subscriptionCopy";
+    copyVariables = { date: localizedDate(commercial.expiresAt) };
+  } else if (proLicensed && licenseType === "perpetual") {
+    badge = "PRO";
+    titleKey = "pro.perpetualTitle";
+    copyKey = "pro.perpetualCopy";
+  } else if (expired) {
+    badge = "PRO EXPIRED";
+    titleKey = "pro.expiredTitle";
+    copyKey = "pro.expiredCopy";
+  } else if (!commercial.moduleAvailable) {
+    titleKey = eligible ? "pro.moduleMissingTitle" : "pro.beforeTitle";
+    copyKey = eligible ? "pro.moduleMissingCopy" : "pro.beforeCopy";
+  } else if (!["community", "missing", "license_missing", "none"].includes(status)) {
+    badge = "PRO";
+    titleKey = "pro.invalidTitle";
+    copyKey = "pro.invalidCopy";
+  }
+
+  const statusBadge = $("#proStatusBadge");
+  statusBadge.textContent = badge;
+  statusBadge.classList.toggle("expired", expired);
+  $("#proStatusTitle").textContent = t(titleKey);
+  $("#proStatusCopy").textContent = t(copyKey, copyVariables);
+
+  const trialUsed = commercial.trialUsed === true || (licenseType === "trial" && expired);
+  const trialButton = $("#proStartTrial");
+  trialButton.hidden = proLicensed;
+  trialButton.disabled = !eligible || trialUsed;
+  trialButton.textContent = t(commercial.moduleAvailable ? "pro.startTrial" : "pro.getTrialBuild");
+  $("#proImportLicense").disabled = !commercial.moduleAvailable;
+
+  const automationEnabled = commercial.moduleAvailable && proLicensed && commercial.automationEnabled !== false;
+  const hasConfig = Boolean(state.automationConfigToken);
+  $("#proSelectConfig").disabled = !automationEnabled;
+  $("#proRunOnce").disabled = !automationEnabled || !hasConfig;
+  $("#proStartWatch").disabled = !automationEnabled || !hasConfig;
+  $("#proStartSchedule").disabled = !automationEnabled || !hasConfig;
+  $("#proScheduleInterval").disabled = !automationEnabled || !hasConfig;
+  $("#proHistory").disabled = !automationEnabled || !hasConfig;
+  $("#proRefreshRuns").disabled = !commercial.moduleAvailable;
+}
+
+async function refreshCommercialState() {
+  const fallback = commercialFallbackState();
+  if (!window.docflowDesktop?.getCommercialState) {
+    state.commercialState = fallback;
+    renderCommercialState();
+    return fallback;
+  }
+  try {
+    const commercial = await window.docflowDesktop.getCommercialState();
+    const license = commercial?.license && typeof commercial.license === "object"
+      ? commercial.license
+      : commercial;
+    const edition = String(license?.edition || "community").toLowerCase();
+    const status = String(license?.status || "community").toLowerCase();
+    const valid = license?.valid === true || (status === "active" && ["pro", "business"].includes(edition));
+    state.commercialState = {
+      ...fallback,
+      moduleAvailable: Boolean(commercial?.adapterReady ?? commercial?.moduleAvailable),
+      trialEligible: commercial?.trialEligible ?? fallback.trialEligible,
+      valid,
+      status,
+      licenseType: license?.licenseType ?? null,
+      edition,
+      startsAt: license?.startsAt ?? license?.issuedAt ?? null,
+      expiresAt: license?.expiresAt ?? null,
+      remainingDays: license?.remainingDays ?? license?.daysRemaining ?? null,
+      features: Array.isArray(license?.features) ? license.features : [],
+      automationEnabled: commercial?.automationEnabled !== false,
+      trialUsed: commercial?.trialUsed === true
+    };
+  } catch (_error) {
+    state.commercialState = fallback;
+  }
+  renderCommercialState();
+  return state.commercialState;
+}
+
+function renderProRuns(runs = state.proRuns) {
+  const target = $("#proRunList");
+  const safeRuns = Array.isArray(runs) ? runs : [];
+  if (!safeRuns.length) {
+    target.innerHTML = `<p>${escapeHtml(t("pro.noRuns"))}</p>`;
+    return;
+  }
+  target.innerHTML = safeRuns.map(run => {
+    const kind = [run.kind, run.trigger, run.mode].includes("schedule") ? "schedule" : "watch";
+    const token = String(
+      run.runToken
+      || (kind === "schedule" ? run.scheduleToken : run.watchToken)
+      || run.token
+      || ""
+    );
+    return `<div class="pro-run-item"><span><strong>${escapeHtml(t(`pro.${kind}`))}</strong><small>${escapeHtml(t("pro.running"))}${run.startedAt ? ` · ${escapeHtml(localizedDate(run.startedAt))}` : ""}</small></span><button class="text-btn danger-text" type="button" data-stop-pro-run="${escapeHtml(token)}" data-run-kind="${kind}">${escapeHtml(t("pro.stop"))}</button></div>`;
+  }).join("");
+}
+
+async function refreshProRuns() {
+  if (!window.docflowDesktop?.listAutomationRuns || !state.commercialState?.moduleAvailable) {
+    state.proRuns = [];
+    renderProRuns();
+    return [];
+  }
+  try {
+    const result = await window.docflowDesktop.listAutomationRuns();
+    const runs = Array.isArray(result) ? result : Array.isArray(result?.runs) ? result.runs : [];
+    state.proRuns = runs.filter(run => ["queued", "running", "stopping"].includes(String(run?.status || "")));
+  } catch (_error) {
+    state.proRuns = [];
+  }
+  renderProRuns();
+  return state.proRuns;
+}
+
+async function openProWorkspace() {
+  recordActivationEvent("pro_feature_intent", { feature: "folders.watched" }).catch(() => {});
+  $("#proModal").hidden = false;
+  await Promise.all([refreshActivationSummary(), refreshCommercialState()]);
+  await refreshProRuns();
+}
+
+async function requestProTrial() {
+  const commercial = state.commercialState || await refreshCommercialState();
+  if (!commercial.trialEligible) return;
+  recordActivationEvent("pro_feature_intent", { feature: "automation.scheduled" }).catch(() => {});
+  if (!commercial.moduleAvailable || !window.docflowDesktop?.requestProTrial) {
+    window.open("https://docflowlocal.com/pricing/?source=desktop-trial", "_blank", "noopener,noreferrer");
+    return;
+  }
+  try {
+    const result = await window.docflowDesktop.requestProTrial();
+    if (result?.cancelled) return;
+    await refreshCommercialState();
+    showToast(t("pro.trialStarted"), t("pro.trialStartedCopy"));
+  } catch (error) {
+    showToast(t("pro.actionFailed"), error.message);
+  }
+}
+
+async function importProLicense() {
+  if (!window.docflowDesktop?.importProLicense) return;
+  try {
+    const result = await window.docflowDesktop.importProLicense();
+    if (!result || result.cancelled) return;
+    await refreshCommercialState();
+    showToast(t("pro.licenseImported"), t("pro.licenseImportedCopy"));
+  } catch (error) {
+    showToast(t("pro.actionFailed"), error.message);
+  }
+}
+
+async function selectAutomationConfig() {
+  if (!window.docflowDesktop?.selectAutomationConfig) return;
+  try {
+    const result = await window.docflowDesktop.selectAutomationConfig();
+    if (!result || result.cancelled) return;
+    state.automationConfigToken = String(result.configToken || "");
+    $("#proConfigSummary").textContent = t(state.automationConfigToken ? "pro.configReady" : "pro.noConfig");
+    renderCommercialState();
+    showToast(t("pro.configSelected"), t("pro.configReady"));
+  } catch (error) {
+    showToast(t("pro.actionFailed"), error.message);
+  }
+}
+
+async function runAutomationOnce() {
+  try {
+    await window.docflowDesktop?.runAutomationOnce?.({ configToken: state.automationConfigToken });
+    showToast(t("pro.runComplete"));
+  } catch (error) {
+    showToast(t("pro.actionFailed"), error.message);
+  }
+}
+
+async function startAutomation(kind) {
+  try {
+    if (kind === "schedule") {
+      await window.docflowDesktop?.startAutomationSchedule?.({
+        configToken: state.automationConfigToken,
+        everyMs: Number($("#proScheduleInterval").value),
+        runImmediately: true
+      });
+    } else {
+      await window.docflowDesktop?.startAutomationWatch?.({ configToken: state.automationConfigToken });
+    }
+    await refreshProRuns();
+    showToast(t("pro.runStarted"));
+  } catch (error) {
+    showToast(t("pro.actionFailed"), error.message);
+  }
+}
+
+async function stopAutomation(token, kind) {
+  try {
+    const payload = { runToken: token };
+    if (kind === "schedule") await window.docflowDesktop?.stopAutomationSchedule?.(payload);
+    else await window.docflowDesktop?.stopAutomationWatch?.(payload);
+    await refreshProRuns();
+    showToast(t("pro.runStopped"));
+  } catch (error) {
+    showToast(t("pro.actionFailed"), error.message);
+  }
+}
+
+async function showAutomationHistory() {
+  if (!state.automationConfigToken || !window.docflowDesktop?.getAutomationHistory) return;
+  try {
+    const result = await window.docflowDesktop.getAutomationHistory({
+      configToken: state.automationConfigToken,
+      limit: 20
+    });
+    const history = Array.isArray(result)
+      ? result
+      : Array.isArray(result?.history)
+        ? result.history
+        : Array.isArray(result?.runs)
+          ? result.runs
+          : [];
+    if (!history.length) {
+      $("#proRunList").innerHTML = `<p>${escapeHtml(t("pro.noHistory"))}</p>`;
+      return;
+    }
+    $("#proRunList").innerHTML = history.map(item => {
+      const counts = item.counts && typeof item.counts === "object" ? item.counts : {};
+      const outputCount = Number(counts.outputs ?? counts.succeeded ?? 0) || 0;
+      return `<div class="pro-run-item"><span><strong>${escapeHtml(String(item.status || t("pro.historyTitle")))}</strong><small>${escapeHtml(localizedDate(item.recordedAt || item.finishedAt || item.completedAt || item.updatedAt || item.startedAt))} · ${outputCount}</small></span></div>`;
+    }).join("");
+  } catch (error) {
+    showToast(t("pro.actionFailed"), error.message);
+  }
+}
+
+function foregroundActiveSeconds() {
+  const current = state.foregroundStartedAt == null
+    ? state.foregroundActiveMs
+    : state.foregroundActiveMs + Math.max(0, Date.now() - state.foregroundStartedAt);
+  return Math.min(86_400, Math.max(0, Math.round(current / 1000)));
+}
+
+async function startActivationProject(sampleOrigin) {
+  if (!window.docflowDesktop?.createActivationProject) return null;
+  if (state.activationProjectPromise) return state.activationProjectPromise;
+  state.activationProjectPromise = (async () => {
+    try {
+      const project = await window.docflowDesktop.createActivationProject({ sampleOrigin: Boolean(sampleOrigin) });
+      state.activationProjectId = project.projectId || "";
+      if (sampleOrigin && state.activationProjectId) {
+        await window.docflowDesktop.recordActivationProgress({
+          projectId: state.activationProjectId,
+          event: "scenario_selected"
+        });
+      }
+      return project;
+    } catch (_error) {
+      return null;
+    } finally {
+      state.activationProjectPromise = null;
+    }
+  })();
+  return state.activationProjectPromise;
+}
+
+async function ensureActivationProject() {
+  if (state.activationProjectId) return state.activationProjectId;
+  await startActivationProject(state.dataOrigin === "sample");
+  return state.activationProjectId;
+}
+
+async function recordActivationEvent(event, details = {}) {
+  if (!window.docflowDesktop?.recordActivationProgress) return null;
+  const projectId = await ensureActivationProject();
+  if (!projectId) return null;
+  try {
+    const result = await window.docflowDesktop.recordActivationProgress({ projectId, event, ...details });
+    if (result?.activation?.real || result?.activation?.usagePql || result?.activation?.intentPql) {
+      await refreshActivationSummary();
+      if (!$("#proModal").hidden) await refreshCommercialState();
+    }
+    return result;
+  } catch (_error) {
+    return null;
+  }
+}
+
+async function sha256Hex(value) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(value)));
+  return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function prepareTrackedBatch(snapshot, validation) {
+  const cleanPreflight = validation.invalid === 0
+    && (validation.configIssues?.length || 0) === 0
+    && snapshot.payload.unconfirmedFields.length === 0;
+  const real = state.dataOrigin === "user"
+    && state.userTemplateCount > 0
+    && cleanPreflight;
+  const sample = state.dataOrigin === "sample" && cleanPreflight;
+  if ((!real && !sample) || !window.docflowDesktop?.beginActivationBatch) return null;
+  const projectId = await ensureActivationProject();
+  if (!projectId) return null;
+  try {
+    const batch = await window.docflowDesktop.beginActivationBatch({
+      projectId,
+      real,
+      dedupeDigest: await sha256Hex(snapshot.body),
+      templateCountBucket: state.userTemplateCount >= 2 ? "two_or_more" : "one"
+    });
+    await recordActivationEvent("preflight_passed", { batchSequence: batch.batchSequence });
+    return { projectId, batchSequence: batch.batchSequence, real };
+  } catch (_error) {
+    return null;
+  }
+}
+
+async function completeTrackedBatch(batch, event) {
+  if (!batch) return null;
+  const details = { batchSequence: batch.batchSequence };
+  if (event === "package_saved") details.foregroundActiveSeconds = foregroundActiveSeconds();
+  return recordActivationEvent(event, details);
+}
+
 function applyLocale(previousLocale = state.locale) {
+  if (state.projectOrigin === "sample") {
+    state.projectName = localized(currentStarterScenario()?.projectName);
+  }
   document.documentElement.lang = state.locale;
   document.title = t("app.title");
   $$("[data-i18n]").forEach(element => {
@@ -765,10 +1800,12 @@ function applyLocale(previousLocale = state.locale) {
     element.setAttribute("placeholder", t(element.dataset.i18nPlaceholder));
   });
   const pattern = $("#filenamePattern");
-  if (pattern && Object.values(DEFAULT_FILENAME_PATTERNS).includes(pattern.textContent.trim())) {
-    pattern.textContent = DEFAULT_FILENAME_PATTERNS[state.locale];
-  } else if (pattern && pattern.textContent.trim() === DEFAULT_FILENAME_PATTERNS[previousLocale]) {
-    pattern.textContent = DEFAULT_FILENAME_PATTERNS[state.locale];
+  const scenario = currentStarterScenario();
+  const scenarioPatterns = scenario?.filenamePattern ? Object.values(scenario.filenamePattern) : [];
+  if (pattern && state.dataOrigin === "sample" && scenarioPatterns.includes(pattern.textContent.trim())) {
+    pattern.textContent = defaultFilenamePattern();
+  } else if (pattern && pattern.textContent.trim() === localized(scenario?.filenamePattern, previousLocale)) {
+    pattern.textContent = defaultFilenamePattern();
   }
   $("#languageToggleLabel").textContent = state.locale === "zh-CN" ? "EN" : "中";
   $("#languageToggle").title = t("language.switch");
@@ -786,6 +1823,12 @@ function applyLocale(previousLocale = state.locale) {
   updatePatternPreview();
   if (!$("#validationModal").hidden && state.validation) showValidation(state.validation);
   if (!$("#ruleModal").hidden) updateRuleModalLabels();
+  renderStarterGrid();
+  updateScenarioChrome();
+  if (!$("#proModal").hidden) {
+    renderCommercialState();
+    renderProRuns();
+  }
 }
 
 async function setLocale(locale) {
@@ -809,9 +1852,16 @@ async function setLocale(locale) {
 
 function showValidation(result = localValidate()) {
   state.validation = result;
+  if (state.dataOrigin === "sample" && result.invalid > 0) {
+    recordActivationEvent("guided_issue_seen").catch(() => {});
+  }
   const issues = result.issues || [];
   const configIssues = Array.isArray(result.configIssues) ? result.configIssues : [];
   const unconfirmedFields = [...new Set(mappingWarnings().map(field => field.template))];
+  const canApplySampleFix = state.dataOrigin === "sample"
+    && result.invalid > 0
+    && !state.sampleIssueFixed
+    && Boolean(currentStarterScenario()?.missingFix);
   const ok = result.invalid === 0 && configIssues.length === 0 && unconfirmedFields.length === 0;
   $("#modalIcon").textContent = ok ? "✓" : "!";
   $("#modalIcon").style.color = ok ? "var(--teal)" : "";
@@ -846,7 +1896,11 @@ function showValidation(result = localValidate()) {
   $("#modalGenerate").textContent = ok
     ? t("modal.generateGroups", { count: result.valid })
     : t("modal.generateValid", { count: result.valid });
-  $("#modalGenerate").disabled = result.canGenerate === false || state.templates.size === 0 || unconfirmedFields.length > 0;
+  $("#fixSampleIssue").hidden = !canApplySampleFix;
+  $("#modalGenerate").disabled = result.canGenerate === false
+    || state.templates.size === 0
+    || unconfirmedFields.length > 0
+    || (state.dataOrigin === "sample" && result.invalid > 0);
   $("#validationModal").hidden = false;
 }
 
@@ -861,6 +1915,9 @@ async function runValidation(openModal = true, snapshot = null) {
     if (!response.ok) throw await apiError(response, t("toast.validationFailed"));
     const result = await response.json();
     updateReadiness(result);
+    if (mappingWarnings().length === 0) {
+      recordActivationEvent("mappings_confirmed").catch(() => {});
+    }
     if (openModal) showValidation(result);
     return result;
   } catch (error) {
@@ -904,7 +1961,10 @@ function setBusy(busy) {
   state.busy = busy;
   $$("#generateTop, #generateSide, #modalGenerate").forEach(button => {
     const unavailable = button.id === "modalGenerate"
-      ? state.validation?.canGenerate === false || state.templates.size === 0 || mappingWarnings().length > 0
+      ? state.validation?.canGenerate === false
+        || state.templates.size === 0
+        || mappingWarnings().length > 0
+        || (state.dataOrigin === "sample" && Number(state.validation?.invalid || 0) > 0)
       : state.templates.size === 0;
     button.disabled = busy || unavailable;
   });
@@ -919,6 +1979,11 @@ async function generatePackage() {
     const snapshot = createWorkflowSnapshot();
     const result = await runValidation(false, snapshot);
     const settings = snapshot.payload.settings;
+    if (state.dataOrigin === "sample" && result.invalid > 0) {
+      showValidation(result);
+      showToast(t("starter.sampleBlocked"), t("starter.sampleBlockedCopy"));
+      return;
+    }
     if (result.canGenerate === false || snapshot.payload.unconfirmedFields.length) {
       throw new Error(
         result.configIssues?.[0]
@@ -927,6 +1992,7 @@ async function generatePackage() {
     }
     if (!result.valid && settings.stopOnMissing) throw new Error(t("toast.noValid"));
     if (!result.total) throw new Error(t("toast.noValid"));
+    const trackedBatch = await prepareTrackedBatch(snapshot, result);
     const response = await apiFetch("/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -940,6 +2006,7 @@ async function generatePackage() {
       ? skippedHeader
       : Math.max(0, Number(result.total || 0) - generatedCount);
     const blob = await response.blob();
+    if (generatedCount > 0) await completeTrackedBatch(trackedBatch, "artifact_generated");
     const disposition = response.headers.get("Content-Disposition") || "";
     const fallbackName = snapshot.payload.locale === "en" ? "DocFlow-Package" : "DocFlow-交付包";
     const filename = filenameFromDisposition(
@@ -955,6 +2022,7 @@ async function generatePackage() {
     } else {
       downloadBlob(blob, filename);
     }
+    if (generatedCount > 0) await completeTrackedBatch(trackedBatch, "package_saved");
     markRecentOutputAvailable();
     $("#validationModal").hidden = true;
     showToast(t("toast.packageDone"), t("toast.packageDoneSummary", {
@@ -965,6 +2033,9 @@ async function generatePackage() {
       if (index < 5) step.classList.add("complete");
     });
     $("#progressFill").style.width = "100%";
+    if (state.dataOrigin === "sample" && result.invalid === 0) {
+      showSampleCompletion(generatedCount);
+    }
   } catch (error) {
     showToast(t("toast.notGenerated"), error.message);
   } finally {
@@ -987,6 +2058,9 @@ async function importFile(file) {
     state.sourceRows = Array.isArray(payload.sourceRows)
       ? payload.sourceRows
       : state.rows.map((_row, index) => index + 2);
+    state.dataOrigin = "user";
+    state.projectOrigin = "user";
+    recordActivationEvent("user_data_selected").catch(() => {});
     for (const field of FIELD_CONFIG) {
       if (field.formula || field.condition) continue;
       const selected = state.mappings[field.template];
@@ -996,6 +2070,7 @@ async function importFile(file) {
     }
     state.validation = null;
     updateMetrics();
+    updateScenarioChrome();
     showToast(t("toast.dataLoaded"), t("toast.dataLoadedCopy", {
       rows: payload.count,
       fields: payload.headers.length
@@ -1014,8 +2089,17 @@ async function inspectTemplate(file) {
   if (!response.ok) throw await apiError(response, t("toast.templateReadFailed"));
   const payload = await response.json();
   if (!payload.id) throw new Error(t("toast.templateReadFailed"));
+  const requirementIndex = state.pendingTemplateBindIndex;
+  const requirement = requirementIndex >= 0
+    ? state.pendingTemplateRequirements[requirementIndex]
+    : null;
+  if (requirement && requirement.kind !== String(payload.kind || "").toUpperCase()) {
+    state.pendingTemplateBindIndex = -1;
+    throw new Error(t("recipe.bindTemplate", { kind: requirement.kind }));
+  }
   const template = {
     id: String(payload.id),
+    projectKey: requirement?.key || `custom.${String(payload.id).replace(/^template-/, "").replace(/[^a-z0-9_-]/gi, "").slice(0, 48)}`,
     filename: payload.filename || file.name,
     kind: String(payload.kind || "").toUpperCase(),
     fields: Array.isArray(payload.fields) ? payload.fields.map(field => String(field)) : [],
@@ -1025,8 +2109,19 @@ async function inspectTemplate(file) {
     message: payload.message || "",
     builtIn: false
   };
+  const alreadyPresent = state.templateCatalog.has(template.id);
   state.templateCatalog.set(template.id, template);
   state.templates.add(template.id);
+  if (requirement) {
+    state.pendingTemplateRequirements.splice(requirementIndex, 1);
+    for (const rule of [...state.computedFields, ...state.conditionalFields]) {
+      if (rule.scope === requirement.key) rule.scope = template.id;
+    }
+  }
+  state.pendingTemplateBindIndex = -1;
+  if (!alreadyPresent) state.userTemplateCount += 1;
+  state.projectOrigin = "user";
+  recordActivationEvent("user_template_selected").catch(() => {});
   for (const templateField of template.fields) {
     if (!Object.prototype.hasOwnProperty.call(state.mappings, templateField)) {
       state.mappings[templateField] = autoSourceFor(templateField);
@@ -1037,6 +2132,7 @@ async function inspectTemplate(file) {
   rebuildFieldConfig();
   renderMappingRows();
   updateReadiness(localValidate());
+  updateScenarioChrome();
   showToast(
     t("toast.templateAdded"),
     template.fields.length
@@ -1053,7 +2149,15 @@ async function inspectTemplates(files) {
       showToast(t("toast.templateImportFailed"), `${file.name}: ${error.message}`);
     }
   }
+  state.pendingTemplateBindIndex = -1;
   $("#templateInput").value = "";
+}
+
+function bindRecipeTemplate(index) {
+  if (!Number.isInteger(index) || !state.pendingTemplateRequirements[index]) return;
+  state.pendingTemplateBindIndex = index;
+  $("#templateInput").value = "";
+  $("#templateInput").click();
 }
 
 async function removeTemplate(templateId) {
@@ -1067,6 +2171,7 @@ async function removeTemplate(templateId) {
     if (!response.ok) throw await apiError(response, t("toast.templateReadFailed"));
     state.templates.delete(templateId);
     state.templateCatalog.delete(templateId);
+    state.userTemplateCount = Math.max(0, state.userTemplateCount - 1);
     state.validation = null;
     renderTemplateCards();
     rebuildFieldConfig();
@@ -1304,6 +2409,10 @@ function bindEvents() {
   $("#templateList").addEventListener("click", event => {
     const card = event.target.closest(".template-card");
     if (!card) return;
+    if (card.dataset.recipeRequirement != null) {
+      bindRecipeTemplate(Number(card.dataset.recipeRequirement));
+      return;
+    }
     if (event.target.closest(".remove-template")) {
       removeTemplate(card.dataset.template);
       return;
@@ -1315,6 +2424,10 @@ function bindEvents() {
     const card = event.target.closest(".template-card");
     if (!card) return;
     event.preventDefault();
+    if (card.dataset.recipeRequirement != null) {
+      bindRecipeTemplate(Number(card.dataset.recipeRequirement));
+      return;
+    }
     toggleTemplate(card.dataset.template);
   });
   $("#signatureUpload").addEventListener("click", () => $("#signatureInput").click());
@@ -1368,8 +2481,8 @@ function bindEvents() {
     showToast(t("toast.fieldInserted"), t("toast.fieldInsertedCopy"));
   }));
   $("#resetSettings").addEventListener("click", () => {
-    $("#filenamePattern").textContent = DEFAULT_FILENAME_PATTERNS[state.locale];
-    $("#folderPattern").textContent = "{{客户简称}}/{{报价编号}}";
+    $("#filenamePattern").textContent = defaultFilenamePattern();
+    $("#folderPattern").textContent = defaultFolderPattern();
     $("#skipBlank").checked = true;
     $("#stopOnMissing").checked = true;
     $("#validationReport").checked = true;
@@ -1400,13 +2513,114 @@ function bindEvents() {
     });
   });
   $("#helpBtn").addEventListener("click", () => showToast(t("toast.quickStart"), t("toast.quickStartCopy")));
-  $("#projectSwitch").addEventListener("click", () => showToast(t("toast.projectWorkspace"), t("toast.projectWorkspaceCopy")));
+  $("#projectSwitch").addEventListener("click", openProjectWorkspace);
+  $("#openPro").addEventListener("click", openProWorkspace);
+  $("#changeScenario").addEventListener("click", openStarterModal);
+  $("#starterGrid").addEventListener("click", event => {
+    const card = event.target.closest("[data-scenario]");
+    if (card) applyStarterScenario(card.dataset.scenario);
+  });
+  ["#startWithOwnFiles", "#useMyFiles", "#completeUseMyFiles"].forEach(selector => {
+    $(selector).addEventListener("click", beginOwnFiles);
+  });
+  $("#fixSampleIssue").addEventListener("click", applySampleFix);
+  $("#projectSave").addEventListener("click", () => saveCurrentProject(false));
+  $("#projectSaveAs").addEventListener("click", () => saveCurrentProject(true));
+  $("#projectOpen").addEventListener("click", () => openProjectFile());
+  $("#recipeExport").addEventListener("click", previewRecipeExport);
+  $("#recipeImport").addEventListener("click", importRecipeFile);
+  $("#recipeExportConfirm").addEventListener("click", confirmRecipeExport);
+  $("#activityExport").addEventListener("click", exportActivationSummary);
+  $("#activityClear").addEventListener("click", clearActivationSummary);
+  $("#proStartTrial").addEventListener("click", requestProTrial);
+  $("#proImportLicense").addEventListener("click", importProLicense);
+  $("#proSelectConfig").addEventListener("click", selectAutomationConfig);
+  $("#proRunOnce").addEventListener("click", runAutomationOnce);
+  $("#proStartWatch").addEventListener("click", () => startAutomation("watch"));
+  $("#proStartSchedule").addEventListener("click", () => startAutomation("schedule"));
+  $("#proRefreshRuns").addEventListener("click", refreshProRuns);
+  $("#proHistory").addEventListener("click", showAutomationHistory);
+  $("#proRunList").addEventListener("click", event => {
+    const button = event.target.closest("[data-stop-pro-run]");
+    if (button) stopAutomation(button.dataset.stopProRun, button.dataset.runKind);
+  });
+  $("#projectNewStarter").addEventListener("click", () => {
+    $("#projectModal").hidden = true;
+    openStarterModal();
+  });
+  $("#projectNameInput").addEventListener("input", event => {
+    state.projectName = event.target.value.slice(0, 120);
+    state.projectOrigin = "user";
+    updateScenarioChrome();
+  });
+  $("#recentProjectList").addEventListener("click", event => {
+    const button = event.target.closest("[data-recent-project]");
+    if (button) openProjectFile(button.dataset.recentProject);
+  });
+  $$('[data-close-project-modal]').forEach(button => {
+    button.addEventListener("click", () => { $("#projectModal").hidden = true; });
+  });
+  $("#projectModal").addEventListener("click", event => {
+    if (event.target === $("#projectModal")) $("#projectModal").hidden = true;
+  });
+  $$('[data-close-recipe-preview]').forEach(button => {
+    button.addEventListener("click", () => {
+      state.pendingRecipePayload = null;
+      $("#recipePreviewModal").hidden = true;
+    });
+  });
+  $("#recipePreviewModal").addEventListener("click", event => {
+    if (event.target === $("#recipePreviewModal")) {
+      state.pendingRecipePayload = null;
+      $("#recipePreviewModal").hidden = true;
+    }
+  });
+  $$('[data-close-pro]').forEach(button => {
+    button.addEventListener("click", () => { $("#proModal").hidden = true; });
+  });
+  $("#proModal").addEventListener("click", event => {
+    if (event.target === $("#proModal")) $("#proModal").hidden = true;
+  });
+  $$('[data-close-sample-complete]').forEach(button => {
+    button.addEventListener("click", () => { $("#sampleCompleteModal").hidden = true; });
+  });
+  $("#sampleCompleteModal").addEventListener("click", event => {
+    if (event.target === $("#sampleCompleteModal")) $("#sampleCompleteModal").hidden = true;
+  });
   $("#openRecent").addEventListener("click", openRecentOutput);
   $("#settingsBtn").addEventListener("click", () => showToast(t("toast.localEngine"), t("toast.localEngineCopy")));
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+      if (state.foregroundStartedAt != null) {
+        state.foregroundActiveMs += Math.max(0, Date.now() - state.foregroundStartedAt);
+        state.foregroundStartedAt = null;
+      }
+    } else if (state.foregroundStartedAt == null) {
+      state.foregroundStartedAt = Date.now();
+    }
+  });
   document.addEventListener("keydown", event => {
     if (event.key === "Escape") {
       $("#validationModal").hidden = true;
+      $("#sampleCompleteModal").hidden = true;
+      $("#projectModal").hidden = true;
+      state.pendingRecipePayload = null;
+      $("#recipePreviewModal").hidden = true;
+      $("#proModal").hidden = true;
+      try {
+        if (localStorage.getItem("docflow-onboarding-seen")) $("#starterModal").hidden = true;
+      } catch (_error) {
+        // Keep the modal state unchanged when storage is unavailable.
+      }
       if (!$("#ruleModal").hidden) closeRuleEditor();
+    }
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
+      event.preventDefault();
+      saveCurrentProject(event.shiftKey);
+    }
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "o") {
+      event.preventDefault();
+      openProjectFile();
     }
     if ((event.metaKey || event.ctrlKey) && event.key === "Enter") generatePackage();
   });
@@ -1420,9 +2634,21 @@ async function initializeApp() {
   } catch (error) {
     sessionError = error;
   }
+  let savedScenario = DEFAULT_STARTER_SCENARIO_ID;
+  let onboardingSeen = false;
+  try {
+    const stored = localStorage.getItem("docflow-starter-scenario");
+    if (STARTER_SCENARIOS.byId[stored]) savedScenario = stored;
+    onboardingSeen = Boolean(localStorage.getItem("docflow-onboarding-seen"));
+  } catch (_error) {
+    // First-run onboarding remains available without localStorage.
+  }
+  applyStarterScenario(savedScenario, { persist: false, close: false, refresh: false });
   bindEvents();
   rebuildFieldConfig();
   applyLocale();
+  updateMetrics();
+  if (!onboardingSeen) openStarterModal();
   if (sessionError) {
     $("#engineLabel").textContent = t("toast.sessionFailed");
     showToast(t("toast.sessionFailed"), sessionError.message);

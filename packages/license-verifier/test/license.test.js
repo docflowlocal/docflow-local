@@ -4,8 +4,11 @@ const assert = require("assert");
 const crypto = require("crypto");
 const {
   CLAIMS_SCHEMA,
+  CURRENT_CLAIMS_SCHEMA,
   DEFAULT_KEYRING,
   ENVELOPE_SCHEMA,
+  LEGACY_LICENSE_TYPE,
+  LICENSE_TYPES,
   LIMITS,
   PRODUCT,
   verifyLicense
@@ -25,8 +28,9 @@ const otherInstallationHash = crypto.createHash("sha256").update("other-installa
 
 function claims(overrides = {}) {
   return {
-    schema: CLAIMS_SCHEMA,
+    schema: CURRENT_CLAIMS_SCHEMA,
     licenseId: "lic_test_001",
+    licenseType: "subscription",
     product: PRODUCT,
     edition: "pro",
     issuedAt: "2026-01-01T00:00:00.000Z",
@@ -38,6 +42,20 @@ function claims(overrides = {}) {
     installationHashes: [installationHash],
     ...overrides
   };
+}
+
+function legacyClaims(overrides = {}) {
+  const value = claims(overrides);
+  value.schema = CLAIMS_SCHEMA;
+  delete value.licenseType;
+  return value;
+}
+
+function perpetualClaims(overrides = {}) {
+  const value = claims({ licenseType: "perpetual", ...overrides });
+  delete value.expiresAt;
+  delete value.graceUntil;
+  return value;
 }
 
 function envelopeFor(payloadClaims, { signingKey = privateKey, keyId = "test-v1", rawPayload } = {}) {
@@ -91,14 +109,100 @@ test("valid signed license unlocks only claimed Pro features", () => {
   assert.strictEqual(result.valid, true);
   assert.strictEqual(result.status, "active");
   assert.strictEqual(result.claims.licenseId, "lic_test_001");
+  assert.strictEqual(result.claims.licenseType, "subscription");
   assert.strictEqual(result.policy.effectiveEdition, "pro");
   assert.strictEqual(hasFeature(result.policy, "projects.history"), true);
   assert.strictEqual(hasFeature(result.policy, "automation.scheduled"), false);
   assert.strictEqual(hasFeature(result.policy, "documents.import"), true);
-  assert.strictEqual(hasFeature(result.policy, "projects.saved"), false);
+  assert.strictEqual(hasFeature(result.policy, "projects.saved"), true);
+  assert.strictEqual(hasFeature(result.policy, "recipes.safeExport"), true);
+  assert.strictEqual(hasFeature(result.policy, "automation.localApi"), true);
+  assert.strictEqual(hasFeature(result.policy, "automation.unattendedApi"), false);
+  assert.strictEqual(hasFeature(result.policy, "automation.retries"), false);
+  assert.strictEqual(hasFeature(result.policy, "rules.advanced"), false);
   assert.strictEqual(hasFeature(result.policy, "automation.cli"), true);
   assert(Object.isFrozen(result.claims));
   assert(Object.isFrozen(result.policy.features));
+});
+
+test("legacy v1 licenses remain valid and are interpreted as subscriptions", () => {
+  const result = verify(envelopeFor(legacyClaims()));
+  assert.strictEqual(result.valid, true);
+  assert.strictEqual(result.claims.schema, CLAIMS_SCHEMA);
+  assert.strictEqual(result.claims.licenseType, LEGACY_LICENSE_TYPE);
+  assert.strictEqual(LEGACY_LICENSE_TYPE, "subscription");
+
+  const ambiguousLegacy = legacyClaims();
+  ambiguousLegacy.licenseType = "trial";
+  assert.strictEqual(
+    verify(envelopeFor(ambiguousLegacy)).code,
+    "claims_schema_invalid"
+  );
+});
+
+test("v2 licenses require a known explicit license type", () => {
+  const missing = claims();
+  delete missing.licenseType;
+  assert.strictEqual(verify(envelopeFor(missing)).code, "claims_schema_invalid");
+  assert.strictEqual(
+    verify(envelopeFor(claims({ licenseType: "evaluation" }))).code,
+    "license_type_invalid"
+  );
+  const subscriptionWithoutExpiry = claims();
+  delete subscriptionWithoutExpiry.expiresAt;
+  assert.strictEqual(
+    verify(envelopeFor(subscriptionWithoutExpiry)).code,
+    "expires_at_invalid"
+  );
+  assert.deepStrictEqual(LICENSE_TYPES, ["trial", "subscription", "perpetual"]);
+});
+
+test("trial licenses are installation-bound, have no grace, and are capped at 21 days", () => {
+  const validTrial = claims({
+    licenseType: "trial",
+    expiresAt: "2026-01-22T00:00:00.000Z"
+  });
+  delete validTrial.graceUntil;
+  const active = verify(envelopeFor(validTrial), { now: "2026-01-21T23:59:59.999Z" });
+  assert.strictEqual(active.valid, true);
+  assert.strictEqual(active.claims.licenseType, "trial");
+  assert.strictEqual(
+    verify(envelopeFor({ ...validTrial, installationHashes: [] }), {
+      now: "2026-01-10T00:00:00.000Z",
+      installationHash: null
+    }).code,
+    "trial_installation_required"
+  );
+  assert.strictEqual(
+    verify(envelopeFor({
+      ...validTrial,
+      expiresAt: "2026-01-22T00:00:00.001Z"
+    }), { now: "2026-01-10T00:00:00.000Z" }).code,
+    "trial_duration_invalid"
+  );
+  assert.strictEqual(
+    verify(envelopeFor({
+      ...validTrial,
+      graceUntil: "2026-01-23T00:00:00.000Z"
+    }), { now: "2026-01-10T00:00:00.000Z" }).code,
+    "license_type_dates_invalid"
+  );
+});
+
+test("perpetual licenses omit expiry and remain version-capped", () => {
+  const envelope = envelopeFor(perpetualClaims());
+  const active = verify(envelope, { now: "2099-01-01T00:00:00.000Z" });
+  assert.strictEqual(active.valid, true);
+  assert.strictEqual(active.status, "active");
+  assert.strictEqual(active.claims.licenseType, "perpetual");
+  assert.strictEqual(
+    verify(envelope, { now: "2099-01-01T00:00:00.000Z", appVersion: "2.0.0" }).status,
+    "version_blocked"
+  );
+  assert.strictEqual(
+    verify(envelopeFor(claims({ licenseType: "perpetual" }))).code,
+    "license_type_dates_invalid"
+  );
 });
 
 test("build ceiling caps a valid Business license", () => {
@@ -266,6 +370,34 @@ test("unknown, duplicate, and out-of-edition features are rejected", () => {
 test("feature policy helpers enforce Community defaults and programmer input", () => {
   assert(Object.isFrozen(FEATURE_CATALOG));
   assert.deepStrictEqual(communityPolicy("business").features, COMMUNITY_FEATURES);
+  for (const feature of [
+    "projects.saved",
+    "recipes.safeExport",
+    "templates.multiple",
+    "automation.cli",
+    "automation.localApi"
+  ]) {
+    assert.strictEqual(FEATURE_CATALOG[feature].minimumEdition, "community");
+    assert.strictEqual(hasFeature(communityPolicy(), feature), true);
+  }
+  const proPolicy = resolveFeaturePolicy({
+    licensedEdition: "pro",
+    licensedFeatures: [
+      "rules.advanced",
+      "automation.unattendedApi",
+      "automation.retries"
+    ],
+    buildCeiling: "pro"
+  });
+  for (const feature of [
+    "rules.advanced",
+    "automation.unattendedApi",
+    "automation.retries"
+  ]) {
+    assert.strictEqual(FEATURE_CATALOG[feature].minimumEdition, "pro");
+    assert.strictEqual(hasFeature(communityPolicy(), feature), false);
+    assert.strictEqual(hasFeature(proPolicy, feature), true);
+  }
   assert.throws(
     () => resolveFeaturePolicy({
       licensedEdition: "pro",

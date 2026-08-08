@@ -16,26 +16,37 @@ const DEFAULT_BUILD_CEILING = "community";
 const FEATURE_CATALOG = Object.freeze({
   "documents.import": Object.freeze({ minimumEdition: "community" }),
   "templates.mapping": Object.freeze({ minimumEdition: "community" }),
+  "templates.multiple": Object.freeze({ minimumEdition: "community" }),
   "rules.edit": Object.freeze({ minimumEdition: "community" }),
   "documents.batchGenerate": Object.freeze({ minimumEdition: "community" }),
   "validation.preflight": Object.freeze({ minimumEdition: "community" }),
   "packages.delivery": Object.freeze({ minimumEdition: "community" }),
+  "projects.saved": Object.freeze({ minimumEdition: "community" }),
+  "recipes.safeExport": Object.freeze({ minimumEdition: "community" }),
   "templates.library": Object.freeze({ minimumEdition: "community" }),
   "automation.cli": Object.freeze({ minimumEdition: "community" }),
+  "automation.localApi": Object.freeze({ minimumEdition: "community" }),
 
   "pdf.visualDesigner": Object.freeze({ minimumEdition: "pro" }),
   "projects.history": Object.freeze({ minimumEdition: "pro" }),
   "data.relational": Object.freeze({ minimumEdition: "pro" }),
+  "rules.advanced": Object.freeze({ minimumEdition: "pro" }),
   "folders.watched": Object.freeze({ minimumEdition: "pro" }),
   "automation.scheduled": Object.freeze({ minimumEdition: "pro" }),
+  // Kept as a stable legacy entitlement identifier. New issuers should grant
+  // automation.unattendedApi for background/API orchestration instead.
   "automation.apiTrigger": Object.freeze({ minimumEdition: "pro" }),
+  "automation.unattendedApi": Object.freeze({ minimumEdition: "pro" }),
+  "automation.retries": Object.freeze({ minimumEdition: "pro" }),
   "audit.reports": Object.freeze({ minimumEdition: "pro" }),
   "approvals.checkpoints": Object.freeze({ minimumEdition: "pro" }),
   "connectors.commercial": Object.freeze({ minimumEdition: "pro" }),
   "support.priority": Object.freeze({ minimumEdition: "pro" }),
 
   "templates.sharedLibrary": Object.freeze({ minimumEdition: "business" }),
+  "governance.rbac": Object.freeze({ minimumEdition: "business" }),
   "deployment.controls": Object.freeze({ minimumEdition: "business" }),
+  "licensing.centralized": Object.freeze({ minimumEdition: "business" }),
   "licensing.business": Object.freeze({ minimumEdition: "business" })
 });
 

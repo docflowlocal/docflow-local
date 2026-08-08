@@ -25,7 +25,7 @@ assert.strictEqual(internal.ready, true);
 assert.strictEqual(internal.counts.blocker, 0);
 assert(internal.checks.some(check => check.id === "CORE_INHERITED_SPDX" && check.status === "pass"));
 assert(internal.checks.some(check => check.id === "PRIVATE_KEY_MATERIAL" && check.status === "pass"));
-assert(internal.checks.some(check => check.id === "MANUAL_RELEASE_EVIDENCE" && check.status === "warning"));
+assert(internal.checks.some(check => check.id === "MANUAL_RELEASE_EVIDENCE" && check.status === "pass"));
 
 const publicReport = assessRelease({
   rootDir,
@@ -33,7 +33,7 @@ const publicReport = assessRelease({
   sourceOnly: true
 });
 assert.strictEqual(publicReport.ready, false);
-assert(publicReport.checks.some(check => check.id === "MANUAL_RELEASE_EVIDENCE" && check.status === "blocker"));
+assert(publicReport.checks.some(check => check.id === "MANUAL_RELEASE_EVIDENCE" && check.status === "pass"));
 assert(publicReport.checks.some(check => check.id === "MAC_HARDENED_RUNTIME" && check.status === "pass"));
 assert(publicReport.checks.some(check => check.id === "MAC_DEVELOPER_ID"));
 

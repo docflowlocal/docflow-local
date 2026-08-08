@@ -768,6 +768,93 @@ function attachmentHtml(row, locale = "zh-CN") {
   </style></head><body><header><strong>${L.title}</strong><span>${escapeHtml(row["报价编号"] || "—")}</span></header><main><h1>${escapeHtml(row["产品名称"] || L.scope)}</h1><div class="details">${L.customer}: ${escapeHtml(row["客户名称"] || row["客户简称"] || "—")}<br>${L.description}: ${escapeHtml(row["产品说明"] || L.defaultDescription)}<br>${L.schedule}: ${escapeHtml(row["交付周期"] || L.defaultSchedule)}<br>${L.owner}: ${escapeHtml(row["负责人"] || L.defaultOwner)}<br>${L.notes}: ${escapeHtml(row["备注"] || L.defaultNotes)}</div></main><section class="check"><strong>${L.checklist}</strong>${L.checks.map(check => `<div class="item"><i class="box"></i>${check}</div>`).join("")}</section><footer><span>${L.generated}</span><span>${L.appendix}</span></footer></body></html>`;
 }
 
+const STARTER_DOCUMENTS = Object.freeze({
+  engineering: {
+    primary: {
+      title: { "zh-CN": "工程移交封面", en: "Engineering Handover Cover" },
+      subtitle: { "zh-CN": "项目交付与修订确认", en: "Project delivery and revision confirmation" },
+      fields: ["项目编号", "项目名称", "建设单位", "专业", "文件编号", "文件名称", "修订号", "移交日期"]
+    },
+    appendix: {
+      title: { "zh-CN": "文件移交登记表", en: "Document Handover Register" },
+      subtitle: { "zh-CN": "文件、责任人与遗留事项", en: "Documents, owners, and open items" },
+      fields: ["文件编号", "文件名称", "专业", "修订号", "负责人", "遗留问题数", "需要整改"]
+    },
+    suffix: { "zh-CN": "文件移交登记表", en: "handover-register" }
+  },
+  hr: {
+    primary: {
+      title: { "zh-CN": "员工入职 Offer", en: "Employment Offer" },
+      subtitle: { "zh-CN": "岗位、薪酬与入职信息", en: "Role, compensation, and start details" },
+      fields: ["员工编号", "员工姓名", "部门", "职位", "入职日期", "工作地点", "月薪", "年薪", "直属经理"]
+    },
+    appendix: {
+      title: { "zh-CN": "入职材料检查表", en: "Onboarding Checklist" },
+      subtitle: { "zh-CN": "提交状态与负责人确认", en: "Submission status and manager confirmation" },
+      fields: ["员工编号", "员工姓名", "部门", "联系邮箱", "材料齐全", "需要补充材料", "直属经理"]
+    },
+    suffix: { "zh-CN": "入职材料检查表", en: "onboarding-checklist" }
+  },
+  compliance: {
+    primary: {
+      title: { "zh-CN": "合规申报封面", en: "Compliance Filing Cover" },
+      subtitle: { "zh-CN": "主体、申报与证书信息", en: "Entity, filing, and certificate details" },
+      fields: ["主体简称", "主体名称", "申报编号", "合规类型", "证书编号", "证书到期日", "负责人", "复核日期"]
+    },
+    appendix: {
+      title: { "zh-CN": "合规证据清单", en: "Compliance Evidence Checklist" },
+      subtitle: { "zh-CN": "材料完整性与复核状态", en: "Evidence completeness and review status" },
+      fields: ["申报编号", "主体名称", "应收材料数", "已收材料数", "完成率", "材料齐全", "负责人", "复核日期"]
+    },
+    suffix: { "zh-CN": "合规证据清单", en: "evidence-checklist" }
+  }
+});
+
+function starterText(value, locale) {
+  return value?.[locale] || value?.["zh-CN"] || value?.en || "";
+}
+
+function starterDocumentHtml(row, scenarioId, kind, locale = "zh-CN") {
+  const scenario = STARTER_DOCUMENTS[scenarioId];
+  const document = scenario?.[kind];
+  if (!document) return null;
+  const title = starterText(document.title, locale);
+  const subtitle = starterText(document.subtitle, locale);
+  const generated = locale === "en"
+    ? "Generated and preflighted locally. No customer data was uploaded."
+    : "已在本机生成并完成预检，客户数据未上传。";
+  const empty = locale === "en" ? "Not provided" : "未提供";
+  const checklist = locale === "en"
+    ? ["Required fields passed preflight", "Naming rules applied", "Delivery folder created", "Files passed integrity checks"]
+    : ["必填字段通过预检", "已应用命名规则", "已建立交付目录", "文件通过完整性校验"];
+  const rows = document.fields.map(field => `<tr><th>${escapeHtml(field)}</th><td>${escapeHtml(valueOr(row[field], empty))}</td></tr>`).join("");
+  return `<!doctype html><html><head><meta charset="utf-8"><style>${baseStyles()}
+    header { height: 42mm; padding: 11mm 18mm; color: white; background: #12243a; }
+    header p { margin: 2mm 0 0; color: #b9c7d5; font-size: 10px; }
+    h1 { margin: 0; font-size: 24px; }
+    main { padding: 14mm 18mm 0; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 10px; }
+    th, td { padding: 4mm; border-bottom: 1px solid #dce4e9; vertical-align: top; }
+    th { width: 34%; color: #65778a; background: #f4f7f8; text-align: left; font-weight: 600; }
+    td { color: #172b3f; }
+    .check { margin-top: 12mm; padding: 7mm; border: 1px solid #d5e3e4; border-radius: 4mm; background: #eff8f7; }
+    .check strong { display: block; margin-bottom: 4mm; font-size: 11px; }
+    .check span { display: inline-block; width: 49%; color: #42576b; font-size: 9px; line-height: 2.2; }
+    .check i { display: inline-grid; width: 4mm; height: 4mm; margin-right: 2mm; border-radius: 50%; color: white; background: #0b918b; place-items: center; font-style: normal; font-size: 7px; }
+    footer { position: absolute; left: 18mm; right: 18mm; bottom: 14mm; display: flex; justify-content: space-between; color: #8695a4; font-size: 7px; }
+  </style></head><body><header><h1>${escapeHtml(title)}</h1><p>${escapeHtml(subtitle)}</p></header><main><table>${rows}</table><section class="check"><strong>${locale === "en" ? "Delivery readiness" : "交付准备度"}</strong>${checklist.map(item => `<span><i>✓</i>${escapeHtml(item)}</span>`).join("")}</section></main><footer><span>DOCFLOW LOCAL · PRIVATE BY DESIGN</span><span>${escapeHtml(generated)}</span></footer></body></html>`;
+}
+
+function starterTemplateName(scenarioId, kind, locale) {
+  const document = STARTER_DOCUMENTS[scenarioId]?.[kind];
+  return document ? starterText(document.title, locale) : null;
+}
+
+function starterTemplateSuffix(scenarioId, locale) {
+  return starterText(STARTER_DOCUMENTS[scenarioId]?.suffix, locale)
+    || (locale === "en" ? "project-appendix" : "项目附件");
+}
+
 function csvCell(value) {
   const text = String(value ?? "");
   const safe = /^\s*[=+\-@]/.test(text) || /^[\t\r]/.test(text) ? `'${text}` : text;
@@ -776,6 +863,9 @@ function csvCell(value) {
 
 async function generateBundle(payload, renderPdf) {
   const locale = payload.locale === "en" ? "en" : "zh-CN";
+  const starterScenario = Object.prototype.hasOwnProperty.call(STARTER_DOCUMENTS, payload.starterScenario)
+    ? payload.starterScenario
+    : "trade";
   const settings = payload.settings || {};
   const assetError = settingsAssetError(settings);
   if (assetError) throw new Error(`图片资源校验失败：${assetError}`);
@@ -818,9 +908,9 @@ async function generateBundle(payload, renderPdf) {
   const templates = [];
   for (const id of requestedTemplates) {
     if (id === "quote") {
-      templates.push({ id, kind: "BUILTIN", filename: locale === "en" ? "Standard Quotation" : "标准报价单", builtIn: "quote" });
+      templates.push({ id, kind: "BUILTIN", filename: starterTemplateName(starterScenario, "primary", locale) || (locale === "en" ? "Standard Quotation" : "标准报价单"), builtIn: "quote" });
     } else if (id === "attachment") {
-      templates.push({ id, kind: "BUILTIN", filename: locale === "en" ? "Project Appendix" : "项目附件", builtIn: "attachment" });
+      templates.push({ id, kind: "BUILTIN", filename: starterTemplateName(starterScenario, "appendix", locale) || (locale === "en" ? "Project Appendix" : "项目附件"), builtIn: "attachment" });
     } else {
       const template = await resolveTemplate(id);
       if (!template?.data) throw new Error(`模板 ${id} 已失效，请重新添加`);
@@ -962,10 +1052,11 @@ async function generateBundle(payload, renderPdf) {
         let sourceDocx = null;
         let suffix = "";
         if (template.builtIn === "quote") {
-          pdf = await renderers.renderHtmlToPdf(await quoteHtml(row, settings.signature || "", locale));
+          const starterHtml = starterDocumentHtml(row, starterScenario, "primary", locale);
+          pdf = await renderers.renderHtmlToPdf(starterHtml || await quoteHtml(row, settings.signature || "", locale));
         } else if (template.builtIn === "attachment") {
-          suffix = locale === "en" ? "project-appendix" : "项目附件";
-          pdf = await renderers.renderHtmlToPdf(attachmentHtml(row, locale));
+          suffix = starterTemplateSuffix(starterScenario, locale);
+          pdf = await renderers.renderHtmlToPdf(starterDocumentHtml(row, starterScenario, "appendix", locale) || attachmentHtml(row, locale));
         } else if (String(template.kind).toUpperCase() === "DOCX") {
           suffix = safeComponent(path.parse(template.filename).name, locale === "en" ? "document" : "文档");
           const rendered = await renderDocxTemplate(template.data, row, settings);
@@ -1076,6 +1167,7 @@ async function generateBundle(payload, renderPdf) {
     product: "DocFlow Local Desktop",
     version: APP_VERSION,
     locale,
+    starterScenario,
     generatedAt: new Date().toISOString(),
     privacy: "All processing completed locally.",
     input: {

@@ -28,7 +28,13 @@ The roadmap communicates direction, not a delivery guarantee.
 
 ## Community Edition next
 
-- Reusable local project files for mappings, rules, templates, and output settings.
+- Reusable local project files for mappings, rules, templates, and output settings;
+  save/open remains a permanent Community capability, distinct from paid run history.
+- Privacy-reviewed shareable recipe format, separate from local project files,
+  with no source rows, original filenames, raw custom templates, customer literals,
+  signatures, image assets, or generated content.
+- Four first-run scenario packs with guided preflight repair and a 3–5 minute
+  sample-to-delivery onboarding path.
 - Richer import diagnostics, data previews, and duplicate-record handling.
 - Community template schema, examples, and a local template starter wizard.
 - More DOCX compatibility fixtures and documented rendering profiles.
@@ -50,6 +56,15 @@ The roadmap communicates direction, not a delivery guarantee.
   connectors for unattended workflows.
 - Project history UI, audit exports, approval workflow UI, offline Pro
   licensing, and priority support.
+- The public verifier now defines explicit v2 `trial`, `subscription`, and
+  `perpetual` license types while retaining v1 verification compatibility.
+  Trial issuance/activation services, secure client storage, and commercial UI
+  remain implementation work; a trial may start only after real activation and
+  explicit user confirmation.
+
+Activation, PQL, north-star, trial-state, and optional-telemetry privacy
+contracts are frozen in
+[docs/activation-and-telemetry.md](docs/activation-and-telemetry.md).
 
 ## Business and Hub
 
