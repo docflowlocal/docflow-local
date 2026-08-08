@@ -1,0 +1,2 @@
+reportName,periodStart,periodEnd,preparedBy,metrics,totalSales,growthRate,showCommentary,commentary
+Demo Regional Sales,2026-06-01,2026-06-30,Casey Kim,"[{""metric"":""Orders"",""currentValue"":128,""previousValue"":115,""changeRate"":0.113},{""metric"":""Average order value"",""currentValue"":342.5,""previousValue"":329.8,""changeRate"":0.039}]",43840,0.086,true,Sanitized demonstration values; no production data

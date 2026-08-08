@@ -1,0 +1,29 @@
+{
+  "rows": [
+    {
+      "certificateId": "CERT-DEMO-001",
+      "recipientName": "Alex Morgan",
+      "courseName": "Workplace Safety Basics",
+      "issuedAt": "2026-07-18",
+      "achievements": [
+        { "achievement": "Completed all learning modules" },
+        { "achievement": "Passed the practical review" }
+      ],
+      "showScore": true,
+      "score": 94.5,
+      "verificationUrl": "https://example.invalid/verify/CERT-DEMO-001"
+    },
+    {
+      "certificateId": "CERT-DEMO-002",
+      "recipientName": "Jamie Chen",
+      "courseName": "Workplace Safety Basics",
+      "issuedAt": "2026-07-18",
+      "achievements": [
+        { "achievement": "Completed all learning modules" }
+      ],
+      "showScore": false,
+      "score": "",
+      "verificationUrl": "https://example.invalid/verify/CERT-DEMO-002"
+    }
+  ]
+}

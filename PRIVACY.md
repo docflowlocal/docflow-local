@@ -1,6 +1,6 @@
 # Privacy Policy for the Community Edition
 
-Last updated: 2026-07-21
+Last updated: 2026-08-08
 
 DocFlow Local is designed to process customer documents on the user's computer.
 
@@ -16,6 +16,24 @@ DocFlow Local is designed to process customer documents on the user's computer.
 The Community Edition may eventually check for signed software updates. Any update request must be documented and must not include document names, field values, customer names, or generated content.
 
 Usage analytics are not enabled in the current Community Edition. If optional diagnostics are introduced, they must be opt-in, documented, and exclude document content and identifying file metadata.
+
+A future release may keep a bounded local-only milestone ledger to resume
+onboarding, deduplicate successful batches, decide whether to offer a Pro
+trial, and show value on the same device. A local ledger is not permission to
+transmit data. It must use the allowlist, retention controls, and the controls
+to inspect, export, and clear data defined in
+[Activation, qualification, trial, and telemetry contract](docs/activation-and-telemetry.md).
+
+Any future telemetry sender must remain disabled until the user makes a
+separate, informed opt-in choice. Uploaded diagnostics may contain only the
+daily aggregate fields in that contract. In particular, DocFlow must not send
+file or folder names, paths, source rows, customer values, field or column
+names, mappings, formulas, template contents, generated content, document
+counts, workflow/input/template hashes, license identifiers, or hardware
+identifiers.
+
+Starting a trial, asking for sales contact, and opting into product diagnostics
+are separate choices. None implies either of the others.
 
 ## Website
 

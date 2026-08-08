@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src data: blob:; font-src data: blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+    >
+    <meta name="color-scheme" content="light">
+    <title>DocFlow Local DOCX renderer</title>
+    <style>
+      @page {
+        margin: 0;
+      }
+
+      html,
+      body {
+        min-height: 100%;
+        margin: 0;
+        background: #fff;
+      }
+
+      #document-container {
+        min-height: 100%;
+      }
+
+      .docx-wrapper {
+        padding: 0 !important;
+        background: #fff !important;
+      }
+
+      .docx-wrapper > section.docx {
+        margin: 0 auto !important;
+        box-shadow: none !important;
+        break-after: page;
+      }
+
+      .docx-wrapper > section.docx:last-child {
+        break-after: auto;
+      }
+
+      @media print {
+        html,
+        body,
+        #document-container,
+        .docx-wrapper {
+          width: auto !important;
+          min-height: 0 !important;
+          overflow: visible !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="style-container" hidden></div>
+    <main id="document-container" aria-label="Rendered Word document"></main>
+    <script src="./docx-render.js"></script>
+  </body>
+</html>

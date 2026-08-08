@@ -5,12 +5,15 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "dev": "npm run build && wrangler dev",
+    "check:seo": "npm run build && node scripts/check-seo.mjs",
+    "indexnow:dry": "npm run build && node scripts/submit-indexnow.mjs --dry-run",
+    "indexnow": "node scripts/submit-indexnow.mjs",
+    "dev": "npm run build && wrangler dev --config wrangler.workers-dev.jsonc",
     "deploy:preview": "npm run build && wrangler deploy --config wrangler.workers-dev.jsonc",
     "deploy": "npm run build && wrangler deploy",
     "deploy:dry": "npm run build && wrangler deploy --dry-run"
   },
   "devDependencies": {
-    "wrangler": "^4.112.0"
+    "wrangler": "^4.114.0"
   }
 }

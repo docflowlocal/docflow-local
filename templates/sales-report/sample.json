@@ -1,0 +1,18 @@
+{
+  "rows": [
+    {
+      "reportName": "Demo Regional Sales",
+      "periodStart": "2026-06-01",
+      "periodEnd": "2026-06-30",
+      "preparedBy": "Casey Kim",
+      "metrics": [
+        { "metric": "Orders", "currentValue": 128, "previousValue": 115, "changeRate": 0.113 },
+        { "metric": "Average order value", "currentValue": 342.5, "previousValue": 329.8, "changeRate": 0.039 }
+      ],
+      "totalSales": 43840,
+      "growthRate": 0.086,
+      "showCommentary": true,
+      "commentary": "Sanitized demonstration values; no production data"
+    }
+  ]
+}

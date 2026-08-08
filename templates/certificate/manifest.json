@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "certificate",
+  "name": "Starter completion certificate",
+  "version": "1.0.0",
+  "license": "CC-BY-4.0",
+  "creator": "DocFlow Local Contributors",
+  "attribution": "DocFlow Local starter template — https://docflowlocal.com",
+  "locale": "en",
+  "template": "starter.docx",
+  "sample": "sample.csv",
+  "filenamePattern": "{{certificateId}}-{{recipientName}}",
+  "fields": [
+    { "name": "certificateId", "type": "string", "required": true },
+    { "name": "recipientName", "type": "string", "required": true },
+    { "name": "courseName", "type": "string", "required": true },
+    { "name": "issuedAt", "type": "date", "required": true },
+    {
+      "name": "achievements",
+      "type": "array",
+      "required": true,
+      "fields": [
+        { "name": "achievement", "type": "string", "required": true }
+      ]
+    },
+    { "name": "showScore", "type": "boolean", "required": false },
+    { "name": "score", "type": "number", "required": false },
+    { "name": "verificationUrl", "type": "string", "required": true }
+  ]
+}

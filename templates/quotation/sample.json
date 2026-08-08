@@ -1,0 +1,25 @@
+{
+  "rows": [
+    {
+      "quoteNumber": "QT-DEMO-001",
+      "quoteDate": "2026-07-15",
+      "customerName": "Northwind Demo Ltd",
+      "customerEmail": "billing@example.invalid",
+      "items": [
+        { "description": "Demo safety gloves", "quantity": 12, "unitPrice": 8.5, "lineTotal": 102 },
+        { "description": "Demo storage bins", "quantity": 4, "unitPrice": 24, "lineTotal": 96 }
+      ],
+      "showFlatItem": false,
+      "itemDescription": "",
+      "itemQuantity": "",
+      "itemUnitPrice": "",
+      "itemLineTotal": "",
+      "subtotal": 198,
+      "showDiscount": true,
+      "discount": 10,
+      "taxRate": 0.08,
+      "total": 203.04,
+      "notes": "Sanitized demonstration data only"
+    }
+  ]
+}

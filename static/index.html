@@ -25,11 +25,12 @@
         <p data-i18n="nav.workspace">工作区</p>
         <button class="nav-item active" data-target="overview"><svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zm10 0h6v6h-6zM4 14h6v6H4zm10 0h6v6h-6z"/></svg><span data-i18n="nav.overview">流程总览</span></button>
         <button class="nav-item" data-target="dataSection"><svg viewBox="0 0 24 24"><path d="M4 5c0-1 3.6-2 8-2s8 1 8 2-3.6 2-8 2-8-1-8-2Zm0 0v6c0 1 3.6 2 8 2s8-1 8-2V5M4 11v6c0 1 3.6 2 8 2s8-1 8-2v-6"/></svg><span data-i18n="nav.data">数据源</span><em id="navRowCount">8</em></button>
-        <button class="nav-item" data-target="templateSection"><svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7zM14 3v5h5M10 13h5m-5 4h5"/></svg><span data-i18n="nav.templates">模板组合</span><em>2</em></button>
+        <button class="nav-item" data-target="templateSection"><svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7zM14 3v5h5M10 13h5m-5 4h5"/></svg><span data-i18n="nav.templates">模板组合</span><em id="navTemplateCount">2</em></button>
         <button class="nav-item" data-target="mappingSection"><svg viewBox="0 0 24 24"><path d="M8 7h12M4 7h.01M8 12h12M4 12h.01M8 17h12M4 17h.01"/></svg><span data-i18n="nav.fields">字段与规则</span></button>
         <button class="nav-item" data-target="outputSection"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 19h14"/></svg><span data-i18n="nav.generate">生成与校验</span></button>
         <p data-i18n="nav.delivery">交付</p>
-        <button class="nav-item" id="openRecent"><svg viewBox="0 0 24 24"><path d="M4 7h6l2 2h8v10H4z"/></svg><span data-i18n="nav.packages">交付包</span><em>3</em></button>
+        <button class="nav-item" id="openRecent"><svg viewBox="0 0 24 24"><path d="M4 7h6l2 2h8v10H4z"/></svg><span data-i18n="nav.packages">交付包</span><em id="recentPackageCount" hidden>0</em></button>
+        <button class="nav-item pro-nav-item" id="openPro"><svg viewBox="0 0 24 24"><path d="M5 18V9m7 9V5m7 13v-6M3 20h18"/></svg><span data-i18n="pro.nav">Pro 自动化</span><em>PRO</em></button>
       </nav>
 
       <div class="privacy-card">
@@ -44,6 +45,14 @@
         <div><p class="eyebrow" data-i18n="hero.eyebrow">项目 / QUOTE PACKAGE · Q3</p><h1 data-i18n="hero.title">季度报价交付包</h1><p class="subtitle" data-i18n="hero.subtitle">把客户数据映射到报价模板，校验后一次生成全部交付文件。</p></div>
         <div class="top-actions"><button class="language-toggle" id="languageToggle" aria-label="Switch to English" title="Switch to English"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.4 2.5 3.7 5.5 3.7 9S14.4 18.5 12 21M12 3c-2.4 2.5-3.7 5.5-3.7 9s1.3 6.5 3.7 9"/></svg><span id="languageToggleLabel">EN</span></button><button class="icon-btn" id="helpBtn" aria-label="帮助" data-i18n-aria="actions.help">?</button><button class="btn secondary" id="validateTop" data-i18n="actions.validate">运行校验</button><button class="btn primary" id="generateTop"><span data-i18n="actions.generate">生成交付包</span><svg viewBox="0 0 20 20"><path d="m8 5 5 5-5 5"/></svg></button></div>
       </header>
+
+      <section class="starter-progress" id="starterProgress" aria-live="polite">
+        <div class="starter-progress-copy">
+          <span class="starter-badge" data-i18n="starter.sampleBadge">安全样例</span>
+          <div><strong id="starterProgressTitle" data-i18n="starter.progressTitle">先完成样例包，再换成你的文件</strong><p id="starterProgressCopy" data-i18n="starter.progressCopy">运行预检，修复故意留下的一个缺失字段，然后生成并保存交付包。</p></div>
+        </div>
+        <div class="starter-progress-actions"><button class="btn secondary" id="changeScenario" data-i18n="starter.changeScenario">更换场景</button><button class="btn primary" id="useMyFiles" data-i18n="starter.useMyFiles">换成我的文件</button></div>
+      </section>
 
       <section class="workflow" aria-label="工作流程" data-i18n-aria="workflow.aria">
         <div class="workflow-progress"><span id="progressFill"></span></div>
@@ -62,7 +71,7 @@
               <div><p class="section-kicker" data-i18n="data.kicker">数据源</p><h2 id="dataFilename">客户报价清单_Q3.csv</h2></div>
               <div class="heading-actions"><span class="sync-label"><i></i><span data-i18n="data.loaded">已加载</span></span><button class="text-btn" id="replaceData" data-i18n="data.replace">替换文件</button></div>
             </div>
-            <input type="file" id="dataInput" accept=".csv,.xlsx,.xlsm" hidden />
+            <input type="file" id="dataInput" accept=".json,.csv,.xlsx,.xlsm" hidden />
             <div class="data-metrics">
               <div><strong id="metricRows">8</strong><span data-i18n="data.records">数据记录</span></div>
               <div><strong id="metricFields">12</strong><span data-i18n="data.fields">可用字段</span></div>
@@ -74,14 +83,14 @@
 
           <section class="panel" id="templateSection">
             <div class="panel-heading compact">
-              <div><p class="section-kicker" data-i18n="templates.kicker">模板组合</p><h2 data-i18n="templates.heading">本批次将生成 2 份文件</h2></div>
+              <div><p class="section-kicker" data-i18n="templates.kicker">模板组合</p><h2 id="templateHeading">本批次已选择 2 个模板</h2></div>
               <button class="text-btn" id="addTemplate"><span>＋</span> <span data-i18n="templates.add">添加模板</span></button>
-              <input type="file" id="templateInput" accept=".docx,.pdf" hidden />
+              <input type="file" id="templateInput" accept=".docx,.pdf" multiple hidden />
             </div>
             <div class="template-row" id="templateList">
               <article class="template-card selected" data-template="quote">
-                <div class="file-thumb word"><span>W</span><b data-i18n="templates.quoteShort">报价单</b><small>DOCX</small></div>
-                <div class="template-info"><div><strong data-i18n="templates.quoteName">标准报价单.docx</strong><span class="tag" data-i18n="templates.primary">主文件</span></div><p><span data-i18n="templates.nineFields">9 个字段</span><span data-i18n="templates.oneRule">1 个计算规则</span><span data-i18n="templates.qr">含二维码</span></p></div>
+                <div class="file-thumb pdf"><span>P</span><b data-i18n="templates.quoteShort">报价单</b><small>PDF</small></div>
+                <div class="template-info"><div><strong data-i18n="templates.quoteName">标准报价单.pdf</strong><span class="tag" data-i18n="templates.primary">主文件</span></div><p><span data-i18n="templates.nineFields">9 个字段</span><span data-i18n="templates.oneRule">1 个计算规则</span><span data-i18n="templates.qr">含二维码</span></p></div>
                 <button class="more-btn" aria-label="更多" data-i18n-aria="actions.more">•••</button><span class="selected-check">✓</span>
               </article>
               <article class="template-card selected" data-template="attachment">
@@ -108,10 +117,7 @@
             <div class="panel-heading compact">
               <div><p class="section-kicker" data-i18n="rules.kicker">自动化规则</p><h2 data-i18n="rules.heading">计算与条件字段</h2></div><span class="tag mint-tag" data-i18n="rules.live">实时计算</span>
             </div>
-            <div class="rule-list">
-              <div class="rule-row"><div class="rule-symbol">∑</div><div><strong data-i18n="rules.total">含税总额</strong><p data-i18n="rules.totalFormula">round((数量 × 单价 − 优惠) × (1 + 税率), 2)</p></div><span data-i18n="rules.computed">计算字段</span><button class="edit-rule" data-i18n="rules.edit">编辑</button></div>
-              <div class="rule-row"><div class="rule-symbol branch">⌁</div><div><strong data-i18n="rules.discount">显示优惠行</strong><p data-i18n="rules.discountCondition">仅当「优惠」大于 0 时显示</p></div><span data-i18n="rules.conditional">条件字段</span><button class="edit-rule" data-i18n="rules.edit">编辑</button></div>
-            </div>
+            <div class="rule-list" id="ruleList"></div>
           </section>
         </div>
 
@@ -124,11 +130,15 @@
             <label class="field-label" data-i18n="output.folderStructure">目录结构</label>
             <div class="pattern-input"><code id="folderPattern" contenteditable="true" spellcheck="false">{{客户简称}}/{{报价编号}}</code><button class="token-btn" data-token-target="folderPattern"><span>＋</span> <span data-i18n="output.field">字段</span></button></div>
             <div class="folder-preview"><svg viewBox="0 0 24 24"><path d="M3 6h7l2 2h9v11H3z"/></svg><div><strong id="folderCustomer">远海贸易</strong><span>└─ <b id="folderQuote">QT-24031</b> / <span id="folderFileCount" data-i18n="output.twoFiles">2 个文件</span></span></div></div>
-            <div class="asset-upload-row"><div><strong data-i18n="output.signature">签名 / 印章图片</strong><p id="signatureStatus" data-i18n="output.noSignature">尚未添加，将保留签名线</p></div><button id="signatureUpload" data-i18n="output.upload">上传图片</button><input type="file" id="signatureInput" accept="image/png,image/jpeg,image/webp" hidden></div>
+            <div class="asset-upload-row"><div><strong data-i18n="output.signature">签名 / 印章图片</strong><p id="signatureStatus" data-i18n="output.noSignature">尚未添加，将保留签名线</p></div><div class="asset-actions"><button id="signatureRemove" class="remove-asset-action" data-i18n="output.removeSignature" hidden>移除</button><button id="signatureUpload" data-i18n="output.upload">上传图片</button></div><input type="file" id="signatureInput" accept="image/png,image/jpeg" hidden></div>
+            <div class="asset-upload-row asset-library-row"><div><strong data-i18n="output.assets">模板图片资源</strong><p id="assetStatus" data-i18n="output.noAssets">可按文件名或不含扩展名的名称匹配图片字段</p><div class="asset-list" id="assetList"></div></div><button id="assetUpload" data-i18n="output.uploadMultiple">选择图片</button><input type="file" id="assetInput" accept="image/png,image/jpeg" multiple hidden></div>
             <div class="divider"></div>
-            <div class="setting-row"><div><strong data-i18n="output.skipBlank">跳过空白记录</strong><p data-i18n="output.skipBlankCopy">不为整行为空的数据生成文件</p></div><label class="switch"><input type="checkbox" checked><span></span></label></div>
-            <div class="setting-row"><div><strong data-i18n="output.stopMissing">缺失字段时停止</strong><p data-i18n="output.stopMissingCopy">存在必填项缺失则跳过该记录</p></div><label class="switch"><input type="checkbox" id="stopMissing" checked><span></span></label></div>
-            <div class="setting-row"><div><strong data-i18n="output.validationReport">生成校验报告</strong><p data-i18n="output.validationReportCopy">在 ZIP 内附带缺失字段明细</p></div><label class="switch"><input type="checkbox" checked><span></span></label></div>
+            <div class="setting-row"><div><strong data-i18n="output.skipBlank">跳过空白记录</strong><p data-i18n="output.skipBlankCopy">不为整行为空的数据生成文件</p></div><label class="switch"><input type="checkbox" id="skipBlank" checked><span></span></label></div>
+            <div class="setting-row"><div><strong data-i18n="output.stopMissing">缺失字段时停止</strong><p data-i18n="output.stopMissingCopy">存在必填项缺失则跳过该记录</p></div><label class="switch"><input type="checkbox" id="stopOnMissing" checked><span></span></label></div>
+            <div class="setting-row"><div><strong data-i18n="output.validationReport">生成校验报告</strong><p data-i18n="output.validationReportCopy">在 ZIP 内附带缺失字段明细</p></div><label class="switch"><input type="checkbox" id="validationReport" checked><span></span></label></div>
+            <div class="setting-row"><div><strong data-i18n="output.includeSourceDocx">包含源 DOCX</strong><p id="includeSourceDocxCopy" data-i18n="output.includeSourceDocxCopy">在交付包内保留完成字段替换的 Word 文件</p></div><label class="switch"><input type="checkbox" id="includeSourceDocx"><span></span></label></div>
+            <div class="setting-row"><div><strong data-i18n="output.mergePdfs">合并 PDF</strong><p data-i18n="output.mergePdfsCopy">为每条记录额外生成一份合并后的 PDF</p></div><label class="switch"><input type="checkbox" id="mergePdfs"><span></span></label></div>
+            <div class="setting-row"><div><strong data-i18n="output.flattenPdf">扁平化 PDF 表单</strong><p data-i18n="output.flattenPdfCopy">锁定已填写的 PDF 表单字段，便于交付</p></div><label class="switch"><input type="checkbox" id="flattenPdf" checked><span></span></label></div>
           </section>
 
           <section class="panel readiness-card">
@@ -143,6 +153,79 @@
     </main>
   </div>
 
+  <div class="modal-backdrop" id="projectModal" hidden>
+    <section class="modal project-modal" role="dialog" aria-modal="true" aria-labelledby="projectModalTitle">
+      <button class="modal-close" type="button" data-close-project-modal>×</button>
+      <p class="section-kicker" data-i18n="project.workspaceKicker">本地项目</p>
+      <h2 id="projectModalTitle" data-i18n="project.workspaceTitle">保存并重复运行你的工作流</h2>
+      <p class="modal-copy" data-i18n="project.workspaceCopy">项目文件仅保存模板、映射和规则，不保存数据记录、签名、图片或生成内容。</p>
+      <label class="project-name-field"><span data-i18n="project.nameLabel">项目名称</span><input id="projectNameInput" type="text" maxlength="120"></label>
+      <div class="project-action-grid">
+        <button class="project-action" id="projectSave" type="button"><strong data-i18n="project.save">保存项目</strong><small data-i18n="project.saveCopy">首次保存会选择 .docflow 文件位置</small></button>
+        <button class="project-action" id="projectSaveAs" type="button"><strong data-i18n="project.saveAs">另存为</strong><small data-i18n="project.saveAsCopy">创建一份独立项目副本</small></button>
+        <button class="project-action" id="projectOpen" type="button"><strong data-i18n="project.open">打开项目</strong><small data-i18n="project.openCopy">从本机选择 .docflow 文件</small></button>
+        <button class="project-action" id="projectNewStarter" type="button"><strong data-i18n="project.newStarter">新建样例项目</strong><small data-i18n="project.newStarterCopy">从四个行业场景重新开始</small></button>
+        <button class="project-action" id="recipeExport" type="button"><strong data-i18n="recipe.export">导出安全配方</strong><small data-i18n="recipe.exportCopy">分享结构、映射和规则，不附带模板与客户数据</small></button>
+        <button class="project-action" id="recipeImport" type="button"><strong data-i18n="recipe.import">导入配方</strong><small data-i18n="recipe.importCopy">绑定你自己的数据与模板后运行</small></button>
+      </div>
+      <div class="recent-projects-heading"><strong data-i18n="project.recent">最近项目</strong><span id="projectPrivacyStatus" data-i18n="project.localOnly">仅本机</span></div>
+      <div class="recent-project-list" id="recentProjectList"></div>
+      <div class="local-activity-card">
+        <div><strong data-i18n="activity.title">本地使用记录</strong><p id="localActivitySummary" data-i18n="activity.loading">正在读取本地摘要…</p></div>
+        <div><button class="text-btn" id="activityExport" type="button" data-i18n="activity.export">导出</button><button class="text-btn danger-text" id="activityClear" type="button" data-i18n="activity.clear">清除</button></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="recipePreviewModal" hidden>
+    <section class="modal recipe-preview-modal" role="dialog" aria-modal="true" aria-labelledby="recipePreviewTitle">
+      <button class="modal-close" type="button" data-close-recipe-preview>×</button>
+      <div class="modal-icon recipe-icon">↗</div>
+      <p class="section-kicker" data-i18n="recipe.kicker">安全分享预览</p>
+      <h2 id="recipePreviewTitle" data-i18n="recipe.previewTitle">此配方不包含客户数据或模板文件</h2>
+      <p class="modal-copy" data-i18n="recipe.previewCopy">只会导出场景、字段结构、映射、规则、命名方式和模板需求。</p>
+      <div class="recipe-preview-summary" id="recipePreviewSummary"></div>
+      <div class="recipe-warning"><strong data-i18n="recipe.reviewTitle">分享前仍需人工复核</strong><p data-i18n="recipe.reviewCopy">字段标签、公式和规则文字仍可能包含内部业务信息。请确认后再分享。</p></div>
+      <div class="modal-actions"><button class="btn secondary" type="button" data-close-recipe-preview data-i18n="recipe.cancel">取消</button><button class="btn primary" id="recipeExportConfirm" type="button" data-i18n="recipe.confirm">确认并导出</button></div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="proModal" hidden>
+    <section class="modal pro-modal" role="dialog" aria-modal="true" aria-labelledby="proModalTitle">
+      <button class="modal-close" type="button" data-close-pro>×</button>
+      <div class="pro-heading"><div class="modal-icon pro-icon">P</div><div><p class="section-kicker" data-i18n="pro.kicker">专业版工作台</p><h2 id="proModalTitle" data-i18n="pro.title">把重复批次交给本机自动运行</h2></div></div>
+      <p class="modal-copy" data-i18n="pro.copy">监控目录、计划任务、失败重试与本地审计只处理你指定的本机文件。Community 项目和既有输出始终保留。</p>
+      <section class="pro-license-card">
+        <div><span class="pro-status-badge" id="proStatusBadge" data-i18n="pro.community">COMMUNITY</span><strong id="proStatusTitle" data-i18n="pro.statusLoading">正在读取许可证状态…</strong><p id="proStatusCopy" data-i18n="pro.statusLoadingCopy">不会上传文档、模板或字段值。</p></div>
+        <div class="pro-license-actions"><button class="btn primary" id="proStartTrial" type="button" data-i18n="pro.startTrial">开启 21 天 Pro 体验</button><button class="btn secondary" id="proImportLicense" type="button" data-i18n="pro.importLicense">导入许可证</button></div>
+      </section>
+      <p class="pro-privacy-note" data-i18n="pro.trialPrivacy">体验期从首个真实批次完成后由你主动开启；试用只发送不可逆设备标识、应用版本和许可请求，不发送客户文件。</p>
+
+      <section class="pro-automation-card">
+        <div class="pro-section-heading"><div><strong data-i18n="pro.automationTitle">本地自动化工作流</strong><p id="proConfigSummary" data-i18n="pro.noConfig">尚未选择自动化配置</p></div><button class="text-btn" id="proSelectConfig" type="button" data-i18n="pro.selectConfig">选择配置</button></div>
+        <div class="pro-controls">
+          <button class="btn secondary" id="proRunOnce" type="button" data-i18n="pro.runOnce">立即扫描一次</button>
+          <button class="btn secondary" id="proStartWatch" type="button" data-i18n="pro.startWatch">开始监控</button>
+          <label><span data-i18n="pro.interval">运行间隔</span><select id="proScheduleInterval"><option value="900000" data-i18n="pro.every15m">每 15 分钟</option><option value="3600000" selected data-i18n="pro.everyHour">每小时</option><option value="86400000" data-i18n="pro.everyDay">每天</option></select></label>
+          <button class="btn secondary" id="proStartSchedule" type="button" data-i18n="pro.startSchedule">启动计划</button>
+        </div>
+        <div class="pro-runs-heading"><strong data-i18n="pro.activeRuns">本机运行任务</strong><div><button class="text-btn" id="proHistory" type="button" data-i18n="pro.history">历史</button><button class="text-btn" id="proRefreshRuns" type="button" data-i18n="pro.refresh">刷新</button></div></div>
+        <div class="pro-run-list" id="proRunList"><p data-i18n="pro.noRuns">当前没有运行中的任务。</p></div>
+      </section>
+      <div class="pro-footer"><span data-i18n="pro.founderPrice">创始用户首年 US$149；不会按文档数量收费。</span><a class="text-btn" href="https://docflowlocal.com/pricing/" target="_blank" rel="noreferrer" data-i18n="pro.viewPricing">查看版本对比</a></div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="starterModal" hidden>
+    <section class="modal starter-modal" role="dialog" aria-modal="true" aria-labelledby="starterModalTitle">
+      <p class="section-kicker" data-i18n="starter.kicker">3–5 分钟快速开始</p>
+      <h2 id="starterModalTitle" data-i18n="starter.title">选择一个行业样例</h2>
+      <p class="modal-copy" data-i18n="starter.copy">每个样例都包含数据、两个模板、预设映射和一个待修复字段。所有处理都在本机完成。</p>
+      <div class="starter-grid" id="starterGrid"></div>
+      <div class="starter-modal-footer"><span data-i18n="starter.footer">无需注册 · 无水印 · 不限生成数量</span><button class="text-btn" id="startWithOwnFiles" data-i18n="starter.startOwn">直接使用我的文件</button></div>
+    </section>
+  </div>
+
   <div class="modal-backdrop" id="validationModal" hidden>
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
       <button class="modal-close" data-close-modal>×</button>
@@ -150,12 +233,49 @@
       <p class="section-kicker" data-i18n="modal.kicker">完整性校验</p><h2 id="modalTitle">发现 2 条记录需要处理</h2>
       <p class="modal-copy" id="modalCopy">有效记录可以继续生成；缺少必填字段的记录将被跳过并写入校验报告。</p>
       <div class="issue-list" id="issueList"></div>
-      <div class="modal-actions"><button class="btn secondary" data-close-modal data-i18n="modal.back">返回修改</button><button class="btn primary" id="modalGenerate">生成有效记录</button></div>
+      <div class="modal-actions"><button class="btn secondary" data-close-modal data-i18n="modal.back">返回修改</button><button class="btn secondary sample-fix-button" id="fixSampleIssue" data-i18n="starter.fixIssue" hidden>应用样例修复</button><button class="btn primary" id="modalGenerate">生成有效记录</button></div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="sampleCompleteModal" hidden>
+    <section class="modal sample-complete-modal" role="dialog" aria-modal="true" aria-labelledby="sampleCompleteTitle">
+      <button class="modal-close" type="button" data-close-sample-complete>×</button>
+      <div class="modal-icon sample-complete-icon">✓</div>
+      <p class="section-kicker" data-i18n="starter.completeKicker">引导激活完成</p>
+      <h2 id="sampleCompleteTitle" data-i18n="starter.completeTitle">你的第一个交付包已经保存</h2>
+      <p class="modal-copy" data-i18n="starter.completeCopy">下一步换成自己的表格和模板。映射、预检、命名与目录流程保持不变。</p>
+      <div class="sample-complete-summary" id="sampleCompleteSummary"></div>
+      <div class="modal-actions"><button class="btn secondary" data-close-sample-complete data-i18n="starter.keepExploring">继续查看样例</button><button class="btn primary" id="completeUseMyFiles" data-i18n="starter.useMyFiles">换成我的文件</button></div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="ruleModal" hidden>
+    <section class="modal rule-editor-modal" role="dialog" aria-modal="true" aria-labelledby="ruleModalTitle">
+      <button class="modal-close" type="button" data-close-rule-modal>×</button>
+      <div class="modal-icon rule-modal-icon">ƒ</div>
+      <p class="section-kicker" data-i18n="ruleEditor.kicker">规则编辑器</p>
+      <h2 id="ruleModalTitle">新增自动化规则</h2>
+      <p class="modal-copy" data-i18n="ruleEditor.copy">使用数据列名称编写本地计算或条件表达式。</p>
+      <form id="ruleForm">
+        <div class="rule-form-grid">
+          <label><span data-i18n="ruleEditor.type">规则类型</span><select id="ruleType"><option value="computed" data-i18n="rules.computed">计算字段</option><option value="conditional" data-i18n="rules.conditional">条件字段</option></select></label>
+          <label><span data-i18n="ruleEditor.name">输出字段名</span><input id="ruleName" type="text" maxlength="80" required placeholder="含税总额" data-i18n-placeholder="ruleEditor.namePlaceholder"></label>
+          <label class="rule-expression-field"><span data-i18n="ruleEditor.expression">表达式</span><textarea id="ruleExpression" rows="3" required placeholder="round((数量 * 单价 - 优惠) * (1 + 税率), 2)" data-i18n-placeholder="ruleEditor.expressionPlaceholder"></textarea></label>
+          <label id="ruleDigitsGroup"><span data-i18n="ruleEditor.digits">结果小数位</span><input id="ruleDigits" type="number" min="0" max="12" value="2"></label>
+          <div class="rule-branches" id="ruleBranches" hidden>
+            <label><span data-i18n="ruleEditor.whenTrue">条件成立时（可选）</span><input id="ruleWhenTrue" type="text" data-i18n-placeholder="ruleEditor.whenTruePlaceholder" placeholder="显示"></label>
+            <label><span data-i18n="ruleEditor.whenFalse">条件不成立时（可选）</span><input id="ruleWhenFalse" type="text" data-i18n-placeholder="ruleEditor.whenFalsePlaceholder" placeholder=""></label>
+          </div>
+        </div>
+        <p class="form-error" id="ruleError" hidden></p>
+        <div class="modal-actions rule-modal-actions"><button class="btn danger" id="ruleDelete" type="button" data-i18n="ruleEditor.delete" hidden>删除规则</button><span></span><button class="btn secondary" type="button" data-close-rule-modal data-i18n="ruleEditor.cancel">取消</button><button class="btn primary" type="submit" data-i18n="ruleEditor.save">保存规则</button></div>
+      </form>
     </section>
   </div>
 
   <div class="toast" id="toast" role="status"><span>✓</span><div><strong id="toastTitle">已完成</strong><p id="toastCopy"></p></div></div>
   <script src="/i18n.js"></script>
+  <script src="/starter-scenarios.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>

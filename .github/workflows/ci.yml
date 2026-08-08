@@ -13,13 +13,47 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
       - run: npm ci
       - run: npm run test:syntax
+      - run: npm run test:licenses
       - run: npm test
+      - run: npm run test:api
+      - run: npm run test:packages
+      - run: npm run test:release
+
+  windows-packaged-smoke:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Parse Windows release scripts
+        shell: powershell
+        run: |
+          [void][scriptblock]::Create((Get-Content -Raw desktop/package-win.ps1))
+          [void][scriptblock]::Create((Get-Content -Raw desktop/package-win-release.ps1))
+          [void][scriptblock]::Create((Get-Content -Raw desktop/release-smoke-win.ps1))
+      - run: npm run pack:win
+
+  macos-packaged-smoke:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run test:packaged:mac:host
 
   website-build:
     runs-on: ubuntu-latest

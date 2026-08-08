@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "org.docflow.example.transform-uppercase",
+  "name": "Uppercase selected fields",
+  "version": "1.0.0",
+  "apiVersion": "1",
+  "entry": "index.js",
+  "capabilities": ["transform"],
+  "permissions": {
+    "networkHosts": [],
+    "filesystem": []
+  }
+}

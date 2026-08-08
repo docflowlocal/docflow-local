@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "legalProvenanceReview": {
+    "status": "complete",
+    "reference": "LW-20260729-DF001; Internal Legal Department; 2026-07-29; publishable for the reviewed Community public-source and package provenance scope (docflow, docflow-desktop, templates, plugins, examples, docs); excludes the private Community+Pro combination and production trial service, which require supplemental review"
+  },
+  "githubSplitRepositories": {
+    "status": "complete",
+    "reference": "https://github.com/docflowlocal/docflow-local/pull/2#issuecomment-5116076361"
+  },
+  "npmScopeTwoFactorAuthentication": {
+    "status": "complete",
+    "reference": "npm organization docflow-local mandatory 2FA confirmed 2026-07-29"
+  },
+  "appleDeveloperId": {
+    "status": "complete",
+    "reference": "Developer ID Application FRKPSKRHGX; v0.5.0 signed release https://github.com/docflowlocal/docflow-desktop/releases/tag/v0.5.0"
+  },
+  "appleNotarization": {
+    "status": "complete",
+    "reference": "Apple-notarized and stapled Community v0.5.0 release https://github.com/docflowlocal/docflow-desktop/releases/tag/v0.5.0"
+  },
+  "windowsAuthenticode": {
+    "status": "pending",
+    "reference": ""
+  },
+  "windowsPackagedSmoke": {
+    "status": "pending",
+    "reference": ""
+  },
+  "productionLicenseKeyring": {
+    "status": "pending",
+    "reference": ""
+  }
+}

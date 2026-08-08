@@ -1,0 +1,16 @@
+DocFlow Core transition-package license
+=======================================
+
+This npm package contains files under both:
+
+* Mozilla Public License 2.0 (`MPL-2.0`); and
+* GNU Affero General Public License version 3 or later
+  (`AGPL-3.0-or-later`).
+
+The applicable license is identified by each source file's SPDX notice and by
+NOTICE.md. Complete, unmodified terms are included in:
+
+* LICENSES/MPL-2.0.txt
+* LICENSES/AGPL-3.0-or-later.txt
+
+This package does not relicense historical AGPL code under the MPL.

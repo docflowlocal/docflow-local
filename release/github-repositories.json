@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "organization": "docflowlocal",
+  "repositories": [
+    {
+      "name": "docflow",
+      "visibility": "public",
+      "description": "Local-first JSON, CSV and Excel to DOCX document automation engine, CLI and API",
+      "homepage": "https://docflowlocal.com",
+      "topics": [
+        "document-automation",
+        "docx",
+        "excel",
+        "mail-merge",
+        "local-first",
+        "nodejs"
+      ],
+      "discussions": true
+    },
+    {
+      "name": "docflow-desktop",
+      "visibility": "public",
+      "description": "Privacy-first desktop document automation for Windows and macOS",
+      "homepage": "https://docflowlocal.com",
+      "topics": [
+        "electron",
+        "document-automation",
+        "excel-to-pdf",
+        "offline-first",
+        "macos",
+        "windows"
+      ],
+      "discussions": true
+    },
+    {
+      "name": "templates",
+      "visibility": "public",
+      "description": "Free DocFlow starter templates for quotations, invoices, certificates, HR and reports",
+      "homepage": "https://docflowlocal.com/templates/",
+      "topics": [
+        "docx-template",
+        "quotation",
+        "invoice",
+        "certificate",
+        "packing-list"
+      ],
+      "discussions": true
+    },
+    {
+      "name": "plugins",
+      "visibility": "public",
+      "description": "Community integrations and trusted local plugins for DocFlow",
+      "homepage": "https://docflowlocal.com",
+      "topics": [
+        "docflow",
+        "plugins",
+        "document-automation",
+        "integration"
+      ],
+      "discussions": true
+    },
+    {
+      "name": "examples",
+      "visibility": "public",
+      "description": "Runnable local document automation workflows built with DocFlow",
+      "homepage": "https://docflowlocal.com",
+      "topics": [
+        "document-automation",
+        "examples",
+        "excel-to-docx",
+        "bulk-certificate"
+      ],
+      "discussions": true
+    },
+    {
+      "name": "docs",
+      "visibility": "public",
+      "description": "DocFlow product, template, CLI, API and plugin documentation",
+      "homepage": "https://docflowlocal.com",
+      "topics": [
+        "documentation",
+        "docflow",
+        "document-automation"
+      ],
+      "discussions": true
+    },
+    {
+      "name": "docflow-pro",
+      "visibility": "private",
+      "description": "Private commercial extensions and release tooling for DocFlow Pro",
+      "homepage": "https://docflowlocal.com/pricing/",
+      "topics": [],
+      "discussions": false
+    }
+  ]
+}

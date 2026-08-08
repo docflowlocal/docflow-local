@@ -1,0 +1,29 @@
+{
+  "rows": [
+    {
+      "certificateId": "CERT-EXAMPLE-101",
+      "recipientName": "Avery Brooks",
+      "courseName": "Equipment Inspection Fundamentals",
+      "issuedAt": "2026-07-24",
+      "achievements": [
+        { "achievement": "Completed the theory module" },
+        { "achievement": "Passed the practical exercise" }
+      ],
+      "showScore": true,
+      "score": 96.5,
+      "verificationUrl": "https://example.invalid/verify/CERT-EXAMPLE-101"
+    },
+    {
+      "certificateId": "CERT-EXAMPLE-102",
+      "recipientName": "Samir Novak",
+      "courseName": "Equipment Inspection Fundamentals",
+      "issuedAt": "2026-07-24",
+      "achievements": [
+        { "achievement": "Completed the theory module" }
+      ],
+      "showScore": false,
+      "score": "",
+      "verificationUrl": "https://example.invalid/verify/CERT-EXAMPLE-102"
+    }
+  ]
+}
