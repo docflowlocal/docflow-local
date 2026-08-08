@@ -119,7 +119,6 @@
         "@pdf-lib/fontkit": "MIT",
         "adm-zip": "MIT",
         "docxtemplater": "MIT",
-        "image-size": "MIT",
         "pdf-lib": "MIT",
         "pizzip": "(MIT OR GPL-3.0)",
         "qrcode": "MIT"

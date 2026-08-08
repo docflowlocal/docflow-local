@@ -58,6 +58,13 @@ by document count.
   inspected, exported, or cleared by the user. This release does not turn the
   ledger into document telemetry or upload it.
 
+### Safer image and dependency handling
+
+- Core 0.1.1 removes the vulnerable third-party image dimension parser and uses
+  a bounded local parser for the PNG/JPEG formats accepted by templates.
+- Truncated and adversarial image headers fail quickly; the reviewed lockfile
+  reports zero known npm vulnerabilities at release-review time.
+
 ## Community and Pro boundary
 
 Community continues to include Excel/CSV/JSON import, Word/PDF field mapping,
@@ -182,6 +189,12 @@ DocFlow Local Community 0.6.0 让用户更快得到第一个可用结果，也�
   路径、映射、公式、生成文本，也不保存文档或模板指纹。
 - 账本容量受限，采用限制性权限保存，并允许用户查看、导出和清除。本版本不会把该账本
   变成文档遥测数据，也不会上传账本。
+
+### 更安全的图片与依赖处理
+
+- Core 0.1.1 移除了存在漏洞的第三方图片尺寸解析器，改用有边界的本地解析器处理模板
+  实际接受的 PNG/JPEG 格式。
+- 截断或恶意图片头会被快速拒绝；经过审查的锁文件在发布审查时报告零项已知 npm 漏洞。
 
 ## Community 与 Pro 的边界
 

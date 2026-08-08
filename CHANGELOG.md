@@ -39,6 +39,9 @@ semantic versioning after the modular repositories are published.
 - Project recipes and activation exports are local, bounded, and intentionally
   free of customer content.
 - The Community build contains no Pro implementation or signing private key.
+- Core 0.1.1 replaces the vulnerable `image-size` parser with a bounded local
+  image-header reader; the reviewed dependency lock reports zero known npm
+  vulnerabilities at release-review time.
 
 ### Release status
 

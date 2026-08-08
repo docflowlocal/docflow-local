@@ -192,7 +192,7 @@ test("export writes verified trees, preserves metadata, and rejects a dirty reru
       `https://github.com/docflowlocal/${repository}#readme`
     );
     if (repository !== "docs") {
-      assert.equal(packageJson.overrides?.["brace-expansion"], "5.0.8");
+      assert.equal(packageJson.overrides?.["brace-expansion"], undefined);
       assert.equal(packageJson.overrides?.uuid, "11.1.1");
     }
     if (["docflow-desktop", "templates", "plugins", "examples"].includes(repository)) {

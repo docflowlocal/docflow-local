@@ -1,6 +1,6 @@
 {
   "name": "@docflow-local/core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Local-first DOCX document generation engine, CLI, HTTP API and plugin SDK",
   "license": "MPL-2.0 AND AGPL-3.0-or-later",
   "author": "DocFlow Local Contributors",
@@ -41,7 +41,7 @@
   ],
   "scripts": {
     "test": "node --test test/*.test.js",
-    "test:syntax": "node --check src/contracts.js && node --check src/request-validator.js && node --check src/index.js && node --check src/plugin-sdk.js && node --check src/http-server.js && node --check src/cli.js && node --check bin/docflow.js",
+    "test:syntax": "node --check src/contracts.js && node --check src/request-validator.js && node --check src/index.js && node --check src/plugin-sdk.js && node --check src/http-server.js && node --check src/cli.js && node --check src/image-dimensions.js && node --check bin/docflow.js",
     "prepublishOnly": "npm run test:syntax && npm test"
   },
   "engines": {
@@ -65,7 +65,6 @@
     "busboy": "^1.6.0",
     "docxtemplater": "^3.69.3",
     "exceljs": "^4.4.0",
-    "image-size": "^2.0.2",
     "pdf-lib": "^1.17.1",
     "pizzip": "^3.2.0",
     "qrcode": "^1.5.4",

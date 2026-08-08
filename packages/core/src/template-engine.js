@@ -24,7 +24,7 @@ const {
   PDFArray,
   PDFRef
 } = require("pdf-lib");
-const { imageSize } = require("image-size");
+const { measureImageDimensions } = require("./image-dimensions");
 
 const XML_PART_PATTERN = /^word\/(?:document|header\d+|footer\d+|footnotes|endnotes)\.xml$/;
 const IMAGE_RELATIONSHIP = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image";
@@ -507,7 +507,7 @@ function validatedImage(buffer, mimeType) {
   }
   let measured;
   try {
-    measured = imageSize(buffer);
+    measured = measureImageDimensions(buffer);
   } catch (_error) {
     throw new Error("图片数据损坏或格式不受支持");
   }
@@ -579,7 +579,7 @@ function imageExtension(mimeType, buffer) {
 }
 
 function imageDimensions(buffer, requestedWidth, requestedHeight) {
-  const measured = imageSize(buffer);
+  const measured = measureImageDimensions(buffer);
   const sourceWidth = Number(measured.width) || 1;
   const sourceHeight = Number(measured.height) || 1;
   const maximumWidth = Number(requestedWidth) || 180;

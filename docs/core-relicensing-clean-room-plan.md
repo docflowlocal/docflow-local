@@ -74,7 +74,7 @@ used as clean implementation inputs.
 | `src/data.js` | `adm-zip`, `exceljs`, `ssf` | MIT, MIT, Apache-2.0 |
 | `src/expression.js` | none | n/a |
 | `src/index.js` | internal Core modules and Node built-ins only | n/a |
-| `src/template-engine.js` | `@fontsource/noto-sans-sc`, `@pdf-lib/fontkit`, `adm-zip`, `docxtemplater`, `image-size`, `pdf-lib`, `pizzip`, `qrcode` | OFL-1.1, MIT, MIT, MIT, MIT, MIT, `(MIT OR GPL-3.0)`, MIT |
+| `src/template-engine.js` | `@fontsource/noto-sans-sc`, `@pdf-lib/fontkit`, `adm-zip`, `docxtemplater`, `pdf-lib`, `pizzip`, `qrcode` | OFL-1.1, MIT, MIT, MIT, MIT, `(MIT OR GPL-3.0)`, MIT |
 
 For `pizzip`, release review must deliberately use and preserve the MIT option
 and its notice. The Noto Sans SC font remains under OFL-1.1. Before a split
