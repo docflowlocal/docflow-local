@@ -6,7 +6,7 @@ const here = resolve(fileURLToPath(new URL('.', import.meta.url)));
 const siteRoot = resolve(here, '..');
 const dist = join(siteRoot, 'dist');
 const siteUrl = 'https://docflowlocal.com';
-const indexNowKey = '62a1c4ddd5abb4809935e193aa22fd73';
+const indexNowKey = '393eedac11f37df862e931238f00bae8';
 const errors = [];
 
 async function walk(directory) {
