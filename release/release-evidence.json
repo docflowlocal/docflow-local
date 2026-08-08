@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "legalProvenanceReview": {
     "status": "complete",
-    "reference": "LW-20260729-DF001; Internal Legal Department; 2026-07-29; publishable"
+    "reference": "LW-20260729-DF001; Internal Legal Department; 2026-07-29; publishable for the reviewed Community public-source and package provenance scope (docflow, docflow-desktop, templates, plugins, examples, docs); excludes the private Community+Pro combination and production trial service, which require supplemental review"
   },
   "githubSplitRepositories": {
     "status": "complete",

@@ -15,6 +15,11 @@ const {
 } = require("./generate-release-metadata");
 
 const rootDir = path.resolve(__dirname, "..");
+const coreWorkspacePresent = fs.existsSync(
+  path.join(rootDir, "packages", "core", "package.json")
+);
+const packageLockPath = path.join(rootDir, "package-lock.json");
+const standaloneRegistryLockPresent = !coreWorkspacePresent && fs.existsSync(packageLockPath);
 
 const internal = assessRelease({
   rootDir,
@@ -32,7 +37,10 @@ const publicReport = assessRelease({
   channel: "public",
   sourceOnly: true
 });
-assert.strictEqual(publicReport.ready, false);
+assert.strictEqual(
+  publicReport.checks.find(check => check.id === "LOCKFILE_SUPPLY_CHAIN")?.status,
+  standaloneRegistryLockPresent ? "pass" : "blocker"
+);
 assert(publicReport.checks.some(check => check.id === "MANUAL_RELEASE_EVIDENCE" && check.status === "pass"));
 assert(publicReport.checks.some(check => check.id === "MAC_HARDENED_RUNTIME" && check.status === "pass"));
 assert(publicReport.checks.some(check => check.id === "MAC_DEVELOPER_ID"));
@@ -101,10 +109,6 @@ assert.strictEqual(parsedWindowsMetadata.platform, "windows");
 
 const inventory = packageInventory(rootDir);
 assert(inventory.some(item => item.name === "docflow-local" || item.name === "docflow-desktop"));
-const coreWorkspacePresent = fs.existsSync(
-  path.join(rootDir, "packages", "core", "package.json")
-);
-const packageLockPath = path.join(rootDir, "package-lock.json");
 if (coreWorkspacePresent || fs.existsSync(packageLockPath)) {
   assert.strictEqual(requirePackageLock(rootDir), packageLockPath);
 } else {
