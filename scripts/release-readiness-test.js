@@ -24,6 +24,8 @@ const standaloneRegistryLockPresent = !coreWorkspacePresent && fs.existsSync(pac
 const internal = assessRelease({
   rootDir,
   channel: "internal",
+  platform: "macOS",
+  arch: "arm64",
   sourceOnly: true
 });
 assert.strictEqual(internal.ready, true);
@@ -35,6 +37,8 @@ assert(internal.checks.some(check => check.id === "MANUAL_RELEASE_EVIDENCE" && c
 const publicReport = assessRelease({
   rootDir,
   channel: "public",
+  platform: "macOS",
+  arch: "arm64",
   sourceOnly: true
 });
 assert.strictEqual(
