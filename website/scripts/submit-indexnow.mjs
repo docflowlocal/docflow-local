@@ -6,7 +6,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const siteRoot = resolve(here, '..');
 const siteUrl = 'https://docflowlocal.com';
 const host = 'docflowlocal.com';
-const key = '62a1c4ddd5abb4809935e193aa22fd73';
+const key = '393eedac11f37df862e931238f00bae8';
 const keyLocation = `${siteUrl}/${key}.txt`;
 const endpoint = 'https://api.indexnow.org/indexnow';
 
