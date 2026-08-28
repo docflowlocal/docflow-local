@@ -151,6 +151,7 @@ Pro 聚焦企业愿意为运营和治理购买的能力：多数据源关系、�
 - [产品实用指南](https://docflowlocal.com/zh/guides/)
 - [安全政策](SECURITY.md)
 - [隐私架构](PRIVACY.md)
+- [桌面端代码签名政策](https://github.com/docflowlocal/docflow-desktop/blob/main/CODE_SIGNING_POLICY.md)
 - [性能测试方法和结果](BENCHMARKS.md)
 - [桌面端构建与发布清单](DESKTOP_BUILD.md)
 - [路线图](ROADMAP.md)
@@ -168,6 +169,9 @@ Pro 聚焦企业愿意为运营和治理购买的能力：多数据源关系、�
 历史 0.x 单体版本继续适用 GNU AGPL-3.0-or-later，既有授权不会被撤回。
 全新编写的合同、许可证校验器、扩展 SDK 和模块文件按 MPL-2.0 准备；当前
 Core 过渡包仍为混合许可，继承自历史引擎的文件继续适用 AGPL-3.0-or-later。
-准确边界见 [NOTICE.md](NOTICE.md)。私有 Pro 模块和商业模板包采用独立条款。DocFlow Local 名称、Logo 和官方行业模板
-不包含在代码许可中，详见 [TRADEMARKS.md](TRADEMARKS.md)。技术支持、
-OEM、闭源集成和企业商业许可请联系 `support@roboai.tech`。
+准确边界见 [NOTICE.md](NOTICE.md)。Community、Core、contracts 与
+license verifier 不提供同一代码的闭源替代授权。私有 Pro 模块、商业模板包、
+实施、培训、支持、SLA 与商标许可属于独立商业服务，不包含在 Community
+安装包中。著作权许可与商标权相互独立，详见
+[TRADEMARKS.md](TRADEMARKS.md)。商业产品与服务请联系
+`support@roboai.tech`。

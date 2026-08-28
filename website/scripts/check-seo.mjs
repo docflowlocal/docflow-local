@@ -60,6 +60,7 @@ for (const file of htmlFiles) {
   if (!html.includes('hreflang="en"') || !html.includes('hreflang="zh-CN"') || !html.includes('hreflang="x-default"')) errors.push(`${displayPath}: incomplete hreflang set`);
   if (!html.includes('property="og:image" content="https://docflowlocal.com/assets/docflow-local-og.png"')) errors.push(`${displayPath}: missing absolute og:image`);
   if (!html.includes('name="twitter:card" content="summary_large_image"')) errors.push(`${displayPath}: missing large Twitter card`);
+  if (!html.includes('CODE_SIGNING_POLICY.md')) errors.push(`${displayPath}: missing code signing policy link`);
 
   const buttonLinks = [...html.matchAll(/<a class="button [^"]*"[^>]*>/g)].map(result => result[0]);
   for (const [index, link] of buttonLinks.entries()) {
@@ -75,6 +76,9 @@ for (const file of htmlFiles) {
   if (path === '/download/' || path === '/zh/download/') {
     for (const marker of ['download_mac_installer', 'quickstart-list', 'download_starter_trade', 'download_starter_engineering', 'download_starter_hr', 'download_starter_compliance']) {
       if (!html.includes(marker)) errors.push(`${displayPath}: download onboarding missing ${marker}`);
+    }
+    if (!html.includes('Free code signing provided by SignPath.io, certificate by SignPath Foundation.')) {
+      errors.push(`${displayPath}: missing SignPath Foundation attribution`);
     }
   }
 
