@@ -6,7 +6,8 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "check:analytics": "node scripts/check-analytics.mjs",
-    "check:seo": "npm run build && node scripts/check-seo.mjs && npm run check:analytics",
+    "check:site": "node scripts/check-site.mjs && node scripts/supporter-checkout-test.mjs",
+    "check:seo": "npm run build && node scripts/check-seo.mjs && npm run check:analytics && npm run check:site",
     "indexnow:dry": "npm run build && node scripts/submit-indexnow.mjs --dry-run",
     "indexnow": "node scripts/submit-indexnow.mjs",
     "dev": "npm run build && wrangler dev --config wrangler.workers-dev.jsonc",

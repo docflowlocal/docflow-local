@@ -11,10 +11,21 @@ const errors = [];
 const buildSource = await readFile(join(siteRoot, 'scripts', 'build.mjs'), 'utf8');
 const analyticsSource = await readFile(join(siteRoot, 'src', 'analytics.js'), 'utf8');
 
+if (!buildSource.includes("const assetRevision = '") || !buildSource.includes('Cache-Control: public, max-age=0, must-revalidate')) {
+  errors.push('assets: mutable CSS and JavaScript require cache revisioning and revalidation');
+}
+if (!analyticsSource.includes("const GA_MEASUREMENT_ID = 'G-77MP7J9XFT'")) errors.push('analytics: unexpected GA4 measurement ID');
+
 if (!buildSource.includes("macos: 'download_mac_installer'")) errors.push('analytics: missing macOS installer event contract');
 if (!buildSource.includes("windows: 'download_windows_installer'")) errors.push('analytics: missing Windows installer event contract');
+for (const marker of ["'supporter_cta_click'", "'supporter_amount_select'", "'supporter_checkout_start'"]) {
+  if (!buildSource.includes(marker)) errors.push(`analytics: missing supporter event contract ${marker}`);
+}
 for (const marker of ["'download_mac_installer'", "'download_windows_installer'", 'file_name:', 'file_extension:', 'link_url:', 'link_domain:']) {
   if (!analyticsSource.includes(marker)) errors.push(`analytics: missing installer handler marker ${marker}`);
+}
+for (const marker of ['docflow-analytics-consent-v1', 'allow_google_signals: false', 'allow_ad_personalization_signals: false']) {
+  if (!analyticsSource.includes(marker)) errors.push(`analytics: missing consent or data-minimization marker ${marker}`);
 }
 
 async function walk(directory) {
@@ -69,6 +80,16 @@ for (const file of htmlFiles) {
   if (!html.includes('property="og:image" content="https://docflowlocal.com/assets/docflow-local-og.png"')) errors.push(`${displayPath}: missing absolute og:image`);
   if (!html.includes('name="twitter:card" content="summary_large_image"')) errors.push(`${displayPath}: missing large Twitter card`);
   if (!html.includes('CODE_SIGNING_POLICY.md')) errors.push(`${displayPath}: missing code signing policy link`);
+  if (!html.includes('data-analytics-consent') || !html.includes('data-analytics-accept') || !html.includes('data-analytics-decline')) {
+    errors.push(`${displayPath}: missing optional analytics consent controls`);
+  }
+  if (!html.includes('data-analytics-settings')) errors.push(`${displayPath}: missing persistent analytics settings control`);
+  if (!html.includes('/assets/analytics.js?v=') || !html.includes('/assets/site.js?v=') || !html.includes('/assets/styles.css?v=')) {
+    errors.push(`${displayPath}: mutable site assets are missing a cache revision`);
+  }
+  if (html.includes('src="https://www.googletagmanager.com/gtag/js')) {
+    errors.push(`${displayPath}: Google Analytics must not load before explicit consent`);
+  }
 
   const buttonLinks = [...html.matchAll(/<a class="button [^"]*"[^>]*>/g)].map(result => result[0]);
   for (const [index, link] of buttonLinks.entries()) {
@@ -107,6 +128,35 @@ for (const file of htmlFiles) {
     }
     if (!html.includes('Free code signing provided by SignPath.io, certificate by SignPath Foundation.')) {
       errors.push(`${displayPath}: missing SignPath Foundation attribution`);
+    }
+    if (!html.includes('data-analytics="supporter_cta_click"') || !html.includes('data-destination="support_page"')) {
+      errors.push(`${displayPath}: missing optional supporter entry point`);
+    }
+    const suggestedSupportPath = path === '/zh/download/' ? '/zh/support/?amount=199' : '/support/?amount=29';
+    if (!html.includes(`href="${suggestedSupportPath}"`)) {
+      errors.push(`${displayPath}: supporter entry point must preselect the localized suggested amount`);
+    }
+  }
+
+  if (path === '/support/' || path === '/zh/support/') {
+    if (!html.includes('data-cta-id="support_community_download"') || !html.includes('data-destination="download_page"')) {
+      errors.push(`${displayPath}: support page must retain an independent free download CTA`);
+    }
+    if ((html.match(/data-analytics="supporter_amount_select"/g) || []).length !== 3) {
+      errors.push(`${displayPath}: expected three one-time support amount selectors`);
+    }
+    const liveCheckout = html.includes('data-checkout-status="live"');
+    if (liveCheckout) {
+      if (!html.includes('data-analytics="supporter_checkout_start"') || html.includes('data-checkout-status="coming_soon"')) {
+        errors.push(`${displayPath}: configured payment flow must use only verified live checkout actions`);
+      }
+    } else {
+      if (!html.includes('data-analytics="supporter_cta_click"') || !html.includes('data-checkout-status="coming_soon"')) {
+        errors.push(`${displayPath}: unconfigured payment flow must use the transparent supporter email event`);
+      }
+      if (html.includes('data-analytics="supporter_checkout_start"')) {
+        errors.push(`${displayPath}: checkout start must not be emitted before a verified payment URL is configured`);
+      }
     }
   }
 
