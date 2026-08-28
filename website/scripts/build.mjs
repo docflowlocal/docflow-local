@@ -11,7 +11,7 @@ const siteUrl = 'https://docflowlocal.com';
 const repoUrl = 'https://github.com/docflowlocal/docflow-local';
 const codeSigningPolicyUrl = 'https://github.com/docflowlocal/docflow-desktop/blob/main/CODE_SIGNING_POLICY.md';
 const gaMeasurementId = 'G-77MP7J9XFT';
-const lastModified = '2026-08-28';
+const lastModified = '2026-08-29';
 const indexNowKey = '393eedac11f37df862e931238f00bae8';
 const socialImageUrl = `${siteUrl}/assets/docflow-local-og.png`;
 const betaEmail = {
@@ -31,7 +31,9 @@ const desktopRelease = {
   page: 'https://github.com/docflowlocal/docflow-desktop/releases/tag/v0.6.0',
   macPkg: 'https://github.com/docflowlocal/docflow-desktop/releases/download/v0.6.0/DocFlow-Local-0.6.0-macOS-arm64.pkg',
   macZip: 'https://github.com/docflowlocal/docflow-desktop/releases/download/v0.6.0/DocFlow-Local-0.6.0-macOS-arm64.zip',
-  macPkgSha256: 'f0b503f60177d7e111d4cb62a4bcdf9734f55400c3b218eae939b1a84646be51'
+  macPkgSha256: 'f0b503f60177d7e111d4cb62a4bcdf9734f55400c3b218eae939b1a84646be51',
+  // Keep this empty until a signed Windows installer is attached to a public release.
+  windowsInstaller: ''
 };
 
 const locales = {
@@ -193,6 +195,30 @@ function analyticsAttributes(eventName, parameters = {}) {
 
 function trackedButton({ href, label, style = 'primary', eventName = 'cta_click', arrow = false, analytics }) {
   return `<a class="button ${style}" href="${escapeAttribute(href)}" ${analyticsAttributes(eventName, analytics)}>${label}${arrow ? ` ${icon('arrow')}` : ''}</a>`;
+}
+
+const installerDownloadEvents = Object.freeze({
+  macos: 'download_mac_installer',
+  windows: 'download_windows_installer'
+});
+
+function installerDownloadButton({ href, label, platform, assetType, ctaId, locale }) {
+  return trackedButton({
+    href,
+    label,
+    eventName: installerDownloadEvents[platform],
+    arrow: true,
+    analytics: {
+      ctaId,
+      ctaLocation: 'download_card',
+      pageType: 'download',
+      locale,
+      destination: 'github_release_asset',
+      platform,
+      assetType,
+      releaseVersion: desktopRelease.version
+    }
+  });
 }
 
 function header(locale, current) {
@@ -636,8 +662,26 @@ function downloadPage(locale) {
   ];
   const quickstartItems = quickstart.map(([number,title,copy])=>`<div class="workflow-item" data-reveal><span class="workflow-number">${number}</span><h3>${title}</h3><p>${copy}</p></div>`).join('');
   const starterCards = starters.map(([key,title,copy,focus],index)=>`<article class="industry-card" data-number="0${index+1}" data-reveal><span class="tag">${zh?'推荐起点':'STARTER PATH'}</span><h3>${title}</h3><p>${copy}</p><p><strong>${focus}</strong></p><a class="industry-link" href="${urlFor(locale,key)}" ${analyticsAttributes('cta_click',{ ctaId: `download_starter_${key}`, ctaLocation: 'starter_grid', pageType: 'download', locale, destination: 'industry_page', industry: key })}>${zh?'查看工作流':'Explore workflow'} ${icon('arrow')}</a></article>`).join('');
+  const macDownloadAction = installerDownloadButton({
+    href: desktopRelease.macPkg,
+    label: zh ? `免费下载 ${desktopRelease.version}` : `Download ${desktopRelease.version} free`,
+    platform: 'macos',
+    assetType: 'pkg',
+    ctaId: 'download_macos_pkg',
+    locale
+  });
+  const windowsDownloadAction = desktopRelease.windowsInstaller
+    ? installerDownloadButton({
+      href: desktopRelease.windowsInstaller,
+      label: zh ? `免费下载 ${desktopRelease.version}` : `Download ${desktopRelease.version} free`,
+      platform: 'windows',
+      assetType: 'exe',
+      ctaId: 'download_windows_installer',
+      locale
+    })
+    : trackedButton({ href: betaEmail[locale], label: locales[locale].beta, eventName: 'beta_request', arrow: true, analytics: { ctaId: 'download_windows_beta', ctaLocation: 'download_card', pageType: 'download', locale, destination: 'windows_beta_email', platform: 'windows' } });
   const body = `${pageHero(locale,'download',zh?'macOS 社区版现已发布':'macOS COMMUNITY EDITION AVAILABLE',zh?'免费下载已签名、已公证的 Community':'Download the signed, notarized Community edition free',zh?`DocFlow Local ${desktopRelease.version} Community 现已提供 Apple Silicon macOS 安装包，内置四种引导式行业工作流；Windows 版本将在完成 Authenticode 签名后发布。`:`DocFlow Local ${desktopRelease.version} Community is available for Apple Silicon Macs with four guided starter workflows. Windows will follow after Authenticode signing is complete.`,false)}
-  <section class="section"><div class="container"><div class="micro-trust download-promises">${promises.map(value=>`<span><i></i>${value}</span>`).join('')}</div><div class="download-grid"><article class="download-card"><span class="os-icon">⌘</span><h2>macOS</h2><p>${zh?'适用于 Apple Silicon（M 系列芯片），已使用 Apple Developer ID 签名并完成 Apple 公证。':'For Apple Silicon (M-series chips), signed with Apple Developer ID and notarized by Apple.'}</p>${trackedButton({ href: desktopRelease.macPkg, label: zh?`免费下载 ${desktopRelease.version}`:`Download ${desktopRelease.version} free`, eventName: 'download_mac_installer', arrow: true, analytics: { ctaId: 'download_macos_pkg', ctaLocation: 'download_card', pageType: 'download', locale, destination: 'github_release_asset', platform: 'macos', assetType: 'pkg', releaseVersion: desktopRelease.version } })}</article><article class="download-card"><span class="os-icon">⊞</span><h2>Windows</h2><p>${zh?'Windows 10/11 安装包正在进行 Authenticode 代码签名准备；不会发布未签名版本。':'The Windows 10/11 installer is being prepared for Authenticode signing; no unsigned build will be published.'}</p>${trackedButton({ href: betaEmail[locale], label: locales[locale].beta, eventName: 'beta_request', arrow: true, analytics: { ctaId: 'download_windows_beta', ctaLocation: 'download_card', pageType: 'download', locale, destination: 'windows_beta_email', platform: 'windows' } })}</article></div><div class="download-note"><strong>${zh?`macOS ${desktopRelease.version} 发布信息`:`macOS ${desktopRelease.version} release information`}</strong><br>${zh?'标准安装请下载 .pkg；如需便携归档可下载 .zip。安装包已完成 Apple 公证。PKG SHA-256：':'Download the .pkg for the standard installation flow or the .zip for a portable archive. The app is Apple notarized. PKG SHA-256: '}<code>${desktopRelease.macPkgSha256}</code><br><a href="${desktopRelease.page}" ${analyticsAttributes('view_release_details',{ ctaId: 'download_release_details', ctaLocation: 'release_note', pageType: 'download', locale, destination: 'github_release', platform: 'macos', releaseVersion: desktopRelease.version })}>${zh?'查看发布说明、ZIP、SBOM 与完整校验信息':'View release notes, ZIP, SBOM, and full verification details'}</a></div><div class="download-note" id="code-signing-policy"><strong>${zh?'代码签名政策':'Code signing policy'}</strong><br>Free code signing provided by SignPath.io, certificate by SignPath Foundation.<br>${zh?'该政策只适用于完全开源的 Windows Community 安装包和便携版；私有 Pro 模块与商业包不在签名范围内。当前不会把任何未通过 Authenticode 验证的 Windows 文件描述为已签名。':'This policy applies only to the fully open-source Windows Community installer and portable edition. Private Pro modules and commercial packages are excluded. No Windows file is described as signed until its Authenticode signature verifies.'}<br><a href="${codeSigningPolicyUrl}">${zh?'阅读完整代码签名政策':'Read the complete code signing policy'}</a></div></div></section>
+  <section class="section"><div class="container"><div class="micro-trust download-promises">${promises.map(value=>`<span><i></i>${value}</span>`).join('')}</div><div class="download-grid"><article class="download-card"><span class="os-icon">⌘</span><h2>macOS</h2><p>${zh?'适用于 Apple Silicon（M 系列芯片），已使用 Apple Developer ID 签名并完成 Apple 公证。':'For Apple Silicon (M-series chips), signed with Apple Developer ID and notarized by Apple.'}</p>${macDownloadAction}</article><article class="download-card"><span class="os-icon">⊞</span><h2>Windows</h2><p>${zh?'Windows 10/11 安装包正在进行 Authenticode 代码签名准备；不会发布未签名版本。':'The Windows 10/11 installer is being prepared for Authenticode signing; no unsigned build will be published.'}</p>${windowsDownloadAction}</article></div><div class="download-note"><strong>${zh?`macOS ${desktopRelease.version} 发布信息`:`macOS ${desktopRelease.version} release information`}</strong><br>${zh?'标准安装请下载 .pkg；如需便携归档可下载 .zip。安装包已完成 Apple 公证。PKG SHA-256：':'Download the .pkg for the standard installation flow or the .zip for a portable archive. The app is Apple notarized. PKG SHA-256: '}<code>${desktopRelease.macPkgSha256}</code><br><a href="${desktopRelease.page}" ${analyticsAttributes('view_release_details',{ ctaId: 'download_release_details', ctaLocation: 'release_note', pageType: 'download', locale, destination: 'github_release', platform: 'macos', releaseVersion: desktopRelease.version })}>${zh?'查看发布说明、ZIP、SBOM 与完整校验信息':'View release notes, ZIP, SBOM, and full verification details'}</a></div><div class="download-note" id="code-signing-policy"><strong>${zh?'代码签名政策':'Code signing policy'}</strong><br>Free code signing provided by SignPath.io, certificate by SignPath Foundation.<br>${zh?'该政策只适用于完全开源的 Windows Community 安装包和便携版；私有 Pro 模块与商业包不在签名范围内。当前不会把任何未通过 Authenticode 验证的 Windows 文件描述为已签名。':'This policy applies only to the fully open-source Windows Community installer and portable edition. Private Pro modules and commercial packages are excluded. No Windows file is described as signed until its Authenticode signature verifies.'}<br><a href="${codeSigningPolicyUrl}">${zh?'阅读完整代码签名政策':'Read the complete code signing policy'}</a></div></div></section>
   <section class="section alt"><div class="container"><div class="section-heading center"><p class="eyebrow">${zh?'3–5 分钟看到第一份结果':'FIRST RESULT IN 3–5 MINUTES'}</p><h2>${zh?'先跑通脱敏样例，再换成自己的文件':'Run a sanitized sample, then replace it with your files'}</h2></div><div class="workflow-list quickstart-list">${quickstartItems}</div></div></section>
   <section class="section"><div class="container"><div class="section-heading"><p class="eyebrow">${zh?'四种 STARTER 路径':'FOUR STARTER PATHS'}</p><h2>${zh?'从一个真实交付场景开始':'Start from a real delivery workflow'}</h2><p>${zh?'0.6.0 已在桌面端内置四种脱敏场景、字段映射、多模板、命名规则和一个引导修复的预检问题；跑通样例后即可换成自己的文件。':'Version 0.6.0 includes four sanitized in-app starters with mappings, multiple templates, naming rules, and one guided preflight issue. Run the sample, then replace it with your own files.'}</p></div><div class="industry-grid">${starterCards}</div></div></section>
   <section class="section alt"><div class="container"><div class="section-heading"><p class="eyebrow">${zh?'开发者入口':'FOR DEVELOPERS'}</p><h2>${zh?'从社区版源代码开始':'Start from the community source'}</h2><p>${zh?'当前模块化源码已发布，可按 README 运行桌面端，也可直接使用 Core 的 CLI、本地 API 与插件接口。':'The current modular source is public. Follow the README to run Desktop Community or use the Core CLI, local API, and plugin contracts directly.'}</p></div><div class="code-card"><div class="code-card-top"><span><i></i> docflow-local</span><span>COMMUNITY</span></div><pre><span class="accent">$</span> git clone ${repoUrl}.git
