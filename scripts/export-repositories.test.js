@@ -247,6 +247,21 @@ test("export writes verified trees, preserves metadata, and rejects a dirty reru
         /hashFiles\('project\/package-lock\.json'\)/
       );
       assert.match(workflow, /@docflow-local\/license-verifier/);
+      const windowsPackageWorkflow = await fs.promises.readFile(
+        path.join(output, repository, ".github/workflows/windows-package.yml"),
+        "utf8"
+      );
+      assert.match(windowsPackageWorkflow, /workflow_dispatch:/);
+      assert.match(windowsPackageWorkflow, /CSC_IDENTITY_AUTO_DISCOVERY: "false"/);
+      assert.match(windowsPackageWorkflow, /--publish" "never/);
+      assert.match(windowsPackageWorkflow, /npm run test:desktop/);
+      assert.match(windowsPackageWorkflow, /Get-AuthenticodeSignature/);
+      assert.match(windowsPackageWorkflow, /distribution = "internal-preview"/);
+      assert.match(windowsPackageWorkflow, /actions\/upload-artifact@v7/);
+      assert.doesNotMatch(
+        windowsPackageWorkflow,
+        /sourceRef = "\$\{\{ inputs\.source_ref \}\}"/
+      );
     }
   }
 
