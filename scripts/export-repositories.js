@@ -749,6 +749,10 @@ function repositoryDefinitions() {
       name: "docflow-desktop",
       entries: Object.freeze([
         ...commonMetadataEntries("docflow-desktop"),
+        sourceEntry(
+          "release/split-repositories/docflow-desktop/windows-package.yml",
+          ".github/workflows/windows-package.yml"
+        ),
         generatedEntry("README.md", "generated:docflow-desktop/README.md", sourceRoot => (
           rewrittenSource(sourceRoot, "README.md", source => rewriteDesktopDocument("README.md", source))
         )),
@@ -967,6 +971,7 @@ function repositoryDefinitions() {
       ]),
       requiredFiles: Object.freeze([
         ".github/workflows/ci.yml",
+        ".github/workflows/windows-package.yml",
         "LICENSE",
         "NOTICE.md",
         "README.md",

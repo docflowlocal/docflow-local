@@ -1,0 +1,165 @@
+name: Windows Community package
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: Reviewed tag or commit to package
+        required: true
+        default: v0.6.0
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-community-package-${{ inputs.source_ref }}
+  cancel-in-progress: false
+
+jobs:
+  package-windows-x64:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+    steps:
+      - name: Check out reviewed source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.source_ref }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Audit production and build dependencies
+        run: npm audit --audit-level=high
+
+      - name: Validate immutable source ref
+        shell: powershell
+        env:
+          DOCFLOW_SOURCE_REF: ${{ inputs.source_ref }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          if (
+            $env:DOCFLOW_SOURCE_REF -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$' -and
+            $env:DOCFLOW_SOURCE_REF -notmatch '^[0-9a-fA-F]{40}$'
+          ) {
+            throw "source_ref must be an immutable version tag or a full 40-character commit SHA."
+          }
+
+      - name: Run desktop and release tests
+        run: |
+          npm run test:desktop
+          npm run test:release
+
+      - name: Build Windows x64 installer and portable app
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $Builder = Join-Path $PWD "node_modules\.bin\electron-builder.cmd"
+          & $Builder "--win" "nsis" "portable" "--x64" "--publish" "never"
+          if ($LASTEXITCODE -ne 0) {
+            throw "electron-builder failed with exit code $LASTEXITCODE"
+          }
+          & powershell "-NoProfile" "-ExecutionPolicy" "Bypass" "-File" "desktop/release-smoke-win.ps1"
+          if ($LASTEXITCODE -ne 0) {
+            throw "Packaged Windows release smoke failed with exit code $LASTEXITCODE"
+          }
+
+      - name: Normalize and verify unsigned preview artifacts
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $Version = (& node -p "require('./package.json').version").Trim()
+          $Setup = Join-Path $PWD "dist\DocFlow-Local-Setup-$Version-x64.exe"
+          $PortableSource = Join-Path $PWD "dist\DocFlow-Local-$Version-win-x64.exe"
+          $Portable = Join-Path $PWD "dist\DocFlow-Local-$Version-Windows-x64.exe"
+
+          if (-not (Test-Path -LiteralPath $Setup -PathType Leaf)) {
+            throw "Expected NSIS installer is missing: $Setup"
+          }
+          if (-not (Test-Path -LiteralPath $PortableSource -PathType Leaf)) {
+            throw "Expected portable executable is missing: $PortableSource"
+          }
+          Move-Item -LiteralPath $PortableSource -Destination $Portable
+
+          foreach ($Artifact in @($Setup, $Portable)) {
+            $Signature = Get-AuthenticodeSignature -LiteralPath $Artifact
+            if ($Signature.Status -ne "NotSigned") {
+              throw "Unsigned preview unexpectedly has Authenticode status $($Signature.Status): $Artifact"
+            }
+          }
+
+      - name: Generate internal release manifest and SBOM
+        run: >-
+          node scripts/generate-release-metadata.js
+          --channel internal
+          --platform windows
+          --arch x64
+          --output dist/release-metadata-windows-x64
+
+      - name: Assemble verified download bundle
+        shell: powershell
+        env:
+          DOCFLOW_SOURCE_REF: ${{ inputs.source_ref }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $Version = (& node -p "require('./package.json').version").Trim()
+          $SourceCommit = (& git rev-parse HEAD).Trim()
+          $Bundle = Join-Path $PWD "dist\windows-community-$Version-x64-unsigned"
+          New-Item -ItemType Directory -Path $Bundle -Force | Out-Null
+
+          $Artifacts = @(
+            (Join-Path $PWD "dist\DocFlow-Local-Setup-$Version-x64.exe"),
+            (Join-Path $PWD "dist\DocFlow-Local-$Version-Windows-x64.exe")
+          )
+          foreach ($Artifact in $Artifacts) {
+            Copy-Item -LiteralPath $Artifact -Destination $Bundle
+          }
+          Copy-Item -Path "dist\release-metadata-windows-x64\*" -Destination $Bundle
+
+          $HashLines = foreach ($Artifact in $Artifacts) {
+            $Hash = Get-FileHash -LiteralPath $Artifact -Algorithm SHA256
+            "{0}  {1}" -f $Hash.Hash.ToLowerInvariant(), (Split-Path -Leaf $Artifact)
+          }
+          $Utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+          $HashText = ([string[]]$HashLines -join "`n") + "`n"
+          [System.IO.File]::WriteAllText(
+            (Join-Path $Bundle "SHA256SUMS.txt"),
+            $HashText,
+            $Utf8NoBom
+          )
+
+          $BuildInfo = [ordered]@{
+            schemaVersion = 1
+            product = "DocFlow Local Community"
+            version = $Version
+            platform = "windows"
+            arch = "x64"
+            sourceRef = $env:DOCFLOW_SOURCE_REF
+            sourceCommit = $SourceCommit
+            signed = $false
+            distribution = "internal-preview"
+          }
+          $BuildInfoJson = (($BuildInfo | ConvertTo-Json) -replace "`r`n", "`n") + "`n"
+          [System.IO.File]::WriteAllText(
+            (Join-Path $Bundle "build-info.json"),
+            $BuildInfoJson,
+            $Utf8NoBom
+          )
+
+      - name: Upload Windows package bundle
+        uses: actions/upload-artifact@v7
+        with:
+          name: docflow-local-windows-x64-unsigned
+          path: dist/windows-community-*-x64-unsigned/*
+          if-no-files-found: error
+          retention-days: 14

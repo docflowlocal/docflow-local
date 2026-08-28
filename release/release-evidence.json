@@ -25,8 +25,8 @@
     "reference": ""
   },
   "windowsPackagedSmoke": {
-    "status": "pending",
-    "reference": ""
+    "status": "complete",
+    "reference": "Unsigned Community v0.6.0 Windows x64 package and packaged-app smoke passed from reviewed source tag v0.6.0 (ac5ba937dac861e44d6c7ad359d48a72c355edbe); GitHub Actions run https://github.com/docflowlocal/docflow-desktop/actions/runs/33177883384; DOCFLOW_PACKAGED_SMOKE_OK; this evidence does not satisfy the separate Authenticode gate"
   },
   "productionLicenseKeyring": {
     "status": "pending",
