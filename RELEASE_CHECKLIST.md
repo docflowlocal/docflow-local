@@ -20,7 +20,7 @@ Pro releases. Do not publish from an unreviewed working tree.
 - Include the full applicable license, notices, security policy, contributor
   policy, changelog, and trademark statement in every repository and artifact.
 - Obtain professional review of the MPL transition, contributor/DCO process,
-  commercial license, template rights, and trademark policy.
+  separate commercial-offering terms, template rights, and trademark policy.
 
 ## 2. Create repositories
 

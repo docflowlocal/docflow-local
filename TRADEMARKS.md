@@ -1,6 +1,11 @@
 # DocFlow Local Trademark Policy
 
-The source-code license does not grant permission to use the DocFlow Local name, logo, product icon, domain names, or other brand identifiers in a way that suggests endorsement or an official build.
+The copyright in repository files, including the official `build/icon.png`
+asset, is available under the applicable open-source license identified by this
+repository. Those copyright licenses do not grant trademark rights in the
+DocFlow Local name, logo, product icon, domain names, or other brand identifiers
+and do not permit their use in a way that suggests endorsement or an official
+build.
 
 You may:
 

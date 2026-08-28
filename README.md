@@ -154,6 +154,7 @@ Paid editions will not be differentiated by hidden telemetry, document uploads, 
 - [Product guides](https://docflowlocal.com/guides/)
 - [Security policy](SECURITY.md)
 - [Privacy architecture](PRIVACY.md)
+- [Desktop code signing policy](https://github.com/docflowlocal/docflow-desktop/blob/main/CODE_SIGNING_POLICY.md)
 - [Benchmark method and results](BENCHMARKS.md)
 - [Desktop build and release checklist](DESKTOP_BUILD.md)
 - [Roadmap](ROADMAP.md)
@@ -172,8 +173,11 @@ The historical 0.x monolith remains available under GNU AGPL-3.0-or-later.
 Original new contracts, verifier, extension SDK, and modular source files are
 being prepared under MPL-2.0. The current Core transition package remains mixed
 because inherited engine files retain AGPL-3.0-or-later; old AGPL grants are not
-revoked. See [NOTICE.md](NOTICE.md) for the exact boundaries. Private Pro modules
-and commercial template packs use separate terms. The DocFlow Local
-name, logo, and official industry templates are not granted under the code
-license; see [TRADEMARKS.md](TRADEMARKS.md). For support, OEM, proprietary
-embedding, or enterprise licensing, contact `support@willgo.tech`.
+revoked. See [NOTICE.md](NOTICE.md) for the exact boundaries. The Community
+application, Core, contracts, and license verifier are not offered under a
+proprietary alternative license. Private Pro modules, commercial template
+packs, implementation, training, support, service-level agreements, and
+trademark permissions are separate commercial offerings and are not included
+in the Community package. Copyright and trademark rights are distinct; see
+[TRADEMARKS.md](TRADEMARKS.md). For commercial products and services, contact
+`support@willgo.tech`.

@@ -37,6 +37,10 @@ When a file has an SPDX identifier, that identifier controls for the file.
 Otherwise, use the nearest applicable package manifest and notice. Material
 outside an explicit MPL or template boundary remains under the root AGPL terms.
 
+This includes the copyright in the official `build/icon.png` asset. The open
+copyright license does not grant trademark rights or permission to imply
+endorsement of a modified build; see [TRADEMARKS.md](TRADEMARKS.md).
+
 ## Starter templates
 
 The starter template packs, their manifests, sample data, and accompanying
@@ -46,8 +50,8 @@ International (`CC-BY-4.0`) as stated in their manifests and
 identify modifications. Template build or validation source files with an
 explicit `MPL-2.0` identifier remain under the MPL.
 
-No source or template license grants rights to DocFlow Local trademarks. See
-[TRADEMARKS.md](TRADEMARKS.md).
+No source, asset, or template license grants rights to DocFlow Local
+trademarks. See [TRADEMARKS.md](TRADEMARKS.md).
 
 ## Other material
 

@@ -1,11 +1,23 @@
-# Commercial licensing
+# Commercial products and services
 
-The Community Edition is intended for release under AGPL-3.0-or-later. A separate commercial license is planned for organizations that need to:
+DocFlow Local Community, Core, contracts, the license verifier, and the other
+open-source components in official Community builds are available only under
+their published open-source licenses. DocFlow Local does not offer a
+proprietary alternative license for those same components and does not waive
+their license obligations for proprietary embedding or closed-source OEM
+redistribution.
 
-- embed the engine in proprietary software;
-- redistribute a closed-source appliance or OEM build;
-- use proprietary Pro modules;
-- receive an offline enterprise license, support, or contractual terms;
-- obtain custom industry templates and implementation services.
+Commercial agreements may cover only offerings that are separate from those
+open-source components:
 
-This file is a product overview, not the commercial license agreement. Contact `sales@docflowlocal.com` for written terms.
+- private DocFlow Pro modules that are not included in Community builds;
+- commercial industry templates and template configuration;
+- implementation, integration, migration, and training services;
+- commercial support, service-level agreements, and enterprise deployment;
+- trademark permissions for approved branded distribution.
+
+Organizations that embed or redistribute Community or Core must comply with
+the applicable AGPL-3.0-or-later and/or MPL-2.0 notices and obligations. This
+file describes product boundaries; it is not an alternative software license.
+Contact `support@willgo.tech` for English-language commercial services or
+`support@roboai.tech` for Chinese-language commercial services.

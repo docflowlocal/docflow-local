@@ -202,8 +202,9 @@ still treated as an explicit release change:
    the license of copied or adapted AGPL files;
 4. add SPDX identifiers and the MPL Exhibit A notice to new source files;
 5. document that old AGPL releases remain AGPL;
-6. require a reviewed contributor agreement or Developer Certificate of Origin
-   before accepting substantial code intended for dual-licensed distributions.
+6. require a reviewed Developer Certificate of Origin before accepting
+   substantial contributions to open-source Community or Core components; those
+   components are not distributed under a proprietary alternative license.
 
 This document is an engineering decision, not legal advice. Commercial release
 terms and the final contribution policy require professional legal review.
