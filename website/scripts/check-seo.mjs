@@ -8,6 +8,14 @@ const dist = join(siteRoot, 'dist');
 const siteUrl = 'https://docflowlocal.com';
 const indexNowKey = '393eedac11f37df862e931238f00bae8';
 const errors = [];
+const buildSource = await readFile(join(siteRoot, 'scripts', 'build.mjs'), 'utf8');
+const analyticsSource = await readFile(join(siteRoot, 'src', 'analytics.js'), 'utf8');
+
+if (!buildSource.includes("macos: 'download_mac_installer'")) errors.push('analytics: missing macOS installer event contract');
+if (!buildSource.includes("windows: 'download_windows_installer'")) errors.push('analytics: missing Windows installer event contract');
+for (const marker of ["'download_mac_installer'", "'download_windows_installer'", 'file_name:', 'file_extension:', 'link_url:', 'link_domain:']) {
+  if (!analyticsSource.includes(marker)) errors.push(`analytics: missing installer handler marker ${marker}`);
+}
 
 async function walk(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -74,8 +82,28 @@ for (const file of htmlFiles) {
     errors.push(`${displayPath}: homepage missing Community download CTA`);
   }
   if (path === '/download/' || path === '/zh/download/') {
-    for (const marker of ['download_mac_installer', 'quickstart-list', 'download_starter_trade', 'download_starter_engineering', 'download_starter_hr', 'download_starter_compliance']) {
+    for (const marker of ['quickstart-list', 'download_starter_trade', 'download_starter_engineering', 'download_starter_hr', 'download_starter_compliance']) {
       if (!html.includes(marker)) errors.push(`${displayPath}: download onboarding missing ${marker}`);
+    }
+    const macInstaller = buttonLinks.find(link => link.includes('data-analytics="download_mac_installer"'));
+    if (!macInstaller) {
+      errors.push(`${displayPath}: missing macOS installer download event`);
+    } else {
+      for (const attribute of ['data-cta-id="download_macos_pkg"', 'data-destination="github_release_asset"', 'data-platform="macos"', 'data-asset-type="pkg"', 'data-release-version="']) {
+        if (!macInstaller.includes(attribute)) errors.push(`${displayPath}: macOS installer event missing ${attribute}`);
+      }
+    }
+
+    const windowsInstaller = buttonLinks.find(link => link.includes('data-analytics="download_windows_installer"'));
+    if (windowsInstaller) {
+      for (const attribute of ['data-cta-id="download_windows_installer"', 'data-destination="github_release_asset"', 'data-platform="windows"', 'data-asset-type="exe"', 'data-release-version="']) {
+        if (!windowsInstaller.includes(attribute)) errors.push(`${displayPath}: Windows installer event missing ${attribute}`);
+      }
+    } else {
+      const windowsBeta = buttonLinks.find(link => link.includes('data-cta-id="download_windows_beta"'));
+      if (!windowsBeta || !windowsBeta.includes('data-analytics="beta_request"') || !windowsBeta.includes('data-platform="windows"')) {
+        errors.push(`${displayPath}: unsigned Windows state must retain the Windows beta event`);
+      }
     }
     if (!html.includes('Free code signing provided by SignPath.io, certificate by SignPath Foundation.')) {
       errors.push(`${displayPath}: missing SignPath Foundation attribution`);

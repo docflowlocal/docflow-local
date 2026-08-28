@@ -31,6 +31,35 @@ function clickParameters(link) {
   });
 }
 
+const installerDownloadEvents = new Set([
+  'download_mac_installer',
+  'download_windows_installer'
+]);
+
+function installerDownloadParameters(link, parameters) {
+  try {
+    const url = new URL(link.href, window.location.href);
+    const encodedName = url.pathname.split('/').filter(Boolean).at(-1) || '';
+    let fileName = encodedName;
+    try {
+      fileName = decodeURIComponent(encodedName);
+    } catch (_error) {
+      // Keep the encoded public filename when a URL contains invalid escapes.
+    }
+    const extension = fileName.includes('.') ? fileName.split('.').at(-1).toLowerCase() : '';
+    return compact({
+      ...parameters,
+      link_url: url.href,
+      link_domain: url.hostname,
+      link_text: link.textContent?.trim(),
+      file_name: fileName,
+      file_extension: extension
+    });
+  } catch (_error) {
+    return parameters;
+  }
+}
+
 function aiReferralSource() {
   const campaignSource = new URLSearchParams(window.location.search).get('utm_source')?.toLowerCase() || '';
   const referringHost = (() => {
@@ -66,7 +95,10 @@ document.addEventListener('click', event => {
 
   const analyticsEvent = link.dataset.analytics;
   if (analyticsEvent) {
-    const parameters = clickParameters(link);
+    const clickContext = clickParameters(link);
+    const parameters = installerDownloadEvents.has(analyticsEvent)
+      ? installerDownloadParameters(link, clickContext)
+      : clickContext;
     track(analyticsEvent, parameters);
     if (link.dataset.ctaId && analyticsEvent !== 'cta_click') {
       track('cta_click', { ...parameters, source_event: analyticsEvent });
