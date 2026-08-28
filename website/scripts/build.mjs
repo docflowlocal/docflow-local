@@ -2,6 +2,7 @@ import { copyFile, mkdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { guideContent, guideKeys } from './guide-content.mjs';
+import { validateSupporterCheckoutUrls } from './supporter-checkout.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const siteRoot = resolve(here, '..');
@@ -10,8 +11,8 @@ const dist = join(siteRoot, 'dist');
 const siteUrl = 'https://docflowlocal.com';
 const repoUrl = 'https://github.com/docflowlocal/docflow-local';
 const codeSigningPolicyUrl = 'https://github.com/docflowlocal/docflow-desktop/blob/main/CODE_SIGNING_POLICY.md';
-const gaMeasurementId = 'G-77MP7J9XFT';
 const lastModified = '2026-08-29';
+const assetRevision = '20260829-1';
 const indexNowKey = '393eedac11f37df862e931238f00bae8';
 const socialImageUrl = `${siteUrl}/assets/docflow-local-og.png`;
 const betaEmail = {
@@ -26,6 +27,16 @@ const contactEmail = {
   en: 'mailto:support@willgo.tech?subject=DocFlow%20Local',
   zh: 'mailto:support@roboai.tech?subject=DocFlow%20Local'
 };
+const supporterEmail = {
+  en: 'support@willgo.tech',
+  zh: 'support@roboai.tech'
+};
+// Add verified payment URLs here when a checkout provider is live. Until then,
+// supporter actions open a clearly labelled email draft and never imply payment.
+const supporterCheckoutUrls = validateSupporterCheckoutUrls({
+  en: { 9: '', 29: '', 99: '' },
+  zh: { 69: '', 199: '', 699: '' }
+});
 const desktopRelease = {
   version: '0.6.0',
   page: 'https://github.com/docflowlocal/docflow-desktop/releases/tag/v0.6.0',
@@ -45,9 +56,9 @@ const locales = {
     footerIntro: 'Privacy-first document automation for teams that work with sensitive files.',
     footer: {
       product: 'Product', company: 'Company', resources: 'Resources',
-      pricing: 'Pricing', security: 'Security', templates: 'Templates', download: 'Download', batch: 'Excel to Word / PDF',
+      pricing: 'Pricing', security: 'Security', templates: 'Templates', download: 'Download', support: 'Support Community', batch: 'Excel to Word / PDF',
       guides: 'Guides', benchmark: 'Benchmarks',
-      github: 'GitHub', roadmap: 'Roadmap', privacy: 'Privacy', signing: 'Code signing policy', contact: 'Contact',
+      github: 'GitHub', roadmap: 'Roadmap', privacy: 'Privacy', analytics: 'Analytics settings', signing: 'Code signing policy', contact: 'Contact',
       trade: 'Trade quotations', engineering: 'Engineering delivery', hr: 'HR onboarding', compliance: 'Compliance packages',
       legal: 'New modular Community files carry MPL-2.0 where marked; legacy 0.x and retained engine files remain AGPL-3.0. DocFlow Local is a trademark of its owner.',
       locality: 'Designed for local-first work.'
@@ -61,9 +72,9 @@ const locales = {
     footerIntro: '为敏感文档而生的本地优先批量自动化工具。',
     footer: {
       product: '产品', company: '相关信息', resources: '行业方案',
-      pricing: '价格', security: '安全', templates: '模板', download: '下载', batch: 'Excel 批量生成 Word / PDF',
+      pricing: '价格', security: '安全', templates: '模板', download: '下载', support: '支持社区版', batch: 'Excel 批量生成 Word / PDF',
       guides: '实用指南', benchmark: '性能测试',
-      github: 'GitHub', roadmap: '路线图', privacy: '隐私说明', signing: '代码签名政策', contact: '联系我们',
+      github: 'GitHub', roadmap: '路线图', privacy: '隐私说明', analytics: '分析统计设置', signing: '代码签名政策', contact: '联系我们',
       trade: '贸易报价', engineering: '工程交付', hr: 'HR 入职', compliance: '合规文件包',
       legal: '新模块化社区文件在明确标注处采用 MPL-2.0；历史 0.x 与保留引擎文件继续采用 AGPL-3.0。DocFlow Local 为其所有者商标。',
       locality: '为本地优先工作流而设计。'
@@ -81,6 +92,7 @@ const pages = {
     security: { path: '/security/', title: 'Offline Document Automation & Privacy | DocFlow Local', description: 'Learn how DocFlow Local processes Excel, Word, PDF, signatures, and customer data on your computer without uploading source files.' },
     templates: { path: '/templates/', title: 'Excel, Word & PDF Automation Templates | DocFlow Local', description: 'Explore document automation template packs for trade quotations, engineering handover, HR onboarding, compliance, education, and property.' },
     download: { path: '/download/', title: 'Download DocFlow Local for macOS | Community 0.6.0', description: 'Download the signed and Apple-notarized DocFlow Local 0.6.0 Community installer for Apple Silicon Macs, with four guided starter workflows.' },
+    support: { path: '/support/', title: 'Support DocFlow Local Community Development', description: 'DocFlow Local Community stays free. Download without registration, or optionally support ongoing development with a one-time contribution.' },
     batch: { path: '/features/excel-to-word-pdf/', title: 'Batch Generate Word & PDF from Excel | DocFlow Local', description: 'Use Excel or CSV rows with Word and PDF templates to batch-generate named, validated document packages entirely on your computer.' },
     trade: { path: '/industries/trade-quotation/', title: 'Excel Quotation & Proforma Generator | DocFlow Local', description: 'Batch-generate quotations, proforma invoices, packing lists, and customer delivery folders from Excel without uploading customer data.' },
     engineering: { path: '/industries/engineering-delivery/', title: 'Engineering Handover Package Generator | DocFlow Local', description: 'Generate project transmittals, cover sheets, document registers, acceptance forms, and structured handover packages locally.' },
@@ -93,6 +105,7 @@ const pages = {
     security: { path: '/zh/security/', title: '本地文档处理与数据安全 | DocFlow Local', description: '了解 DocFlow Local 如何在电脑本机处理 Excel、Word、PDF、签名和客户数据，不上传源文件。' },
     templates: { path: '/zh/templates/', title: 'Word/PDF 批量生成行业模板 | DocFlow Local', description: '查看贸易报价、工程交付、HR 入职、教育证书、合规认证和房产资料的文档自动化模板包。' },
     download: { path: '/zh/download/', title: '下载 DocFlow Local macOS 社区版 0.6.0', description: '下载适用于 Apple Silicon Mac 的已签名、已公证 DocFlow Local 0.6.0 社区版安装器，内置四种引导式行业工作流。' },
+    support: { path: '/zh/support/', title: '一次性支持 DocFlow Local 社区版开发', description: 'DocFlow Local Community 永久保持免费，可无需注册直接下载；如果它对你有帮助，也可自愿一次性支持持续开发。' },
     batch: { path: '/zh/features/excel-to-word-pdf/', title: 'Excel 批量生成 Word/PDF 文档 | DocFlow Local', description: '把 Excel/CSV 每行数据绑定到 Word 和 PDF 模板，在本机批量生成、命名、校验并整理文档包。' },
     trade: { path: '/zh/industries/trade-quotation/', title: 'Excel 批量生成报价单与形式发票 | DocFlow Local', description: '从 Excel 批量生成报价单、形式发票、装箱单和客户交付目录，客户数据无需上传。' },
     engineering: { path: '/zh/industries/engineering-delivery/', title: '工程资料与项目交付包自动化 | DocFlow Local', description: '在本地批量生成项目传递单、封面、文件清单、验收表与结构化竣工交付包。' },
@@ -119,6 +132,7 @@ const pageNames = {
     security: 'Security & privacy',
     templates: 'Document automation templates',
     download: 'Download Community',
+    support: 'Support Community',
     batch: 'Excel to Word & PDF',
     trade: 'Trade quotation automation',
     engineering: 'Engineering handover automation',
@@ -131,6 +145,7 @@ const pageNames = {
     security: '安全与隐私',
     templates: '行业自动化模板',
     download: '下载 Community',
+    support: '支持社区版',
     batch: 'Excel 批量生成 Word/PDF',
     trade: '贸易报价自动化',
     engineering: '工程交付自动化',
@@ -182,7 +197,10 @@ function analyticsAttributes(eventName, parameters = {}) {
     assetType: 'asset-type',
     releaseVersion: 'release-version',
     plan: 'plan',
-    industry: 'industry'
+    industry: 'industry',
+    supportAmount: 'support-amount',
+    currency: 'currency',
+    checkoutStatus: 'checkout-status'
   };
   const attributes = [['data-analytics', eventName]];
   for (const [key, value] of Object.entries(parameters)) {
@@ -221,6 +239,52 @@ function installerDownloadButton({ href, label, platform, assetType, ctaId, loca
   });
 }
 
+function supporterTiers(locale) {
+  return locale === 'zh'
+    ? [
+      { amount: 69, currency: 'CNY', label: '¥69' },
+      { amount: 199, currency: 'CNY', label: '¥199', recommended: true },
+      { amount: 699, currency: 'CNY', label: '¥699' }
+    ]
+    : [
+      { amount: 9, currency: 'USD', label: 'US$9' },
+      { amount: 29, currency: 'USD', label: 'US$29', recommended: true },
+      { amount: 99, currency: 'USD', label: 'US$99' }
+    ];
+}
+
+function supporterAction(locale, tier) {
+  const checkoutUrl = supporterCheckoutUrls[locale][tier.amount];
+  if (checkoutUrl) {
+    return {
+      href: checkoutUrl,
+      eventName: 'supporter_checkout_start',
+      destination: 'supporter_checkout',
+      checkoutStatus: 'live',
+      label: locale === 'zh' ? `一次性支持 ${tier.label}` : `Support once — ${tier.label}`
+    };
+  }
+  const subject = locale === 'zh'
+    ? `DocFlow Local 一次性支持意向 ${tier.label}`
+    : `DocFlow Local one-time support interest ${tier.label}`;
+  const body = locale === 'zh'
+    ? `我希望以 ${tier.label} 一次性支持 DocFlow Local Community。支付通道开放后请通知我。`
+    : `I would like to support DocFlow Local Community once at ${tier.label}. Please notify me when the payment channel is available.`;
+  return {
+    href: `mailto:${supporterEmail[locale]}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
+    eventName: 'supporter_cta_click',
+    destination: 'supporter_email',
+    checkoutStatus: 'coming_soon',
+    label: locale === 'zh' ? `登记 ${tier.label} 支持意向` : `Register ${tier.label} support interest`
+  };
+}
+
+function supporterTeaser(locale, pageType, ctaLocation) {
+  const zh = locale === 'zh';
+  const suggested = supporterTiers(locale).find(tier => tier.recommended);
+  return `<aside class="supporter-teaser" data-reveal><div><p class="eyebrow">${zh ? '可选的一次性支持' : 'OPTIONAL ONE-TIME SUPPORT'}</p><h3>${zh ? 'Community 永久免费；觉得有帮助，可以支持持续开发' : 'Community stays free. Support ongoing development if it helps.'}</h3><p>${zh ? '建议支持价：¥199（或 US$29）。支持完全自愿，不解锁额外功能，也不影响免费下载与使用。' : 'Suggested support: US$29 (about ¥199). Support is entirely optional, unlocks no extra features, and never blocks the free download.'}</p></div>${trackedButton({ href: `${urlFor(locale, 'support')}?amount=${suggested.amount}`, label: zh ? '查看一次性支持方式' : 'View one-time support options', style: 'secondary', eventName: 'supporter_cta_click', arrow: true, analytics: { ctaId: `${pageType}_supporter_options`, ctaLocation, pageType, locale, destination: 'support_page', supportAmount: suggested.amount, currency: suggested.currency, checkoutStatus: 'coming_soon' } })}</aside>`;
+}
+
 function header(locale, current) {
   const l = locales[locale];
   const other = locale === 'en' ? 'zh' : 'en';
@@ -256,16 +320,22 @@ function footer(locale) {
     <div class="container">
       <div class="footer-grid">
         <div class="footer-intro"><a class="brand" href="${urlFor(locale, 'home')}">${brand()}</a><p>${l.footerIntro}</p></div>
-        <div class="footer-column"><strong>${f.product}</strong><a href="${urlFor(locale, 'batch')}">${f.batch}</a><a href="${urlFor(locale, 'pricing')}">${f.pricing}</a><a href="${urlFor(locale, 'security')}">${f.security}</a><a href="${urlFor(locale, 'templates')}">${f.templates}</a><a href="${urlFor(locale, 'download')}">${f.download}</a></div>
+        <div class="footer-column"><strong>${f.product}</strong><a href="${urlFor(locale, 'batch')}">${f.batch}</a><a href="${urlFor(locale, 'pricing')}">${f.pricing}</a><a href="${urlFor(locale, 'security')}">${f.security}</a><a href="${urlFor(locale, 'templates')}">${f.templates}</a><a href="${urlFor(locale, 'download')}">${f.download}</a><a href="${urlFor(locale, 'support')}">${f.support}</a></div>
         <div class="footer-column"><strong>${f.resources}</strong><a href="${urlFor(locale, 'guides')}">${f.guides}</a><a href="${urlFor(locale, 'benchmark')}">${f.benchmark}</a><a href="${urlFor(locale, 'trade')}">${f.trade}</a><a href="${urlFor(locale, 'engineering')}">${f.engineering}</a><a href="${urlFor(locale, 'hr')}">${f.hr}</a><a href="${urlFor(locale, 'compliance')}">${f.compliance}</a></div>
-        <div class="footer-column"><strong>${f.company}</strong><a href="${repoUrl}">${f.github}</a><a href="${repoUrl}/blob/main/ROADMAP.md">${f.roadmap}</a><a href="${repoUrl}/blob/main/PRIVACY.md">${f.privacy}</a><a href="${codeSigningPolicyUrl}">${f.signing}</a><a href="${contactEmail[locale]}">${f.contact}</a></div>
+        <div class="footer-column"><strong>${f.company}</strong><a href="${repoUrl}">${f.github}</a><a href="${repoUrl}/blob/main/ROADMAP.md">${f.roadmap}</a><a href="${repoUrl}/blob/main/PRIVACY.md">${f.privacy}</a><a href="#analytics-settings" data-analytics-settings>${f.analytics}</a><a href="${codeSigningPolicyUrl}">${f.signing}</a><a href="${contactEmail[locale]}">${f.contact}</a></div>
       </div>
       <div class="footer-bottom"><span>© <span data-year>2026</span> DocFlow Local. ${f.legal}</span><span>${f.locality}</span></div>
     </div>
   </footer>`;
 }
 
+function analyticsConsent(locale) {
+  const zh = locale === 'zh';
+  return `<aside class="analytics-consent" id="analytics-settings" data-analytics-consent role="dialog" aria-modal="false" aria-labelledby="analyticsConsentTitle" hidden><div><strong id="analyticsConsentTitle">${zh ? '是否允许匿名网站分析？' : 'Allow optional website analytics?'}</strong><p>${zh ? '同意后才会加载 Google Analytics，用于了解页面、下载和支持流程；不会读取桌面端文档或客户数据。你可随时从页脚重新设置。' : 'Google Analytics loads only after you accept, to measure pages, downloads, and the support flow. It never reads desktop documents or customer data. You can change this from the footer.'} <a href="${repoUrl}/blob/main/PRIVACY.md">${zh ? '查看隐私说明' : 'Read privacy details'}</a></p></div><div class="analytics-consent-actions"><button class="button secondary" type="button" data-analytics-decline>${zh ? '拒绝' : 'Decline'}</button><button class="button primary" type="button" data-analytics-accept>${zh ? '接受分析统计' : 'Accept analytics'}</button></div></aside>`;
+}
+
 const absoluteUrlFor = (locale, key) => `${siteUrl}${urlFor(locale, key)}`;
+const assetUrl = path => `${path}?v=${assetRevision}`;
 
 function breadcrumb(locale, current) {
   if (current === 'home') return '';
@@ -412,9 +482,8 @@ function layout(locale, current, body, { faq = [], article = false } = {}) {
   <link rel="icon" href="/assets/icon.png">
   <link rel="apple-touch-icon" href="/assets/icon.png">
   <link rel="manifest" href="/site.webmanifest">
-  <link rel="stylesheet" href="/assets/styles.css">
-  <script async src="https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}"></script>
-  <script src="/assets/analytics.js"></script>
+  <link rel="stylesheet" href="${assetUrl('/assets/styles.css')}">
+  <script src="${assetUrl('/assets/analytics.js')}"></script>
   <meta property="og:type" content="website"><meta property="og:site_name" content="DocFlow Local">
   <meta property="og:title" content="${title}"><meta property="og:description" content="${description}">
   <meta property="og:url" content="${canonical}"><meta property="og:locale" content="${locale === 'zh' ? 'zh_CN' : 'en_US'}">
@@ -430,7 +499,8 @@ function layout(locale, current, body, { faq = [], article = false } = {}) {
   ${header(locale, current)}
   <main id="main">${breadcrumb(locale, current)}${body}</main>
   ${footer(locale)}
-  <script src="/assets/site.js" defer></script>
+  ${analyticsConsent(locale)}
+  <script src="${assetUrl('/assets/site.js')}" defer></script>
 </body>
 </html>`;
 }
@@ -546,7 +616,7 @@ function pricingSection(locale, full = false) {
   const pageType = full ? 'pricing' : 'home';
   const cards = plans.map((p,i)=>`<article class="price-card${i===1?' featured':''}" data-reveal>${i===1?`<span class="popular">${zh?'推荐':'MOST POPULAR'}</span>`:''}<div class="plan-name">${p[0]}</div><div class="price">${p[1]}${i===1?`<small>/${zh?'年':'year'}</small>`:''}</div><p class="plan-copy">${p[2]}</p><ul class="plan-list">${p[3].map(x=>`<li><i>✓</i>${x}</li>`).join('')}</ul>${trackedButton({ href: p[4], label: p[5], style: p[6], eventName: p[7], analytics: { ctaId: p[8], ctaLocation: 'pricing_card', pageType, locale, destination: p[9], plan: ['community','pro','business'][i], platform: i === 0 ? 'macos' : undefined } })}</article>`).join('');
   const heading = full ? '' : `<div class="section-heading center"><p class="eyebrow">${zh?'清晰升级':'A CLEAR UPGRADE PATH'}</p><h2>${zh?'先用起来，再为高价值效率付费':'Start working, then pay for higher-value efficiency'}</h2></div>`;
-  return `<section class="section${full?'':' alt'}"><div class="container">${heading}<div class="pricing-grid">${cards}</div><p class="fine-print">${zh?'社区版不按生成数量收费、不加水印。功能开放范围以各版本发布说明为准。创始用户专业版首年 $149；续费前会清楚展示当期价格。行业模板包定价规划为 $99–299/套，实施服务 $2,000 起。':'Community is not priced by document volume and adds no watermark. Feature availability follows each release note. Founding customers: $149 for the first Pro year; the renewal price will be shown clearly before renewal. Industry-pack pricing is expected at $99–299, with implementation from $2,000.'}</p></div></section>`;
+  return `<section class="section${full?'':' alt'}"><div class="container">${heading}<div class="pricing-grid">${cards}</div><p class="fine-print">${zh?'社区版不按生成数量收费、不加水印。可选的一次性支持不解锁功能，也不影响免费下载。功能开放范围以各版本发布说明为准。创始用户专业版首年 $149；续费前会清楚展示当期价格。行业模板包定价规划为 $99–299/套，实施服务 $2,000 起。':'Community is not priced by document volume and adds no watermark. Optional one-time support unlocks no features and never affects the free download. Feature availability follows each release note. Founding customers: $149 for the first Pro year; the renewal price will be shown clearly before renewal. Industry-pack pricing is expected at $99–299, with implementation from $2,000.'}</p>${supporterTeaser(locale, pageType, 'pricing_section')}</div></section>`;
 }
 
 function faqItems(locale) {
@@ -555,12 +625,12 @@ function faqItems(locale) {
     ['客户文件会上传吗？','不会。桌面端文档处理在本机完成；官网只承载产品信息与下载入口。'],
     ['社区版是真的可用，还是只是演示？','社区版不是限额试用：当前代码已覆盖 JSON/Excel/CSV 导入、模板映射、批量生成、命名、基础条件计算、多模板交付包和校验。0.6.0 源码、安装包和发布说明均已公开，其中逐项标注功能范围。'],
     ['Word 和 PDF 都支持吗？','MVP 以两类模板为目标。复杂 Word 原版式保真和可视化 PDF 坐标映射会持续增强，并在发布说明中明确成熟度。'],
-    ['能否购买一次永久使用？','Community 按已发布的开源许可证永久免费使用。Pro 按年提供独立功能、更新与支持；商业协议仅覆盖独立 Pro、模板、服务、支持和商标许可，不替代 Community 或 Core 的开源许可证。']
+    ['能否购买一次永久使用？','Community 按已发布的开源许可证永久免费使用，无需购买。可以自愿一次性支持持续开发，但不会因此解锁额外功能。Pro 按年提供独立功能、更新与支持；商业协议仅覆盖独立 Pro、模板、服务、支持和商标许可，不替代 Community 或 Core 的开源许可证。']
   ] : [
     ['Are customer files uploaded?','No. Desktop document processing runs on your computer. The website only hosts product information and release links.'],
     ['Is Community usable or just a demo?','Community is not a quota-limited trial: the current code covers JSON/Excel/CSV import, template mapping, batch generation, naming, core conditions and calculations, multi-template delivery packages, and validation. The 0.6.0 source, installers, and release notes are public with capability scope stated explicitly.'],
     ['Do Word and PDF both work?','The MVP targets both template types. Complex Word layout fidelity and visual PDF coordinate mapping will keep improving, with maturity stated clearly in release notes.'],
-    ['Can I buy it once and keep using it?','Community remains free under its published open-source licenses. Pro is annual because it includes separate features, updates, and support. Commercial agreements cover only separate Pro software, templates, services, support, and trademark permissions; they do not replace the Community or Core open-source licenses.']
+    ['Can I buy it once and keep using it?','Community remains free under its published open-source licenses and requires no purchase. You may support ongoing development once, but doing so unlocks no extra features. Pro is annual because it includes separate features, updates, and support. Commercial agreements cover only separate Pro software, templates, services, support, and trademark permissions; they do not replace the Community or Core open-source licenses.']
   ];
 }
 
@@ -617,7 +687,7 @@ function securityPage(locale) {
   ];
   const body = `${pageHero(locale,'security',zh?'安全不是口号':'SECURITY BY BOUNDARY',zh?'客户文档留在客户电脑上':'Customer documents stay on the customer’s computer',zh?'DocFlow Local 的核心设计选择，是尽量不让敏感数据产生新的云端副本。':'DocFlow Local is designed to avoid creating new cloud copies of sensitive customer data.')}
   <section class="section"><div class="container"><div class="section-heading"><p class="eyebrow">${zh?'四层保护':'FOUR PROTECTION LAYERS'}</p><h2>${zh?'从处理边界到安全披露':'From processing boundaries to responsible disclosure'}</h2></div><div class="detail-grid">${cards.map(([h,p,list])=>`<article class="detail-card" data-reveal><span class="card-icon">${icon('shield')}</span><h3>${h}</h3><p>${p}</p><ul>${list.map(x=>`<li>${x}</li>`).join('')}</ul></article>`).join('')}</div></div></section>
-  <section class="section alt"><div class="container privacy-grid"><div><p class="eyebrow">${zh?'信任边界':'TRUST BOUNDARY'}</p><div class="section-heading"><h2>${zh?'官网、更新服务与文档处理彼此分开':'Website, updates, and document processing are separate'}</h2><p>${zh?'访问官网或检查版本不需要上传业务文件。将来若引入崩溃报告或可选遥测，会先公开字段、目的和关闭方式。':'Visiting the website or checking a version never requires business files. If crash reports or optional telemetry are introduced later, fields, purpose, and opt-out controls will be documented first.'}</p></div></div><div class="privacy-diagram"><span class="no-cloud">${zh?'数据不出机':'DATA STAYS LOCAL'}</span><div class="device-box"><div class="device-top"><i></i><span><b>DocFlow Local</b><small>127.0.0.1</small></span></div><div class="device-flow"><span>${zh?'表格数据':'Spreadsheet data'}<i></i></span><span>${zh?'模板渲染':'Template rendering'}<i></i></span><span>${zh?'交付文件':'Deliverables'}<i></i></span></div></div></div></div></section>
+  <section class="section alt"><div class="container privacy-grid"><div><p class="eyebrow">${zh?'信任边界':'TRUST BOUNDARY'}</p><div class="section-heading"><h2>${zh?'官网、更新服务与文档处理彼此分开':'Website, updates, and document processing are separate'}</h2><p>${zh?'访问官网或检查版本不需要上传业务文件。可选的网站分析只在访客同意后加载；桌面端将来若引入崩溃报告或遥测，会另行公开字段、目的和关闭方式。':'Visiting the website or checking a version never requires business files. Optional website analytics loads only after consent; any future desktop crash reporting or telemetry will separately document its fields, purpose, and opt-out controls.'}</p></div></div><div class="privacy-diagram"><span class="no-cloud">${zh?'数据不出机':'DATA STAYS LOCAL'}</span><div class="device-box"><div class="device-top"><i></i><span><b>DocFlow Local</b><small>127.0.0.1</small></span></div><div class="device-flow"><span>${zh?'表格数据':'Spreadsheet data'}<i></i></span><span>${zh?'模板渲染':'Template rendering'}<i></i></span><span>${zh?'交付文件':'Deliverables'}<i></i></span></div></div></div></div></section>
   ${cta(locale,'security',zh?'需要企业安全评估材料？':'Need material for a security review?',zh?'联系我们获取部署说明、数据流说明与商业支持方案，或先免费下载 Community。':'Contact us for deployment notes, data-flow documentation, and commercial support options, or start with Community free.',{primary:'contact'})}`;
   return layout(locale,'security',body);
 }
@@ -681,7 +751,7 @@ function downloadPage(locale) {
     })
     : trackedButton({ href: betaEmail[locale], label: locales[locale].beta, eventName: 'beta_request', arrow: true, analytics: { ctaId: 'download_windows_beta', ctaLocation: 'download_card', pageType: 'download', locale, destination: 'windows_beta_email', platform: 'windows' } });
   const body = `${pageHero(locale,'download',zh?'macOS 社区版现已发布':'macOS COMMUNITY EDITION AVAILABLE',zh?'免费下载已签名、已公证的 Community':'Download the signed, notarized Community edition free',zh?`DocFlow Local ${desktopRelease.version} Community 现已提供 Apple Silicon macOS 安装包，内置四种引导式行业工作流；Windows 版本将在完成 Authenticode 签名后发布。`:`DocFlow Local ${desktopRelease.version} Community is available for Apple Silicon Macs with four guided starter workflows. Windows will follow after Authenticode signing is complete.`,false)}
-  <section class="section"><div class="container"><div class="micro-trust download-promises">${promises.map(value=>`<span><i></i>${value}</span>`).join('')}</div><div class="download-grid"><article class="download-card"><span class="os-icon">⌘</span><h2>macOS</h2><p>${zh?'适用于 Apple Silicon（M 系列芯片），已使用 Apple Developer ID 签名并完成 Apple 公证。':'For Apple Silicon (M-series chips), signed with Apple Developer ID and notarized by Apple.'}</p>${macDownloadAction}</article><article class="download-card"><span class="os-icon">⊞</span><h2>Windows</h2><p>${zh?'Windows 10/11 安装包正在进行 Authenticode 代码签名准备；不会发布未签名版本。':'The Windows 10/11 installer is being prepared for Authenticode signing; no unsigned build will be published.'}</p>${windowsDownloadAction}</article></div><div class="download-note"><strong>${zh?`macOS ${desktopRelease.version} 发布信息`:`macOS ${desktopRelease.version} release information`}</strong><br>${zh?'标准安装请下载 .pkg；如需便携归档可下载 .zip。安装包已完成 Apple 公证。PKG SHA-256：':'Download the .pkg for the standard installation flow or the .zip for a portable archive. The app is Apple notarized. PKG SHA-256: '}<code>${desktopRelease.macPkgSha256}</code><br><a href="${desktopRelease.page}" ${analyticsAttributes('view_release_details',{ ctaId: 'download_release_details', ctaLocation: 'release_note', pageType: 'download', locale, destination: 'github_release', platform: 'macos', releaseVersion: desktopRelease.version })}>${zh?'查看发布说明、ZIP、SBOM 与完整校验信息':'View release notes, ZIP, SBOM, and full verification details'}</a></div><div class="download-note" id="code-signing-policy"><strong>${zh?'代码签名政策':'Code signing policy'}</strong><br>Free code signing provided by SignPath.io, certificate by SignPath Foundation.<br>${zh?'该政策只适用于完全开源的 Windows Community 安装包和便携版；私有 Pro 模块与商业包不在签名范围内。当前不会把任何未通过 Authenticode 验证的 Windows 文件描述为已签名。':'This policy applies only to the fully open-source Windows Community installer and portable edition. Private Pro modules and commercial packages are excluded. No Windows file is described as signed until its Authenticode signature verifies.'}<br><a href="${codeSigningPolicyUrl}">${zh?'阅读完整代码签名政策':'Read the complete code signing policy'}</a></div></div></section>
+  <section class="section"><div class="container"><div class="micro-trust download-promises">${promises.map(value=>`<span><i></i>${value}</span>`).join('')}</div><div class="download-grid"><article class="download-card"><span class="os-icon">⌘</span><h2>macOS</h2><p>${zh?'适用于 Apple Silicon（M 系列芯片），已使用 Apple Developer ID 签名并完成 Apple 公证。':'For Apple Silicon (M-series chips), signed with Apple Developer ID and notarized by Apple.'}</p>${macDownloadAction}</article><article class="download-card"><span class="os-icon">⊞</span><h2>Windows</h2><p>${zh?'Windows 10/11 安装包正在进行 Authenticode 代码签名准备；不会发布未签名版本。':'The Windows 10/11 installer is being prepared for Authenticode signing; no unsigned build will be published.'}</p>${windowsDownloadAction}</article></div><div class="download-note"><strong>${zh?`macOS ${desktopRelease.version} 发布信息`:`macOS ${desktopRelease.version} release information`}</strong><br>${zh?'标准安装请下载 .pkg；如需便携归档可下载 .zip。安装包已完成 Apple 公证。PKG SHA-256：':'Download the .pkg for the standard installation flow or the .zip for a portable archive. The app is Apple notarized. PKG SHA-256: '}<code>${desktopRelease.macPkgSha256}</code><br><a href="${desktopRelease.page}" ${analyticsAttributes('view_release_details',{ ctaId: 'download_release_details', ctaLocation: 'release_note', pageType: 'download', locale, destination: 'github_release', platform: 'macos', releaseVersion: desktopRelease.version })}>${zh?'查看发布说明、ZIP、SBOM 与完整校验信息':'View release notes, ZIP, SBOM, and full verification details'}</a></div><div class="download-note" id="code-signing-policy"><strong>${zh?'代码签名政策':'Code signing policy'}</strong><br>Free code signing provided by SignPath.io, certificate by SignPath Foundation.<br>${zh?'该政策只适用于完全开源的 Windows Community 安装包和便携版；私有 Pro 模块与商业包不在签名范围内。当前不会把任何未通过 Authenticode 验证的 Windows 文件描述为已签名。':'This policy applies only to the fully open-source Windows Community installer and portable edition. Private Pro modules and commercial packages are excluded. No Windows file is described as signed until its Authenticode signature verifies.'}<br><a href="${codeSigningPolicyUrl}">${zh?'阅读完整代码签名政策':'Read the complete code signing policy'}</a></div>${supporterTeaser(locale, 'download', 'download_page')}</div></section>
   <section class="section alt"><div class="container"><div class="section-heading center"><p class="eyebrow">${zh?'3–5 分钟看到第一份结果':'FIRST RESULT IN 3–5 MINUTES'}</p><h2>${zh?'先跑通脱敏样例，再换成自己的文件':'Run a sanitized sample, then replace it with your files'}</h2></div><div class="workflow-list quickstart-list">${quickstartItems}</div></div></section>
   <section class="section"><div class="container"><div class="section-heading"><p class="eyebrow">${zh?'四种 STARTER 路径':'FOUR STARTER PATHS'}</p><h2>${zh?'从一个真实交付场景开始':'Start from a real delivery workflow'}</h2><p>${zh?'0.6.0 已在桌面端内置四种脱敏场景、字段映射、多模板、命名规则和一个引导修复的预检问题；跑通样例后即可换成自己的文件。':'Version 0.6.0 includes four sanitized in-app starters with mappings, multiple templates, naming rules, and one guided preflight issue. Run the sample, then replace it with your own files.'}</p></div><div class="industry-grid">${starterCards}</div></div></section>
   <section class="section alt"><div class="container"><div class="section-heading"><p class="eyebrow">${zh?'开发者入口':'FOR DEVELOPERS'}</p><h2>${zh?'从社区版源代码开始':'Start from the community source'}</h2><p>${zh?'当前模块化源码已发布，可按 README 运行桌面端，也可直接使用 Core 的 CLI、本地 API 与插件接口。':'The current modular source is public. Follow the README to run Desktop Community or use the Core CLI, local API, and plugin contracts directly.'}</p></div><div class="code-card"><div class="code-card-top"><span><i></i> docflow-local</span><span>COMMUNITY</span></div><pre><span class="accent">$</span> git clone ${repoUrl}.git
@@ -689,6 +759,22 @@ function downloadPage(locale) {
 <span class="accent">$</span> npm ci
 <span class="accent">$</span> npm run desktop</pre></div></div></section>`;
   return layout(locale,'download',body);
+}
+
+function supportPage(locale) {
+  const zh = locale === 'zh';
+  const tiers = supporterTiers(locale);
+  const suggested = tiers.find(tier => tier.recommended);
+  const suggestedAction = supporterAction(locale, suggested);
+  const amountButtons = tiers.map(tier => {
+    const action = supporterAction(locale, tier);
+    return `<button class="supporter-amount${tier.recommended ? ' is-selected' : ''}" type="button" aria-pressed="${tier.recommended ? 'true' : 'false'}" data-supporter-amount="${tier.amount}" data-supporter-label="${tier.label}" data-supporter-href="${escapeAttribute(action.href)}" data-supporter-event="${action.eventName}" data-supporter-destination="${action.destination}" data-supporter-checkout-status="${action.checkoutStatus}" data-supporter-cta-label="${escapeAttribute(action.label)}" ${analyticsAttributes('supporter_amount_select', { pageType: 'support', locale, supportAmount: tier.amount, currency: tier.currency, checkoutStatus: action.checkoutStatus })}>${tier.label}${tier.recommended ? `<small>${zh ? '推荐' : 'SUGGESTED'}</small>` : ''}</button>`;
+  }).join('');
+  const supportAction = `<a class="button secondary" href="${escapeAttribute(suggestedAction.href)}" data-supporter-cta ${analyticsAttributes(suggestedAction.eventName, { ctaId: 'support_supporter_action', ctaLocation: 'supporter_card', pageType: 'support', locale, destination: suggestedAction.destination, supportAmount: suggested.amount, currency: suggested.currency, checkoutStatus: suggestedAction.checkoutStatus })}>${suggestedAction.label}</a>`;
+  const body = `${pageHero(locale, 'support', zh ? '免费使用，自愿支持' : 'FREE TO USE, OPTIONAL TO SUPPORT', zh ? 'Community 永久免费；喜欢它，可以一次性支持开发' : 'Community stays free. Support development once if it helps.', zh ? '无需注册即可下载，不限制生成数量，也不会因为未付款而减少功能。建议一次性支持价为 ¥199（或 US$29）。' : 'Download without an account, document limits, or reduced features. The suggested one-time support amount is US$29 (about ¥199).', false)}
+  <section class="section"><div class="container support-choice-grid"><article class="support-choice free-choice" data-reveal><span class="support-choice-tag">COMMUNITY</span><h2>${zh ? '免费下载并永久使用' : 'Download free and keep using it'}</h2><div class="support-price">$0</div><p>${zh ? '下载和支持彼此独立。Community 无需注册、没有水印，也不按生成文档数量收费。' : 'Downloading and supporting are independent. Community requires no account, adds no watermark, and is never priced by document volume.'}</p><ul class="plan-list"><li><i>✓</i>${zh ? '免费直达官方签名安装包' : 'Direct access to the official signed installer'}</li><li><i>✓</i>${zh ? '不开启付款墙' : 'No payment wall'}</li><li><i>✓</i>${zh ? '支持与否不改变功能' : 'The same features whether you support or not'}</li></ul>${trackedButton({ href: urlFor(locale, 'download'), label: locales[locale].communityDownload, arrow: true, analytics: { ctaId: 'support_community_download', ctaLocation: 'free_choice', pageType: 'support', locale, destination: 'download_page', platform: 'macos' } })}</article><article class="support-choice supporter-choice" data-supporter data-reveal><span class="support-choice-tag">${zh ? '可选支持' : 'OPTIONAL SUPPORT'}</span><h2>${zh ? '支持维护、测试和新版本' : 'Support maintenance, testing, and releases'}</h2><p>${zh ? '选择一个一次性支持意向。推荐 ¥199；也可以选择较小或较高金额。' : 'Choose a one-time support amount. US$29 is suggested, with smaller and larger options available.'}</p><div class="supporter-amounts" role="group" aria-label="${zh ? '选择一次性支持金额' : 'Choose a one-time support amount'}">${amountButtons}</div>${supportAction}<p class="supporter-status" data-supporter-status>${zh ? '安全支付通道正在接入。当前按钮只会打开支持邮件并登记意向，不会收取任何款项。' : 'A secure payment channel is being integrated. The current button only opens a support email draft and does not take payment.'}</p></article></div></section>
+  <section class="section alt"><div class="container"><div class="section-heading center"><p class="eyebrow">${zh ? '支持原则' : 'SUPPORT PRINCIPLES'}</p><h2>${zh ? '支持开发，不制造功能差异' : 'Support development, not artificial feature gaps'}</h2></div><div class="detail-grid"><article class="detail-card"><h3>${zh ? '不会变成购买门槛' : 'Never a purchase requirement'}</h3><p>${zh ? '官网主下载入口和安装包始终不受支持流程阻挡。' : 'The primary download path and installer remain available without entering the support flow.'}</p></article><article class="detail-card"><h3>${zh ? '不承诺额外权益' : 'No implied extra entitlement'}</h3><p>${zh ? '一次性支持不会解锁 Pro、商业模板、SLA 或优先支持。' : 'One-time support does not unlock Pro, commercial templates, an SLA, or priority support.'}</p></article></div></div></section>`;
+  return layout(locale, 'support', body);
 }
 
 function batchFaqItems(locale) {
@@ -981,6 +1067,7 @@ async function build() {
     await writePage(urlFor(locale,'security'), securityPage(locale));
     await writePage(urlFor(locale,'templates'), templatesPage(locale));
     await writePage(urlFor(locale,'download'), downloadPage(locale));
+    await writePage(urlFor(locale,'support'), supportPage(locale));
     await writePage(urlFor(locale,'batch'), batchPage(locale));
     for (const key of ['trade','engineering','hr','compliance']) await writePage(urlFor(locale,key), industryPage(locale,key));
     await writePage(urlFor(locale, 'guides'), guidesPage(locale));
@@ -1057,8 +1144,8 @@ Sitemap: ${siteUrl}/sitemap.xml
 ## Scope
 DocFlow Local is a document generation and packaging tool. It does not certify business, legal, tax, or regulatory correctness. Image-based signatures are not certificate-backed digital signatures. Refer to the current release notes and repository documentation for exact supported formats and limits.
 `);
-  await writeFile(join(dist, '_headers'), `/*\n  X-Content-Type-Options: nosniff\n  X-Frame-Options: DENY\n  Referrer-Policy: strict-origin-when-cross-origin\n  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()\n  Content-Security-Policy: default-src 'self'; style-src 'self'; script-src 'self' https://www.googletagmanager.com; img-src 'self' data: https://www.google-analytics.com https://www.googletagmanager.com; connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com https://analytics.google.com https://*.analytics.google.com https://www.googletagmanager.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' mailto:\n\n/assets/*\n  Cache-Control: public, max-age=31536000, immutable\n`);
-  await writeFile(join(dist, '404.html'), `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Page not found | DocFlow Local</title><meta name="description" content="The requested DocFlow Local page could not be found."><meta name="robots" content="noindex,follow"><meta name="theme-color" content="#0a1b2a"><link rel="icon" href="/assets/icon.png"><link rel="manifest" href="/site.webmanifest"><link rel="stylesheet" href="/assets/styles.css"><script async src="https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}"></script><script src="/assets/analytics.js"></script></head><body data-page-type="404" data-locale="en">${header('en','home')}<main id="main">${pageHero('en','404','404','This page is not in the package.','Return to the product site or switch to the Chinese homepage.',false)}<div class="container"><div class="page-actions">${trackedButton({ href: '/', label: 'English homepage', analytics: { ctaId: '404_home_en', ctaLocation: '404', pageType: '404', locale: 'en', destination: 'home' } })}${trackedButton({ href: '/zh/', label: '中文首页', style: 'secondary', analytics: { ctaId: '404_home_zh', ctaLocation: '404', pageType: '404', locale: 'en', destination: 'home_zh' } })}</div></div></main>${footer('en')}<script src="/assets/site.js" defer></script></body></html>`);
+  await writeFile(join(dist, '_headers'), `/*\n  X-Content-Type-Options: nosniff\n  X-Frame-Options: DENY\n  Referrer-Policy: strict-origin-when-cross-origin\n  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()\n  Content-Security-Policy: default-src 'self'; style-src 'self'; script-src 'self' https://www.googletagmanager.com; img-src 'self' data: https://www.google-analytics.com https://www.googletagmanager.com; connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com https://analytics.google.com https://*.analytics.google.com https://www.googletagmanager.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' mailto:\n\n/assets/*\n  Cache-Control: public, max-age=0, must-revalidate\n`);
+  await writeFile(join(dist, '404.html'), `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Page not found | DocFlow Local</title><meta name="description" content="The requested DocFlow Local page could not be found."><meta name="robots" content="noindex,follow"><meta name="theme-color" content="#0a1b2a"><link rel="icon" href="/assets/icon.png"><link rel="manifest" href="/site.webmanifest"><link rel="stylesheet" href="${assetUrl('/assets/styles.css')}"><script src="${assetUrl('/assets/analytics.js')}"></script></head><body data-page-type="404" data-locale="en">${header('en','home')}<main id="main">${pageHero('en','404','404','This page is not in the package.','Return to the product site or switch to the Chinese homepage.',false)}<div class="container"><div class="page-actions">${trackedButton({ href: '/', label: 'English homepage', analytics: { ctaId: '404_home_en', ctaLocation: '404', pageType: '404', locale: 'en', destination: 'home' } })}${trackedButton({ href: '/zh/', label: '中文首页', style: 'secondary', analytics: { ctaId: '404_home_zh', ctaLocation: '404', pageType: '404', locale: 'en', destination: 'home_zh' } })}</div></div></main>${footer('en')}${analyticsConsent('en')}<script src="${assetUrl('/assets/site.js')}" defer></script></body></html>`);
   await writeFile(join(dist, 'site.webmanifest'), JSON.stringify({ name:'DocFlow Local', short_name:'DocFlow', start_url:'/', display:'standalone', background_color:'#f3f7f8', theme_color:'#0a1b2a', icons:[{src:'/assets/icon.png',sizes:'1024x1024',type:'image/png'}] }, null, 2));
   process.stdout.write(`Built ${allUrls.length} localized pages in ${dist}\n`);
 }
