@@ -68,11 +68,23 @@ accepted analytics data under its own privacy terms and the retention settings
 configured in the DocFlow Local GA4 property. Aggregated reports may be kept
 for product analysis.
 
-The current supporter action opens a prefilled email and does not take payment.
-If a visitor sends that email, the message, sender address, and any information
-the visitor chooses to include are processed by the relevant email providers
-for responding to the request. Any future checkout provider must be identified
-and accompanied by a separate notice before payment information is collected.
+Optional one-time support payments use Stripe-hosted Payment Links. Opening or
+completing a Stripe checkout causes Stripe, Inc. and its affiliates to process
+information needed to operate and secure the payment service. Depending on the
+payment method and jurisdiction, this can include the payment email address,
+payment-method details, billing information, IP address, device and browser
+information, cookies, and fraud-prevention signals.
+
+Stripe may make the support amount, currency, payment status, receipt email,
+limited billing information, and masked payment-method details available to the
+DocFlow Local merchant account. Card entry and payment processing occur on
+Stripe's hosted page: the DocFlow Local website and desktop application do not
+receive or store the full card number, card security code, or raw payment
+credentials. Stripe handles this information under the
+[Stripe Privacy Policy](https://stripe.com/privacy). No document contents,
+templates, spreadsheet rows, generated files, or desktop activity are sent to
+Stripe through the supporter flow. Supporting is optional and does not unlock
+additional Community features or licence rights.
 
 ## 中文说明
 
@@ -96,9 +108,18 @@ Google Analytics 4（衡量 ID：`G-77MP7J9XFT`）仅在访客主动选择
 Signals。Google 按其隐私条款及 DocFlow Local GA4 属性的保留设置处理已同意
 的数据，汇总统计结果可能用于长期产品分析。
 
-当前支持按钮仅打开预填邮件，不会扣款。用户主动发送后，邮件地址、正文及
-用户自行填写的信息会由相关邮件服务商处理，以便回复支持意向。未来接入支付
-服务商前，将先明确服务商和相应隐私提示。
+可选的一次性支持付款使用 Stripe 托管的 Payment Links。打开或完成 Stripe
+结账时，Stripe, Inc. 及其关联方会为提供和保护支付服务而处理必要信息。根据
+付款方式和所在地区，这些信息可能包括付款邮箱、支付方式信息、账单信息、
+IP 地址、设备与浏览器信息、Cookie 以及反欺诈信号。
+
+Stripe 可能向 DocFlow Local 的商户账户提供支持金额、币种、付款状态、收据
+邮箱、有限的账单信息及经过掩码处理的支付方式信息。卡片信息输入和支付处理
+均在 Stripe 托管页面完成；DocFlow Local 官网和桌面应用不会接收或保存完整
+卡号、银行卡安全码或原始支付凭据。Stripe 按
+[Stripe 隐私政策](https://stripe.com/privacy)处理这些信息。支持流程不会向
+Stripe 发送文档正文、模板、表格数据、生成文件或桌面端活动记录。一次性支持
+完全自愿，不会解锁额外的 Community 功能或许可权益。
 
 ## Contact
 

@@ -150,6 +150,12 @@ for (const file of htmlFiles) {
       if (!html.includes('data-analytics="supporter_checkout_start"') || html.includes('data-checkout-status="coming_soon"')) {
         errors.push(`${displayPath}: configured payment flow must use only verified live checkout actions`);
       }
+      const liveStatus = path === '/zh/support/'
+        ? '点击后将前往由 Stripe 托管的安全支付页面。'
+        : 'The button opens a secure checkout page hosted by Stripe.';
+      if (!html.includes(liveStatus) || html.includes('does not take payment') || html.includes('不会收取任何款项')) {
+        errors.push(`${displayPath}: live checkout must show accurate Stripe payment guidance`);
+      }
     } else {
       if (!html.includes('data-analytics="supporter_cta_click"') || !html.includes('data-checkout-status="coming_soon"')) {
         errors.push(`${displayPath}: unconfigured payment flow must use the transparent supporter email event`);
