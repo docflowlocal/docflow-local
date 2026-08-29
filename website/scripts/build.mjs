@@ -12,7 +12,7 @@ const siteUrl = 'https://docflowlocal.com';
 const repoUrl = 'https://github.com/docflowlocal/docflow-local';
 const codeSigningPolicyUrl = 'https://github.com/docflowlocal/docflow-desktop/blob/main/CODE_SIGNING_POLICY.md';
 const lastModified = '2026-08-29';
-const assetRevision = '20260829-1';
+const assetRevision = '20260829-2';
 const indexNowKey = '393eedac11f37df862e931238f00bae8';
 const socialImageUrl = `${siteUrl}/assets/docflow-local-og.png`;
 const betaEmail = {
@@ -31,11 +31,19 @@ const supporterEmail = {
   en: 'support@willgo.tech',
   zh: 'support@roboai.tech'
 };
-// Add verified payment URLs here when a checkout provider is live. Until then,
-// supporter actions open a clearly labelled email draft and never imply payment.
+// Public Stripe Payment Links are enabled atomically across every localized tier.
+// The validator rejects sandbox links and any non-Stripe checkout origin.
 const supporterCheckoutUrls = validateSupporterCheckoutUrls({
-  en: { 9: '', 29: '', 99: '' },
-  zh: { 69: '', 199: '', 699: '' }
+  en: {
+    9: 'https://buy.stripe.com/28E7sM7IMac9fIU0Dsc7u00',
+    29: 'https://buy.stripe.com/6oU3cwgfi6ZX40cfymc7u01',
+    99: 'https://buy.stripe.com/3cIdRabZ25VT40c2LAc7u02'
+  },
+  zh: {
+    69: 'https://buy.stripe.com/bJe3cwgfi6ZXfIUae2c7u03',
+    199: 'https://buy.stripe.com/4gM00k4wAdoleEQ0Dsc7u04',
+    699: 'https://buy.stripe.com/dRmaEY0gkckheEQdqec7u05'
+  }
 });
 const desktopRelease = {
   version: '0.6.0',
@@ -282,7 +290,8 @@ function supporterAction(locale, tier) {
 function supporterTeaser(locale, pageType, ctaLocation) {
   const zh = locale === 'zh';
   const suggested = supporterTiers(locale).find(tier => tier.recommended);
-  return `<aside class="supporter-teaser" data-reveal><div><p class="eyebrow">${zh ? '可选的一次性支持' : 'OPTIONAL ONE-TIME SUPPORT'}</p><h3>${zh ? 'Community 永久免费；觉得有帮助，可以支持持续开发' : 'Community stays free. Support ongoing development if it helps.'}</h3><p>${zh ? '建议支持价：¥199（或 US$29）。支持完全自愿，不解锁额外功能，也不影响免费下载与使用。' : 'Suggested support: US$29 (about ¥199). Support is entirely optional, unlocks no extra features, and never blocks the free download.'}</p></div>${trackedButton({ href: `${urlFor(locale, 'support')}?amount=${suggested.amount}`, label: zh ? '查看一次性支持方式' : 'View one-time support options', style: 'secondary', eventName: 'supporter_cta_click', arrow: true, analytics: { ctaId: `${pageType}_supporter_options`, ctaLocation, pageType, locale, destination: 'support_page', supportAmount: suggested.amount, currency: suggested.currency, checkoutStatus: 'coming_soon' } })}</aside>`;
+  const suggestedAction = supporterAction(locale, suggested);
+  return `<aside class="supporter-teaser" data-reveal><div><p class="eyebrow">${zh ? '可选的一次性支持' : 'OPTIONAL ONE-TIME SUPPORT'}</p><h3>${zh ? 'Community 永久免费；觉得有帮助，可以支持持续开发' : 'Community stays free. Support ongoing development if it helps.'}</h3><p>${zh ? '建议支持价：¥199（或 US$29）。支持完全自愿，不解锁额外功能，也不影响免费下载与使用。' : 'Suggested support: US$29 (about ¥199). Support is entirely optional, unlocks no extra features, and never blocks the free download.'}</p></div>${trackedButton({ href: `${urlFor(locale, 'support')}?amount=${suggested.amount}`, label: zh ? '查看一次性支持方式' : 'View one-time support options', style: 'secondary', eventName: 'supporter_cta_click', arrow: true, analytics: { ctaId: `${pageType}_supporter_options`, ctaLocation, pageType, locale, destination: 'support_page', supportAmount: suggested.amount, currency: suggested.currency, checkoutStatus: suggestedAction.checkoutStatus } })}</aside>`;
 }
 
 function header(locale, current) {
@@ -771,8 +780,14 @@ function supportPage(locale) {
     return `<button class="supporter-amount${tier.recommended ? ' is-selected' : ''}" type="button" aria-pressed="${tier.recommended ? 'true' : 'false'}" data-supporter-amount="${tier.amount}" data-supporter-label="${tier.label}" data-supporter-href="${escapeAttribute(action.href)}" data-supporter-event="${action.eventName}" data-supporter-destination="${action.destination}" data-supporter-checkout-status="${action.checkoutStatus}" data-supporter-cta-label="${escapeAttribute(action.label)}" ${analyticsAttributes('supporter_amount_select', { pageType: 'support', locale, supportAmount: tier.amount, currency: tier.currency, checkoutStatus: action.checkoutStatus })}>${tier.label}${tier.recommended ? `<small>${zh ? '推荐' : 'SUGGESTED'}</small>` : ''}</button>`;
   }).join('');
   const supportAction = `<a class="button secondary" href="${escapeAttribute(suggestedAction.href)}" data-supporter-cta ${analyticsAttributes(suggestedAction.eventName, { ctaId: 'support_supporter_action', ctaLocation: 'supporter_card', pageType: 'support', locale, destination: suggestedAction.destination, supportAmount: suggested.amount, currency: suggested.currency, checkoutStatus: suggestedAction.checkoutStatus })}>${suggestedAction.label}</a>`;
+  const supporterPrompt = suggestedAction.checkoutStatus === 'live'
+    ? (zh ? '选择一个一次性支持金额。推荐 ¥199；也可以选择较小或较高金额。' : 'Choose a one-time support amount. US$29 is suggested, with smaller and larger options available.')
+    : (zh ? '选择一个一次性支持意向。推荐 ¥199；也可以选择较小或较高金额。' : 'Choose a one-time support amount. US$29 is suggested, with smaller and larger options available.');
+  const supporterStatus = suggestedAction.checkoutStatus === 'live'
+    ? (zh ? '点击后将前往由 Stripe 托管的安全支付页面。' : 'The button opens a secure checkout page hosted by Stripe.')
+    : (zh ? '安全支付通道正在接入。当前按钮只会打开支持邮件并登记意向，不会收取任何款项。' : 'A secure payment channel is being integrated. The current button only opens a support email draft and does not take payment.');
   const body = `${pageHero(locale, 'support', zh ? '免费使用，自愿支持' : 'FREE TO USE, OPTIONAL TO SUPPORT', zh ? 'Community 永久免费；喜欢它，可以一次性支持开发' : 'Community stays free. Support development once if it helps.', zh ? '无需注册即可下载，不限制生成数量，也不会因为未付款而减少功能。建议一次性支持价为 ¥199（或 US$29）。' : 'Download without an account, document limits, or reduced features. The suggested one-time support amount is US$29 (about ¥199).', false)}
-  <section class="section"><div class="container support-choice-grid"><article class="support-choice free-choice" data-reveal><span class="support-choice-tag">COMMUNITY</span><h2>${zh ? '免费下载并永久使用' : 'Download free and keep using it'}</h2><div class="support-price">$0</div><p>${zh ? '下载和支持彼此独立。Community 无需注册、没有水印，也不按生成文档数量收费。' : 'Downloading and supporting are independent. Community requires no account, adds no watermark, and is never priced by document volume.'}</p><ul class="plan-list"><li><i>✓</i>${zh ? '免费直达官方签名安装包' : 'Direct access to the official signed installer'}</li><li><i>✓</i>${zh ? '不开启付款墙' : 'No payment wall'}</li><li><i>✓</i>${zh ? '支持与否不改变功能' : 'The same features whether you support or not'}</li></ul>${trackedButton({ href: urlFor(locale, 'download'), label: locales[locale].communityDownload, arrow: true, analytics: { ctaId: 'support_community_download', ctaLocation: 'free_choice', pageType: 'support', locale, destination: 'download_page', platform: 'macos' } })}</article><article class="support-choice supporter-choice" data-supporter data-reveal><span class="support-choice-tag">${zh ? '可选支持' : 'OPTIONAL SUPPORT'}</span><h2>${zh ? '支持维护、测试和新版本' : 'Support maintenance, testing, and releases'}</h2><p>${zh ? '选择一个一次性支持意向。推荐 ¥199；也可以选择较小或较高金额。' : 'Choose a one-time support amount. US$29 is suggested, with smaller and larger options available.'}</p><div class="supporter-amounts" role="group" aria-label="${zh ? '选择一次性支持金额' : 'Choose a one-time support amount'}">${amountButtons}</div>${supportAction}<p class="supporter-status" data-supporter-status>${zh ? '安全支付通道正在接入。当前按钮只会打开支持邮件并登记意向，不会收取任何款项。' : 'A secure payment channel is being integrated. The current button only opens a support email draft and does not take payment.'}</p></article></div></section>
+  <section class="section"><div class="container support-choice-grid"><article class="support-choice free-choice" data-reveal><span class="support-choice-tag">COMMUNITY</span><h2>${zh ? '免费下载并永久使用' : 'Download free and keep using it'}</h2><div class="support-price">$0</div><p>${zh ? '下载和支持彼此独立。Community 无需注册、没有水印，也不按生成文档数量收费。' : 'Downloading and supporting are independent. Community requires no account, adds no watermark, and is never priced by document volume.'}</p><ul class="plan-list"><li><i>✓</i>${zh ? '免费直达官方签名安装包' : 'Direct access to the official signed installer'}</li><li><i>✓</i>${zh ? '不开启付款墙' : 'No payment wall'}</li><li><i>✓</i>${zh ? '支持与否不改变功能' : 'The same features whether you support or not'}</li></ul>${trackedButton({ href: urlFor(locale, 'download'), label: locales[locale].communityDownload, arrow: true, analytics: { ctaId: 'support_community_download', ctaLocation: 'free_choice', pageType: 'support', locale, destination: 'download_page', platform: 'macos' } })}</article><article class="support-choice supporter-choice" data-supporter data-reveal><span class="support-choice-tag">${zh ? '可选支持' : 'OPTIONAL SUPPORT'}</span><h2>${zh ? '支持维护、测试和新版本' : 'Support maintenance, testing, and releases'}</h2><p>${supporterPrompt}</p><div class="supporter-amounts" role="group" aria-label="${zh ? '选择一次性支持金额' : 'Choose a one-time support amount'}">${amountButtons}</div>${supportAction}<p class="supporter-status" data-supporter-status>${supporterStatus}</p></article></div></section>
   <section class="section alt"><div class="container"><div class="section-heading center"><p class="eyebrow">${zh ? '支持原则' : 'SUPPORT PRINCIPLES'}</p><h2>${zh ? '支持开发，不制造功能差异' : 'Support development, not artificial feature gaps'}</h2></div><div class="detail-grid"><article class="detail-card"><h3>${zh ? '不会变成购买门槛' : 'Never a purchase requirement'}</h3><p>${zh ? '官网主下载入口和安装包始终不受支持流程阻挡。' : 'The primary download path and installer remain available without entering the support flow.'}</p></article><article class="detail-card"><h3>${zh ? '不承诺额外权益' : 'No implied extra entitlement'}</h3><p>${zh ? '一次性支持不会解锁 Pro、商业模板、SLA 或优先支持。' : 'One-time support does not unlock Pro, commercial templates, an SLA, or priority support.'}</p></article></div></div></section>`;
   return layout(locale, 'support', body);
 }

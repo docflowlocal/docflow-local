@@ -77,4 +77,15 @@ buttons[0].click();
 assert.equal(buttons[0].classList.contains('is-selected'), true);
 assert.equal(cta.dataset.supportAmount, '9');
 
+buttons[1].dataset.supporterHref = 'https://buy.stripe.com/live-link';
+buttons[1].dataset.supporterCtaLabel = 'Support once — US$29';
+buttons[1].dataset.supporterEvent = 'supporter_checkout_start';
+buttons[1].dataset.supporterDestination = 'supporter_checkout';
+buttons[1].dataset.supporterCheckoutStatus = 'live';
+buttons[1].click();
+assert.equal(cta.href, 'https://buy.stripe.com/live-link');
+assert.equal(cta.dataset.analytics, 'supporter_checkout_start');
+assert.equal(cta.dataset.checkoutStatus, 'live');
+assert.equal(status.textContent, 'The button opens a secure checkout page hosted by Stripe.');
+
 console.log('Site interaction validation passed for supporter tier preselection.');

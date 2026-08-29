@@ -83,7 +83,7 @@
       if (status) {
         const zh = document.documentElement.lang.startsWith('zh');
         status.textContent = button.dataset.supporterCheckoutStatus === 'live'
-          ? (zh ? '点击后将前往安全支付页面。' : 'The button opens the secure checkout page.')
+          ? (zh ? '点击后将前往由 Stripe 托管的安全支付页面。' : 'The button opens a secure checkout page hosted by Stripe.')
           : (zh ? '安全支付通道正在接入。当前按钮只会打开支持邮件并登记意向，不会收取任何款项。' : 'A secure payment channel is being integrated. The current button only opens a support email draft and does not take payment.');
       }
     };

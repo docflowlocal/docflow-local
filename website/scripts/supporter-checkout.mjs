@@ -3,18 +3,7 @@ const EXPECTED_TIERS = Object.freeze({
   zh: Object.freeze(['69', '199', '699'])
 });
 
-const EXACT_HOSTS = new Set([
-  'buy.stripe.com',
-  'checkout.stripe.com',
-  'checkout.paddle.com',
-  'pay.paddle.io'
-]);
-
-function trustedCheckoutHost(hostname) {
-  const host = hostname.toLowerCase();
-  return EXACT_HOSTS.has(host)
-    || (host.endsWith('.lemonsqueezy.com') && host !== '.lemonsqueezy.com');
-}
+const STRIPE_PAYMENT_LINK_ORIGIN = 'https://buy.stripe.com';
 
 export function verifiedSupporterCheckoutUrl(value) {
   if (value === '') return '';
@@ -27,14 +16,21 @@ export function verifiedSupporterCheckoutUrl(value) {
   } catch (_error) {
     throw new TypeError('Supporter checkout URL is invalid');
   }
+  let decodedPath;
+  try {
+    decodedPath = decodeURIComponent(parsed.pathname).toLowerCase();
+  } catch (_error) {
+    throw new TypeError('Supporter checkout URL has an invalid path');
+  }
   if (
-    parsed.protocol !== 'https:'
+    parsed.origin !== STRIPE_PAYMENT_LINK_ORIGIN
     || parsed.username
     || parsed.password
     || parsed.hash
-    || !trustedCheckoutHost(parsed.hostname)
+    || parsed.pathname === '/'
+    || decodedPath.startsWith('/test_')
   ) {
-    throw new TypeError('Supporter checkout URL must use an approved HTTPS payment host without credentials or fragments');
+    throw new TypeError('Supporter checkout URL must be a live https://buy.stripe.com/ Payment Link without credentials or fragments');
   }
   return parsed.href;
 }
