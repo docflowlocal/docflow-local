@@ -87,7 +87,7 @@ Windows 代码签名证书；未签名或自签名的 Preview 不能视为已完
 
 ### 独立的 Self-Signed Preview 通道
 
-`0.6.1-preview.1` 起可使用项目专用证书构建自签名测试版：
+当前 `0.6.1-preview.2` 可使用项目专用证书构建自签名测试版：
 
 ```powershell
 npm ci
@@ -113,6 +113,13 @@ Foundation 证书，也不能满足正式商业发布的公众可信签名门禁
 `Get-AuthenticodeSignature` 核对步骤，见
 [Windows 自签名 Preview 说明](release/WINDOWS_SELF_SIGNED_PREVIEW.md)。
 默认 Windows 信任链可能显示 `NotTrusted`，这不代表通过公众信任验证。
+
+无人值守 Preview 构建将单次签名命令限制为 120 秒，打包后的应用主进程检查
+限制为 60 秒，并记录 packaging、smoke 进程退出、trust、verify 阶段标记。
+仅在 GitHub 托管的临时 Windows runner 上，签名后验证会临时导入固定的公开
+证书到 `LocalMachine\Root`，完成或失败时精确清理；签名私钥仍位于
+`CurrentUser\My`，清理时同时删除私钥。这些操作不是安装器或应用的行为，
+不会为用户设备修改信任设置，也不会免除签名、RFC 3161 时间戳或指纹校验。
 
 ### 正式公众可信签名通道
 

@@ -6,7 +6,7 @@ on:
       source_ref:
         description: Reviewed preview version tag to package
         required: true
-        default: v0.6.1-preview.1
+        default: v0.6.1-preview.2
         type: string
 
 permissions:

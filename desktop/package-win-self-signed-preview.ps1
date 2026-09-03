@@ -27,13 +27,18 @@ $Expected = @(
 )
 foreach ($Path in $Expected) { Remove-Item -LiteralPath $Path -Force -ErrorAction SilentlyContinue }
 
+$env:SIGNTOOL_TIMEOUT = "120000"
+Write-Host "PREVIEW_PACKAGING_START version=$Version signtoolTimeoutMs=$env:SIGNTOOL_TIMEOUT"
 & ".\node_modules\.bin\electron-builder.cmd" `
   "--config" "desktop/electron-builder.win-self-signed-preview.cjs" `
   "--win" "nsis" "portable" "--x64" "--publish" "never"
 if ($LASTEXITCODE -ne 0) { throw "Self-signed Windows packaging failed with exit code $LASTEXITCODE" }
+Write-Host "PREVIEW_PACKAGING_COMPLETE version=$Version"
 
-powershell -NoProfile -ExecutionPolicy Bypass -File desktop/release-smoke-win.ps1
+Write-Host "PREVIEW_SMOKE_START version=$Version"
+powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File desktop/release-smoke-win.ps1
 if ($LASTEXITCODE -ne 0) { throw "Packaged Windows release smoke failed with exit code $LASTEXITCODE" }
+Write-Host "PREVIEW_SMOKE_COMPLETE version=$Version"
 
 $LocalesDir = Join-Path $RootDir "dist\win-unpacked\locales"
 $ExpectedLocales = @("en-US.pak", "zh-CN.pak")
@@ -44,7 +49,11 @@ if ($Difference) { throw "Windows package locales are not exactly English and Si
 # Trust is added only after signing to avoid ambiguous certificate-store selection.
 # It exists only on the ephemeral build runner, never in the installer or app.
 if ($env:GITHUB_ACTIONS -eq "true" -and $env:RUNNER_ENVIRONMENT -eq "github-hosted" -and $env:RUNNER_OS -eq "Windows") {
-  Import-Certificate -FilePath $Pinned.Path -CertStoreLocation "Cert:\CurrentUser\Root" | Out-Null
+  Write-Host "PREVIEW_TRUST_START store=LocalMachine/Root"
+  Import-Certificate -FilePath $Pinned.Path -CertStoreLocation "Cert:\LocalMachine\Root" -Confirm:$false | Out-Null
+  $TrustedCertificate = Get-Item -LiteralPath "Cert:\LocalMachine\Root\$($Pinned.Metadata.sha1Thumbprint)" -ErrorAction Stop
+  Assert-DocFlowPreviewCertificate -Certificate $TrustedCertificate -Metadata $Pinned.Metadata
+  Write-Host "PREVIEW_TRUST_READY store=LocalMachine/Root thumbprint=$($Pinned.Metadata.sha1Thumbprint)"
 }
 
 $ArtifactPaths = @($Expected[0], $Expected[1], (Join-Path $RootDir "dist\win-unpacked\DocFlow Local.exe"))
@@ -60,8 +69,10 @@ if (-not $Signtool) {
 if (-not $Signtool) { throw "signtool.exe was not found" }
 
 $Verification = @()
+Write-Host "PREVIEW_VERIFY_START artifacts=$($ArtifactPaths.Count)"
 foreach ($Path in $ArtifactPaths) {
   if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { throw "Expected signed artifact is missing: $Path" }
+  Write-Host "PREVIEW_VERIFY_FILE_START $(Split-Path -Leaf $Path)"
   $Signature = Get-AuthenticodeSignature -LiteralPath $Path
   if (
     $Signature.Status -ne "Valid" -or $null -eq $Signature.SignerCertificate -or
@@ -81,6 +92,7 @@ foreach ($Path in $ArtifactPaths) {
   }
   Write-Host "SELF_SIGNED_PREVIEW_OK $(Split-Path -Leaf $Path) sha256=$Hash"
 }
+Write-Host "PREVIEW_VERIFY_COMPLETE artifacts=$($Verification.Count)"
 $Utf8NoBom = [System.Text.UTF8Encoding]::new($false)
 $VerificationJson = (([ordered]@{ schemaVersion = 1; artifacts = $Verification } | ConvertTo-Json -Depth 5) -replace "`r`n", "`n") + "`n"
 [System.IO.File]::WriteAllText((Join-Path $RootDir "dist\windows-self-signed-preview-verification.json"), $VerificationJson, $Utf8NoBom)

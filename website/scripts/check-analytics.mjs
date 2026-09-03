@@ -105,6 +105,61 @@ for (const installer of [
   assert.equal(events[1].parameters.source_event, installer.eventName);
 }
 
+const windowsPreviewClick = {
+  eventName: 'download_windows_preview',
+  href: 'https://github.com/docflowlocal/docflow-desktop/releases/download/v0.6.1-preview.2/DocFlow-Local-Setup-0.6.1-preview.2-x64-Self-Signed-Preview.exe',
+  text: 'Download self-signed Windows Preview',
+  dataset: {
+    ctaId: 'download_windows_self_signed_preview',
+    ctaLocation: 'download_card',
+    pageType: 'download',
+    locale: 'en',
+    destination: 'github_release_asset',
+    platform: 'windows',
+    assetType: 'exe',
+    releaseVersion: '0.6.1-preview.2',
+    downloadKind: 'installer'
+  }
+};
+
+for (const locale of ['en', 'zh-CN']) {
+  const previewRuntime = analyticsRuntime();
+  dispatch(previewRuntime, {
+    ...windowsPreviewClick,
+    dataset: { ...windowsPreviewClick.dataset, locale }
+  });
+  const previewEvents = recordedEvents(previewRuntime);
+  assert.deepEqual(previewEvents.map(event => event.name), ['download_windows_preview', 'cta_click']);
+  assert.equal(previewEvents.some(event => event.name === 'download_windows_installer'), false);
+  for (const event of previewEvents) {
+    assert.equal(event.parameters.cta_id, 'download_windows_self_signed_preview');
+    assert.equal(event.parameters.destination, 'github_release_asset');
+    assert.equal(event.parameters.locale, locale);
+    assert.equal(event.parameters.platform, 'windows');
+    assert.equal(event.parameters.asset_type, 'exe');
+    assert.equal(event.parameters.release_version, '0.6.1-preview.2');
+    assert.equal(event.parameters.file_name, 'DocFlow-Local-Setup-0.6.1-preview.2-x64-Self-Signed-Preview.exe');
+    assert.equal(event.parameters.file_extension, 'exe');
+    assert.equal(event.parameters.link_url, windowsPreviewClick.href);
+    assert.equal(event.parameters.link_domain, 'github.com');
+  }
+  assert.equal(previewEvents[1].parameters.source_event, 'download_windows_preview');
+}
+
+for (const [consent, doNotTrack] of [[null, '0'], ['denied', '0'], ['granted', '1']]) {
+  const previewRuntime = analyticsRuntime(consent, doNotTrack);
+  dispatch(previewRuntime, windowsPreviewClick);
+  assert.equal(recordedEvents(previewRuntime).length, 0);
+  assert.equal(previewRuntime.scripts.length, 0);
+  assert.equal(previewRuntime.window.docflowAnalyticsConsent.isEnabled(), false);
+}
+
+const revokedPreviewRuntime = analyticsRuntime();
+revokedPreviewRuntime.window.docflowAnalyticsConsent.set('denied');
+dispatch(revokedPreviewRuntime, windowsPreviewClick);
+assert.equal(recordedEvents(revokedPreviewRuntime).length, 0);
+assert.equal(revokedPreviewRuntime.window.docflowAnalyticsConsent.isEnabled(), false);
+
 const betaRuntime = analyticsRuntime();
 dispatch(betaRuntime, {
   eventName: 'beta_request',
@@ -180,4 +235,4 @@ const dntRuntime = analyticsRuntime('granted', '1');
 assert.equal(dntRuntime.scripts.length, 0);
 assert.equal(dntRuntime.window.docflowAnalyticsConsent.isEnabled(), false);
 
-console.log('Consent-gated analytics validation passed for installer, beta, and optional supporter CTAs.');
+console.log('Consent-gated analytics validation passed for installer, independent Windows Preview, beta, and optional supporter CTAs.');

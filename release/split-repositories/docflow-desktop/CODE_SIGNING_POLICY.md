@@ -19,7 +19,7 @@ will reflect the service and certificate actually used.
 
 ## Independent self-signed Preview channel
 
-`0.6.1-preview.1` introduces a separate `Self-Signed Preview` channel using a
+The current `0.6.1-preview.2` uses a separate `Self-Signed Preview` channel with a
 project-controlled certificate, not a SignPath Foundation certificate. The
 build command is `npm run build:win:self-signed-preview`.
 
@@ -65,6 +65,16 @@ are restricted to the controlled signing environment and are never included
 in source, logs, packages, or release assets. The Preview guide included in the
 release explains read-only hash and signature checks; it does not install
 certificate trust for users.
+
+Only an ephemeral GitHub-hosted Windows runner may temporarily import the
+pinned public certificate into `LocalMachine\Root`, after signing, for build
+verification. Cleanup removes that exact trust entry and the signing key from
+`CurrentUser\My`; it never removes unrelated certificates. Signing commands
+have a 120-second timeout, and the packaged smoke process has a 60-second
+timeout with process-tree termination on timeout. Stage markers distinguish
+packaging, smoke-process exit, temporary trust, and verification. These bounds
+do not weaken signer pinning, Authenticode verification, RFC 3161 timestamps,
+or the separation between Preview and publicly trusted production releases.
 
 ## Signing scope
 
