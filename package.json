@@ -1,6 +1,6 @@
 {
   "name": "docflow-local",
-  "version": "0.6.1-preview.1",
+  "version": "0.6.1-preview.2",
   "description": "Privacy-first desktop document automation for JSON/Excel/CSV and Word/PDF templates",
   "main": "desktop/main.js",
   "author": "DocFlow Local Contributors",

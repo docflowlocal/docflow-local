@@ -372,7 +372,7 @@ async function generatedCiWorkflow(sourceRoot, repositoryName) {
         "        if: ${{ runner.os == 'Windows' }}",
         "        shell: powershell",
         "        run: |",
-        "          @('desktop/package-win-self-signed-preview.ps1', 'desktop/windows-preview-certificate.ps1', 'desktop/prepare-windows-preview-signing.ps1', 'desktop/cleanup-windows-preview-signing.ps1') | ForEach-Object { [void][scriptblock]::Create((Get-Content -LiteralPath $_ -Raw)) }"
+        "          @('desktop/package-win-self-signed-preview.ps1', 'desktop/windows-preview-certificate.ps1', 'desktop/prepare-windows-preview-signing.ps1', 'desktop/cleanup-windows-preview-signing.ps1', 'desktop/release-smoke-win.ps1') | ForEach-Object { [void][scriptblock]::Create((Get-Content -LiteralPath $_ -Raw)) }"
       ]
     : [];
   const bootstrapModeStep = repositoryName === "docflow-desktop"

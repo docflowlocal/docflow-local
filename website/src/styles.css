@@ -293,7 +293,10 @@ img, svg { display: block; }
 .os-icon { width: 53px; height: 53px; border-radius: 16px; display: grid; place-items: center; color: var(--teal); background: var(--teal-pale); font-size: 19px; font-weight: 850; }
 .download-card h2 { margin: 22px 0 0; font-size: 25px; }
 .download-card p { min-height: 52px; color: var(--muted); font-size: 14px; }
+.download-card .button { max-width: 100%; padding-top: 10px; padding-bottom: 10px; line-height: 1.35; }
+.download-card .button svg { flex-shrink: 0; }
 .download-note { margin-top: 20px; padding: 17px; border: 1px solid #d8e4e7; border-radius: 13px; color: #607784; background: #f7fafb; font-size: 13px; }
+.download-note code { overflow-wrap: anywhere; }
 .industry-hero-grid { display: grid; grid-template-columns: 1fr .8fr; gap: 65px; align-items: center; text-align: left; }
 .industry-hero-grid .page-hero { text-align: left; }
 .industry-hero-grid .page-hero h1 { margin: 0; }

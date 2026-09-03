@@ -3,6 +3,20 @@
 All notable changes to DocFlow Local are documented here. The project uses
 semantic versioning after the modular repositories are published.
 
+## 0.6.1-preview.2 — Unattended Preview build safeguards
+
+- Uses the pinned public certificate in `LocalMachine\Root` only on ephemeral
+  GitHub-hosted Windows runners after signing, and removes that exact trust
+  entry and the `CurrentUser\My` private key during cleanup.
+- Bounds each signing command to 120 seconds and the packaged smoke main
+  process to 60 seconds, with process-tree termination on timeout.
+- Adds distinct packaging, smoke-process exit, trust-import, and verification
+  markers for diagnosing unattended build waits.
+- Retains the existing certificate fingerprint, SHA-256 signatures, RFC 3161
+  timestamps, bilingual resources, and Preview-only release gates.
+- Adds regression checks for the unattended-build safeguards. The previous
+  build wait's exact cause is not claimed as confirmed.
+
 ## 0.6.1-preview.1 — Windows Self-Signed Preview
 
 - Adds a separately labeled Windows x64 NSIS installer and portable build,

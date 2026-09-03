@@ -21,7 +21,7 @@ if (!buildSource.includes("windows: 'download_windows_installer'")) errors.push(
 for (const marker of ["'supporter_cta_click'", "'supporter_amount_select'", "'supporter_checkout_start'"]) {
   if (!buildSource.includes(marker)) errors.push(`analytics: missing supporter event contract ${marker}`);
 }
-for (const marker of ["'download_mac_installer'", "'download_windows_installer'", 'file_name:', 'file_extension:', 'link_url:', 'link_domain:']) {
+for (const marker of ["'download_mac_installer'", "'download_windows_installer'", "'download_windows_preview'", 'file_name:', 'file_extension:', 'link_url:', 'link_domain:']) {
   if (!analyticsSource.includes(marker)) errors.push(`analytics: missing installer handler marker ${marker}`);
 }
 for (const marker of ['docflow-analytics-consent-v1', 'allow_google_signals: false', 'allow_ad_personalization_signals: false']) {
@@ -121,13 +121,26 @@ for (const file of htmlFiles) {
         if (!windowsInstaller.includes(attribute)) errors.push(`${displayPath}: Windows installer event missing ${attribute}`);
       }
     } else {
-      const windowsBeta = buttonLinks.find(link => link.includes('data-cta-id="download_windows_beta"'));
-      if (!windowsBeta || !windowsBeta.includes('data-analytics="beta_request"') || !windowsBeta.includes('data-platform="windows"')) {
-        errors.push(`${displayPath}: unsigned Windows state must retain the Windows beta event`);
+      const windowsPreview = buttonLinks.find(link => link.includes('data-analytics="download_windows_preview"'));
+      if (!windowsPreview) {
+        errors.push(`${displayPath}: missing independently tracked Windows Preview download`);
+      } else {
+        for (const attribute of ['data-cta-id="download_windows_self_signed_preview"', 'data-destination="github_release_asset"', 'data-platform="windows"', 'data-asset-type="exe"', 'data-release-version="0.6.1-preview.2"', 'Self-Signed-Preview.exe']) {
+          if (!windowsPreview.includes(attribute)) errors.push(`${displayPath}: Windows Preview event missing ${attribute}`);
+        }
+      }
+      if (!/id="windows-preview-verification"[\s\S]*?<code>[a-f0-9]{64}<\/code>/.test(html)) {
+        errors.push(`${displayPath}: Windows Preview must publish the verified installer SHA-256`);
       }
     }
-    if (!html.includes('Free code signing provided by SignPath.io, certificate by SignPath Foundation.')) {
-      errors.push(`${displayPath}: missing SignPath Foundation attribution`);
+    for (const marker of ['Self-Signed Preview', 'SmartScreen', 'Smart App Control']) {
+      if (!html.includes(marker)) errors.push(`${displayPath}: missing Windows Preview risk label ${marker}`);
+    }
+    if (html.includes('Free code signing provided by SignPath.io, certificate by SignPath Foundation.')) {
+      errors.push(`${displayPath}: unapproved SignPath sponsorship must not be claimed`);
+    }
+    if (!html.includes(path === '/zh/download/' ? 'SignPath 申请仍在等待批准' : 'SignPath application is pending')) {
+      errors.push(`${displayPath}: signing provider status must remain explicit`);
     }
     if (!html.includes('data-analytics="supporter_cta_click"') || !html.includes('data-destination="support_page"')) {
       errors.push(`${displayPath}: missing optional supporter entry point`);

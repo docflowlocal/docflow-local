@@ -105,7 +105,9 @@ function clickParameters(link) {
 
 const installerDownloadEvents = new Set([
   'download_mac_installer',
-  'download_windows_installer'
+  'download_windows_installer',
+  // Preview downloads share file metadata, not the public-release conversion event.
+  'download_windows_preview'
 ]);
 
 function installerDownloadParameters(link, parameters) {

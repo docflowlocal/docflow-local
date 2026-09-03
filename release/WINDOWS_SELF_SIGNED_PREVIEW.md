@@ -5,10 +5,10 @@
 | Item / 项目 | Value / 内容 |
 | --- | --- |
 | Channel / 通道 | Self-Signed Preview — not publicly trusted / 自签名预览版，非公众可信签名 |
-| Version / 版本 | `0.6.1-preview.1` |
+| Version / 版本 | `0.6.1-preview.2` |
 | Architecture / 架构 | Windows x64 |
-| Installer / 安装版 | `DocFlow-Local-Setup-0.6.1-preview.1-x64-Self-Signed-Preview.exe` |
-| Portable / 便携版 | `DocFlow-Local-0.6.1-preview.1-Windows-x64-Self-Signed-Preview.exe` |
+| Installer / 安装版 | `DocFlow-Local-Setup-0.6.1-preview.2-x64-Self-Signed-Preview.exe` |
+| Portable / 便携版 | `DocFlow-Local-0.6.1-preview.2-Windows-x64-Self-Signed-Preview.exe` |
 | Public certificate / 公开证书 | `DocFlow-Local-Preview-CodeSigning.cer` |
 | Certificate subject / 证书主题 | `CN=DocFlow Local Community Preview` |
 | SHA-1 certificate thumbprint / 证书指纹 | `3BDE0D54717DC1A0C7BB19B36B3C2B90A6C00337` |
@@ -85,6 +85,14 @@ SignPath 或正式公众可信签名门禁改成“已完成”。私钥必须�
 发布记录应包含准确的源码提交、构建记录、安装包 SHA-256、SBOM、此说明和
 公开 CER。构建机针对固定证书进行的验证仅用于确认 Preview 的签名，不是
 公众信任证明；不能据此宣称终端用户的 Windows 将自动信任此包。
+
+`0.6.1-preview.2` 增加无人值守构建保护：单次签名命令限时 120 秒，打包后的
+应用主进程检查限时 60 秒，超时则终止该进程树。日志分别标记打包完成、
+smoke 进程退出、临时信任导入和签名验证。仅 GitHub 托管的临时 Windows
+runner 可在签名后将固定公开证书加入 `LocalMachine\Root` 用于构建验证，
+清理时仅移除该固定证书；`CurrentUser\My` 中的签名私钥也会被删除。
+这些仅限构建机的措施不更改用户设备，不降低签名、RFC 3161 时间戳或证书
+指纹门禁，也不代表先前构建等待的根因已得到确认。
 
 ## English
 
@@ -165,6 +173,17 @@ against the pinned certificate on a build host verifies the Preview signature;
 it is not evidence of public trust and does not mean end-user Windows systems
 will trust the package automatically.
 
+`0.6.1-preview.2` adds unattended-build safeguards: a 120-second limit per
+signing command and a 60-second limit for the packaged app's main smoke
+process, terminating that process tree on timeout. Log markers distinguish
+packaging completion, smoke-process exit, temporary trust import, and
+signature verification. Only an ephemeral GitHub-hosted Windows runner may
+temporarily add the pinned public certificate to `LocalMachine\Root` after
+signing for build verification. Cleanup removes that exact certificate and
+the signing private key in `CurrentUser\My`. These build-host-only measures do
+not change user devices, weaken signature/RFC 3161 timestamp/fingerprint gates,
+or claim that the cause of the previous build wait has been confirmed.
+
 ## Read-only download checks / 只读下载校验
 
 Run these commands in the folder containing the downloaded EXEs. They read
@@ -176,8 +195,8 @@ certificates, or change Windows security settings.
 
 ```powershell
 $Files = @(
-  '.\DocFlow-Local-Setup-0.6.1-preview.1-x64-Self-Signed-Preview.exe',
-  '.\DocFlow-Local-0.6.1-preview.1-Windows-x64-Self-Signed-Preview.exe'
+  '.\DocFlow-Local-Setup-0.6.1-preview.2-x64-Self-Signed-Preview.exe',
+  '.\DocFlow-Local-0.6.1-preview.2-Windows-x64-Self-Signed-Preview.exe'
 )
 
 Get-FileHash -LiteralPath $Files -Algorithm SHA256
