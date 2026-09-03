@@ -20,6 +20,9 @@ function validateWindowsSigningEnvironment(env = process.env) {
   if (!String(env.DOCFLOW_WIN_PUBLISHER_NAME || "").trim()) {
     errors.push("DOCFLOW_WIN_PUBLISHER_NAME is required.");
   }
+  if ([subject, String(env.DOCFLOW_WIN_PUBLISHER_NAME || "")].some(value => /DocFlow Local Community Preview/i.test(value))) {
+    errors.push("The self-signed Preview identity cannot be used for a publicly trusted release.");
+  }
   return { valid: errors.length === 0, errors, mode: pfx ? "pfx" : subject ? "store" : null };
 }
 

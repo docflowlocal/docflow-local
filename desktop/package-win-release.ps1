@@ -54,6 +54,8 @@ foreach ($Artifact in $Artifacts) {
   if (
     $Signature.Status -ne "Valid" -or
     $null -eq $Signature.SignerCertificate -or
+    $Signature.SignerCertificate.Subject -eq $Signature.SignerCertificate.Issuer -or
+    $Signature.SignerCertificate.Subject -match "DocFlow Local Community Preview" -or
     $null -eq $Signature.TimeStamperCertificate
   ) {
     throw "Authenticode verification failed for $($Artifact.Name): $($Signature.Status)"

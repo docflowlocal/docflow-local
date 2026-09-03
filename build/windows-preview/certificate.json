@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "purpose": "windows-self-signed-preview-only",
+  "commonName": "DocFlow Local Community Preview",
+  "subject": "CN=DocFlow Local Community Preview",
+  "issuer": "CN=DocFlow Local Community Preview",
+  "serialNumber": "7B9D40EF81A9664EB06C167548E58520184D2B2F",
+  "sha1Thumbprint": "3BDE0D54717DC1A0C7BB19B36B3C2B90A6C00337",
+  "sha256Fingerprint": "55A4AB626BD3C54E94161ADEF08B85C24E5E8A61B6CE8F4CB7DF15331F8B8114",
+  "notBefore": "2026-09-03T15:58:36Z",
+  "notAfter": "2027-03-02T15:58:36Z",
+  "certificateFile": "DocFlow-Local-Preview-CodeSigning.cer",
+  "publiclyTrusted": false,
+  "certificateAuthority": false
+}

@@ -3,6 +3,18 @@
 All notable changes to DocFlow Local are documented here. The project uses
 semantic versioning after the modular repositories are published.
 
+## 0.6.1-preview.1 — Windows Self-Signed Preview
+
+- Adds a separately labeled Windows x64 NSIS installer and portable build,
+  signed with a pinned, Preview-only certificate and RFC 3161 timestamps.
+- Keeps English and Simplified Chinese application and installer resources.
+- Publishes public certificate fingerprints, executable SHA-256 checksums,
+  a CycloneDX SBOM, and an exact source/build record.
+- Protects signing keys in a manually approved release environment; no private
+  key is distributed, and installers never change users' certificate trust.
+- Preserves the publicly trusted stable Windows release gate. Self-signed
+  Preview builds can still be blocked by SmartScreen or Smart App Control.
+
 ## 0.6.0 — Release candidate
 
 ### Added

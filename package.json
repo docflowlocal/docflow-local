@@ -1,6 +1,6 @@
 {
   "name": "docflow-local",
-  "version": "0.6.0",
+  "version": "0.6.1-preview.1",
   "description": "Privacy-first desktop document automation for JSON/Excel/CSV and Word/PDF templates",
   "main": "desktop/main.js",
   "author": "DocFlow Local Contributors",
@@ -38,10 +38,10 @@
     "test:packages": "node scripts/package-consumer-test.js",
     "benchmark:engine": "node desktop/benchmark-engine.js",
     "test:api": "node desktop/engine-api-test.js",
-    "test:syntax": "node --check static/app.js && node --check static/i18n.js && node --check static/starter-scenarios.js && node --check desktop/expression.js && node --check desktop/template-engine.js && node --check desktop/engine.js && node --check desktop/main.js && node --check desktop/preload.js && node --check desktop/docx-render.js && node --check desktop/project-io.js && node --check desktop/project-io-test.js && node --check desktop/project-recipe.js && node --check desktop/project-recipe-test.js && node --check desktop/activation-ledger.js && node --check desktop/activation-ledger-test.js && node --check desktop/commercial-host.js && node --check desktop/commercial-host-test.js && node --check desktop/preload-p3-test.js && node --check desktop/preload-commercial-test.js && node --check desktop/release-smoke.js && node --check desktop/pdf-smoke.js && node --check desktop/ui-smoke.js && node --check desktop/pro-ui-smoke.js && node --check desktop/mvp-regression-test.js && node --check desktop/benchmark-engine.js && node --check desktop/electron-builder.release.cjs && node --check desktop/electron-builder.win-release.cjs && node --check desktop/release-signing-preflight.js && node --check desktop/release-signing-preflight-test.js && node --check desktop/release-signing-preflight-win.js && node --check desktop/release-signing-preflight-win-test.js && node --check scripts/package-consumer-test.js && node --check scripts/check-license-boundaries.js && node --check scripts/release-readiness.js && node --check scripts/release-readiness-test.js && node --check scripts/generate-release-metadata.js && node --check scripts/export-repositories.js && node --check scripts/export-repositories.test.js",
+    "test:syntax": "node --check static/app.js && node --check static/i18n.js && node --check static/starter-scenarios.js && node --check desktop/expression.js && node --check desktop/template-engine.js && node --check desktop/engine.js && node --check desktop/main.js && node --check desktop/preload.js && node --check desktop/docx-render.js && node --check desktop/project-io.js && node --check desktop/project-io-test.js && node --check desktop/project-recipe.js && node --check desktop/project-recipe-test.js && node --check desktop/activation-ledger.js && node --check desktop/activation-ledger-test.js && node --check desktop/commercial-host.js && node --check desktop/commercial-host-test.js && node --check desktop/preload-p3-test.js && node --check desktop/preload-commercial-test.js && node --check desktop/release-smoke.js && node --check desktop/pdf-smoke.js && node --check desktop/ui-smoke.js && node --check desktop/pro-ui-smoke.js && node --check desktop/mvp-regression-test.js && node --check desktop/benchmark-engine.js && node --check desktop/electron-builder.release.cjs && node --check desktop/electron-builder.win-release.cjs && node --check desktop/electron-builder.win-self-signed-preview.cjs && node --check desktop/windows-preview-certificate.js && node --check desktop/release-signing-preflight.js && node --check desktop/release-signing-preflight-test.js && node --check desktop/release-signing-preflight-win.js && node --check desktop/release-signing-preflight-win-test.js && node --check scripts/package-consumer-test.js && node --check scripts/check-license-boundaries.js && node --check scripts/release-readiness.js && node --check scripts/release-readiness-test.js && node --check scripts/generate-release-metadata.js && node --check scripts/generate-windows-self-signed-preview-metadata.js && node --check scripts/export-repositories.js && node --check scripts/export-repositories.test.js",
     "test:exports": "node --test scripts/export-repositories.test.js",
     "export:repositories": "node scripts/export-repositories.js",
-    "test:release": "npm run test:licenses && node scripts/release-readiness-test.js && node desktop/release-signing-preflight-test.js && node desktop/release-signing-preflight-win-test.js && node scripts/release-readiness.js --channel internal --source-only",
+    "test:release": "npm run test:licenses && node scripts/release-readiness-test.js && node desktop/release-signing-preflight-test.js && node desktop/release-signing-preflight-win-test.js && node desktop/windows-self-signed-preview-config-test.js && node scripts/release-readiness.js --channel internal --source-only",
     "release:check": "npm run release:check:mac",
     "release:check:mac": "npm run test:licenses && node scripts/release-readiness.js --channel public --platform macOS",
     "release:check:win": "npm run test:licenses && node scripts/release-readiness.js --channel public --platform windows --arch x64",
@@ -64,6 +64,7 @@
     "build:mac:release:x64": "zsh desktop/package-mac-release.sh x64",
     "build:win": "powershell -NoProfile -ExecutionPolicy Bypass -File desktop/package-win.ps1",
     "build:win:x64": "powershell -NoProfile -ExecutionPolicy Bypass -File desktop/package-win.ps1",
+    "build:win:self-signed-preview": "powershell -NoProfile -ExecutionPolicy Bypass -File desktop/package-win-self-signed-preview.ps1",
     "build:win:release": "powershell -NoProfile -ExecutionPolicy Bypass -File desktop/package-win-release.ps1",
     "pack:mac": "electron-builder --mac dir --arm64",
     "pack:mac:x64": "electron-builder --mac dir --x64",
@@ -131,6 +132,17 @@
     "mac": {
       "category": "public.app-category.productivity",
       "icon": "build/icon.png",
+      "electronLanguages": [
+        "en",
+        "zh_CN"
+      ],
+      "extendInfo": {
+        "CFBundleDevelopmentRegion": "en",
+        "CFBundleLocalizations": [
+          "en",
+          "zh_CN"
+        ]
+      },
       "identity": null,
       "hardenedRuntime": false,
       "gatekeeperAssess": false,
@@ -162,6 +174,10 @@
     },
     "win": {
       "icon": "build/icon.png",
+      "electronLanguages": [
+        "en-US",
+        "zh-CN"
+      ],
       "target": [
         {
           "target": "nsis",
@@ -179,6 +195,12 @@
     },
     "nsis": {
       "oneClick": false,
+      "multiLanguageInstaller": true,
+      "installerLanguages": [
+        "en_US",
+        "zh_CN"
+      ],
+      "displayLanguageSelector": true,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,

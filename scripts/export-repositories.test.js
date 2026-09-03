@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 const assert = require("node:assert/strict");
+const { X509Certificate, createHash } = require("node:crypto");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
@@ -162,6 +163,14 @@ test("export writes verified trees, preserves metadata, and rejects a dirty reru
   assert.equal(Object.prototype.hasOwnProperty.call(desktopPackage, "workspaces"), false);
   assert.match(desktopPackage.scripts["release:check:win"], /--platform windows --arch x64/);
   assert.match(desktopPackage.scripts["release:metadata:win"], /--platform windows --arch x64/);
+  assert.match(
+    desktopPackage.scripts["build:win:self-signed-preview"],
+    /desktop\/package-win-self-signed-preview\.ps1/
+  );
+  assert.match(
+    desktopPackage.scripts["test:release"],
+    /node desktop\/windows-self-signed-preview-config-test\.js/
+  );
   assert.equal(
     await exists(path.join(output, "docflow-desktop/package-lock.json")),
     false,
@@ -247,6 +256,14 @@ test("export writes verified trees, preserves metadata, and rejects a dirty reru
         /hashFiles\('project\/package-lock\.json'\)/
       );
       assert.match(workflow, /@docflow-local\/license-verifier/);
+      for (const scriptName of [
+        "package-win-self-signed-preview.ps1",
+        "windows-preview-certificate.ps1",
+        "prepare-windows-preview-signing.ps1",
+        "cleanup-windows-preview-signing.ps1"
+      ]) {
+        assert(workflow.includes(scriptName), `Windows CI must parse ${scriptName}`);
+      }
       const windowsPackageWorkflow = await fs.promises.readFile(
         path.join(output, repository, ".github/workflows/windows-package.yml"),
         "utf8"
@@ -261,6 +278,193 @@ test("export writes verified trees, preserves metadata, and rejects a dirty reru
       assert.doesNotMatch(
         windowsPackageWorkflow,
         /sourceRef = "\$\{\{ inputs\.source_ref \}\}"/
+      );
+
+      const previewFiles = {
+        workflow: ".github/workflows/windows-self-signed-preview.yml",
+        config: "desktop/electron-builder.win-self-signed-preview.cjs",
+        script: "desktop/package-win-self-signed-preview.ps1",
+        prepare: "desktop/prepare-windows-preview-signing.ps1",
+        cleanup: "desktop/cleanup-windows-preview-signing.ps1",
+        metadataGenerator: "scripts/generate-windows-self-signed-preview-metadata.js",
+        certificate: "build/windows-preview/DocFlow-Local-Preview-CodeSigning.cer",
+        metadata: "build/windows-preview/certificate.json",
+        documentation: "release/WINDOWS_SELF_SIGNED_PREVIEW.md"
+      };
+      for (const relativePath of Object.values(previewFiles)) {
+        assert.equal(
+          await exists(path.join(output, repository, relativePath)),
+          true,
+          `${relativePath} must be included in the public Desktop export`
+        );
+      }
+
+      const previewWorkflow = await fs.promises.readFile(
+        path.join(output, repository, previewFiles.workflow),
+        "utf8"
+      );
+      assert.match(previewWorkflow, /^on:\n  workflow_dispatch:/m);
+      assert.doesNotMatch(
+        previewWorkflow,
+        /^\s*(?:push|pull_request|pull_request_target|workflow_call|schedule):/m
+      );
+      assert.match(
+        previewWorkflow,
+        /^\s+environment:\s+windows-self-signed-preview\s*$/m
+      );
+      assert.match(previewWorkflow, /permissions:\n  contents: read/);
+      assert.match(previewWorkflow, /actions\/checkout@[a-f0-9]{40}/);
+      assert.match(previewWorkflow, /actions\/setup-node@[a-f0-9]{40}/);
+      assert.match(previewWorkflow, /actions\/upload-artifact@[a-f0-9]{40}/);
+      assert.match(previewWorkflow, /persist-credentials:\s+false/);
+      for (const secretName of [
+        "DOCFLOW_WIN_PREVIEW_PFX_BASE64",
+        "DOCFLOW_WIN_PREVIEW_PFX_PASSWORD"
+      ]) {
+        assert.equal(
+          [...previewWorkflow.matchAll(new RegExp(`secrets\\.${secretName}`, "g"))].length,
+          1,
+          `${secretName} must be injected exactly once`
+        );
+      }
+      assert.doesNotMatch(
+        previewWorkflow.slice(0, previewWorkflow.indexOf("    steps:")),
+        /\$\{\{\s*secrets\./,
+        "private signing values must not be job-level environment variables"
+      );
+      const secretReference = previewWorkflow.indexOf("secrets.DOCFLOW_WIN_PREVIEW_PFX_BASE64");
+      const importStepStart = previewWorkflow.lastIndexOf("\n      - ", secretReference);
+      assert(importStepStart >= 0);
+      const importStepEnd = previewWorkflow.indexOf("\n      - ", secretReference);
+      const importStep = previewWorkflow.slice(
+        importStepStart,
+        importStepEnd < 0 ? previewWorkflow.length : importStepEnd
+      );
+      for (const command of ["npm run test:desktop", "npm run test:release"]) {
+        const commandIndex = previewWorkflow.indexOf(command);
+        assert(
+          commandIndex >= 0 && commandIndex < importStepStart,
+          `${command} must finish before the signing key is imported`
+        );
+      }
+      assert.match(importStep, /secrets\.DOCFLOW_WIN_PREVIEW_PFX_PASSWORD/);
+      assert.match(importStep, /desktop\/prepare-windows-preview-signing\.ps1/);
+      assert.doesNotMatch(importStep, /(?:npm run|electron-builder)/);
+      assert.doesNotMatch(
+        previewWorkflow,
+        /(?:Write-(?:Host|Output)|echo)[^\n]*(?:PFX_BASE64|PFX_PASSWORD)/i
+      );
+      assert.doesNotMatch(previewWorkflow, /--channel["' ]+public/);
+      assert.match(previewWorkflow, /if:\s*\$\{\{\s*always\(\)\s*\}\}/);
+      assert.match(previewWorkflow, /build:win:self-signed-preview -- -SkipTests/);
+
+      const uploadStepStart = previewWorkflow.indexOf("actions/upload-artifact@");
+      assert(uploadStepStart >= 0);
+      const uploadStepEnd = previewWorkflow.indexOf("\n      - ", uploadStepStart);
+      const uploadStep = previewWorkflow.slice(
+        uploadStepStart,
+        uploadStepEnd < 0 ? previewWorkflow.length : uploadStepEnd
+      );
+      assert.match(uploadStep, /windows-community-\*-x64-self-signed-preview\/\*/);
+      assert.doesNotMatch(
+        uploadStep,
+        /(?:\.pfx|\.p12|PRIVATE KEY|PFX_BASE64|password|RUNNER_TEMP)/i
+      );
+
+      const previewConfig = await fs.promises.readFile(
+        path.join(output, repository, previewFiles.config),
+        "utf8"
+      );
+      const previewScript = await fs.promises.readFile(
+        path.join(output, repository, previewFiles.script),
+        "utf8"
+      );
+      const previewMetadataGenerator = await fs.promises.readFile(
+        path.join(output, repository, previewFiles.metadataGenerator),
+        "utf8"
+      );
+      const previewPreparation = await fs.promises.readFile(
+        path.join(output, repository, previewFiles.prepare),
+        "utf8"
+      );
+      const previewCleanup = await fs.promises.readFile(
+        path.join(output, repository, previewFiles.cleanup),
+        "utf8"
+      );
+      const previewImplementation = [
+        previewWorkflow,
+        previewConfig,
+        previewScript,
+        previewMetadataGenerator
+      ].join("\n");
+      assert.match(previewConfig, /certificateSha1:\s*metadata\.sha1Thumbprint/);
+      assert.match(previewConfig, /signingHashAlgorithms:\s*\["sha256"\]/);
+      assert.match(previewConfig, /rfc3161TimeStampServer/);
+      assert.doesNotMatch(previewConfig, /certificate(?:File|Password|SubjectName)/);
+      assert.match(previewImplementation, /TimeStamperCertificate/);
+      assert.match(previewImplementation, /sha1Thumbprint/);
+      assert.match(previewImplementation, /distribution\s*[:=]\s*"self-signed-preview"/);
+      assert.match(previewImplementation, /signatureTrust\s*[:=]\s*"self-signed"/);
+      assert.match(previewImplementation, /publiclyTrusted\s*[:=]\s*\$?false/);
+      assert.match(previewImplementation, /signed\s*[:=]\s*\$?true/);
+      assert.match(previewMetadataGenerator, /publicReleaseEligible:\s*false/);
+      assert.doesNotMatch(previewMetadataGenerator, /(?:\.pfx|\.p12|PFX_BASE64|PFX_PASSWORD)/i);
+      assert.doesNotMatch(previewImplementation, /windowsAuthenticode[^\n]*complete/i);
+      assert.match(previewPreparation, /Import-PfxCertificate/);
+      assert.doesNotMatch(previewPreparation, /-Exportable\b/);
+      assert.match(previewPreparation, /RUNNER_ENVIRONMENT\s+-ne\s+"github-hosted"/);
+      assert.match(previewPreparation, /ConvertTo-SecureString/);
+      assert.match(previewPreparation, /finally\s*\{/);
+      assert.match(previewPreparation, /Remove-Item[^\n]*\$PfxPath/);
+      assert.doesNotMatch(
+        previewPreparation,
+        /(?:Write-(?:Host|Output)|echo)[^\n]*(?:PFX_BASE64|PFX_PASSWORD)/i
+      );
+      assert.match(previewCleanup, /RUNNER_ENVIRONMENT\s+-ne\s+"github-hosted"/);
+      assert.match(previewCleanup, /Remove-Item/);
+
+      const previewCertificateBytes = await fs.promises.readFile(
+        path.join(output, repository, previewFiles.certificate)
+      );
+      const previewCertificateMetadata = JSON.parse(await fs.promises.readFile(
+        path.join(output, repository, previewFiles.metadata),
+        "utf8"
+      ));
+      const previewCertificate = new X509Certificate(previewCertificateBytes);
+      assert.deepEqual(previewCertificate.raw, previewCertificateBytes);
+      assert.equal(previewCertificate.subject, previewCertificateMetadata.subject);
+      assert.equal(previewCertificate.issuer, previewCertificateMetadata.issuer);
+      assert.equal(previewCertificate.subject, previewCertificate.issuer);
+      assert.equal(previewCertificate.verify(previewCertificate.publicKey), true);
+      assert.equal(previewCertificate.ca, false);
+      assert.deepEqual(previewCertificate.keyUsage, ["1.3.6.1.5.5.7.3.3"]);
+      assert.equal(previewCertificateMetadata.purpose, "windows-self-signed-preview-only");
+      assert.equal(previewCertificateMetadata.publiclyTrusted, false);
+      assert.equal(
+        createHash("sha1").update(previewCertificateBytes).digest("hex").toUpperCase(),
+        previewCertificateMetadata.sha1Thumbprint
+      );
+      assert.equal(
+        createHash("sha256").update(previewCertificateBytes).digest("hex").toUpperCase(),
+        previewCertificateMetadata.sha256Fingerprint
+      );
+
+      const previewDocumentation = await fs.promises.readFile(
+        path.join(output, repository, previewFiles.documentation),
+        "utf8"
+      );
+      assert.match(previewDocumentation, /self-signed/i);
+      assert.match(previewDocumentation, /not publicly trusted/i);
+      assert.match(previewDocumentation, /SmartScreen/i);
+      assert.match(previewDocumentation, /sha256Fingerprint|SHA-256(?: certificate)? fingerprint/i);
+
+      const exportedPreviewPaths = result.manifest.repositories
+        .find(item => item.name === "docflow-desktop")
+        .files.map(file => file.path);
+      assert.equal(
+        exportedPreviewPaths.some(file => /\.(?:pfx|p12|pem|key)$/i.test(file)),
+        false,
+        "the Desktop export must never include private signing material"
       );
     }
   }
@@ -300,6 +504,10 @@ test("export writes verified trees, preserves metadata, and rejects a dirty reru
   assert.match(desktopReleaseResult.stdout, /DocFlow release readiness \(internal\)/);
   assert.match(desktopReleaseResult.stdout, /PASS SPLIT_DESKTOP_DEPENDENCIES/);
   assert.match(desktopReleaseResult.stdout, /WARN LOCKFILE_SUPPLY_CHAIN/);
+  assert.match(
+    desktopReleaseResult.stdout,
+    /Windows self-signed Preview certificate\/config tests passed/
+  );
 
   const docsResult = await execFileAsync(npmCommand, ["test"], {
     cwd: path.join(output, "docs"),

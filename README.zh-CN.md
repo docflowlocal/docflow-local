@@ -154,6 +154,7 @@ Pro 聚焦企业愿意为运营和治理购买的能力：多数据源关系、�
 - [桌面端代码签名政策](https://github.com/docflowlocal/docflow-desktop/blob/main/CODE_SIGNING_POLICY.md)
 - [性能测试方法和结果](BENCHMARKS.md)
 - [桌面端构建与发布清单](DESKTOP_BUILD.md)
+- [Windows 自签名预览版与校验说明](release/WINDOWS_SELF_SIGNED_PREVIEW.md)
 - [路线图](ROADMAP.md)
 - [平台架构与多仓拆分](PLATFORM_ARCHITECTURE.md)
 - [未发布版本变更记录](CHANGELOG.md)
