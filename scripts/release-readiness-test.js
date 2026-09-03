@@ -6,6 +6,7 @@ const path = require("path");
 const {
   assessRelease,
   formatHumanReport,
+  isPublicWindowsSignature,
   parseArguments
 } = require("./release-readiness");
 const {
@@ -15,6 +16,19 @@ const {
 } = require("./generate-release-metadata");
 
 const rootDir = path.resolve(__dirname, "..");
+const publicSignature = {
+  status: "Valid",
+  signerSubject: "CN=Example Publisher",
+  signerIssuer: "CN=Example Public CA",
+  signerThumbprint: "A".repeat(40),
+  timestampThumbprint: "B".repeat(40)
+};
+assert.strictEqual(isPublicWindowsSignature(publicSignature), true);
+assert.strictEqual(isPublicWindowsSignature({ ...publicSignature, signerIssuer: publicSignature.signerSubject }), false);
+assert.strictEqual(isPublicWindowsSignature({ ...publicSignature, signerSubject: "CN=DocFlow Local Community Preview" }), false);
+assert.strictEqual(isPublicWindowsSignature({ ...publicSignature, signerIssuer: null }), false);
+assert.strictEqual(isPublicWindowsSignature({ ...publicSignature, timestampThumbprint: null }), false);
+assert.strictEqual(isPublicWindowsSignature({ ...publicSignature, status: "NotTrusted" }), false);
 const coreWorkspacePresent = fs.existsSync(
   path.join(rootDir, "packages", "core", "package.json")
 );

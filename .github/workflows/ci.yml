@@ -36,11 +36,16 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: node desktop/windows-self-signed-preview-config-test.js
       - name: Parse Windows release scripts
         shell: powershell
         run: |
           [void][scriptblock]::Create((Get-Content -Raw desktop/package-win.ps1))
           [void][scriptblock]::Create((Get-Content -Raw desktop/package-win-release.ps1))
+          [void][scriptblock]::Create((Get-Content -Raw desktop/package-win-self-signed-preview.ps1))
+          [void][scriptblock]::Create((Get-Content -Raw desktop/windows-preview-certificate.ps1))
+          [void][scriptblock]::Create((Get-Content -Raw desktop/prepare-windows-preview-signing.ps1))
+          [void][scriptblock]::Create((Get-Content -Raw desktop/cleanup-windows-preview-signing.ps1))
           [void][scriptblock]::Create((Get-Content -Raw desktop/release-smoke-win.ps1))
       - run: npm run pack:win
 

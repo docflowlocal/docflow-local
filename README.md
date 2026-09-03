@@ -157,6 +157,7 @@ Paid editions will not be differentiated by hidden telemetry, document uploads, 
 - [Desktop code signing policy](https://github.com/docflowlocal/docflow-desktop/blob/main/CODE_SIGNING_POLICY.md)
 - [Benchmark method and results](BENCHMARKS.md)
 - [Desktop build and release checklist](DESKTOP_BUILD.md)
+- [Windows Self-Signed Preview and verification](release/WINDOWS_SELF_SIGNED_PREVIEW.md)
 - [Roadmap](ROADMAP.md)
 - [Platform architecture and repository split](PLATFORM_ARCHITECTURE.md)
 - [Unreleased changelog](CHANGELOG.md)

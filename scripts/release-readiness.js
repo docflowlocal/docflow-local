@@ -112,6 +112,16 @@ function readJson(rootDir, relativePath) {
   return JSON.parse(fs.readFileSync(path.join(rootDir, relativePath), "utf8"));
 }
 
+function isPublicWindowsSignature(authenticode) {
+  return Boolean(
+    authenticode?.status === "Valid" &&
+    authenticode.signerThumbprint && authenticode.timestampThumbprint &&
+    authenticode.signerSubject && authenticode.signerIssuer &&
+    authenticode.signerSubject !== authenticode.signerIssuer &&
+    !/DocFlow Local Community Preview/i.test(authenticode.signerSubject)
+  );
+}
+
 function sha256(filePath) {
   const hash = crypto.createHash("sha256");
   hash.update(fs.readFileSync(filePath));
@@ -869,6 +879,7 @@ function assessRelease({
           "$result = [ordered]@{",
           "  status = [string]$signature.Status",
           "  signerSubject = if ($null -eq $signature.SignerCertificate) { $null } else { $signature.SignerCertificate.Subject }",
+          "  signerIssuer = if ($null -eq $signature.SignerCertificate) { $null } else { $signature.SignerCertificate.Issuer }",
           "  signerThumbprint = if ($null -eq $signature.SignerCertificate) { $null } else { $signature.SignerCertificate.Thumbprint }",
           "  timestampSubject = if ($null -eq $signature.TimeStamperCertificate) { $null } else { $signature.TimeStamperCertificate.Subject }",
           "  timestampThumbprint = if ($null -eq $signature.TimeStamperCertificate) { $null } else { $signature.TimeStamperCertificate.Thumbprint }",
@@ -896,10 +907,7 @@ function assessRelease({
           authenticode = null;
         }
         const validAuthenticode =
-          signature.ok &&
-          authenticode?.status === "Valid" &&
-          Boolean(authenticode.signerThumbprint) &&
-          Boolean(authenticode.timestampThumbprint);
+          signature.ok && isPublicWindowsSignature(authenticode);
         const artifact = artifacts.find(item => item.name === artifactName);
         if (artifact) artifact.authenticode = authenticode;
         add(
@@ -1012,6 +1020,7 @@ module.exports = {
   assessRelease,
   formatHumanReport,
   listPrivateKeyFiles,
+  isPublicWindowsSignature,
   parseArguments,
   validateReleaseLockfile
 };

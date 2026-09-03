@@ -82,7 +82,39 @@ npm ci
 npm run build:win
 ```
 
-构建结果包括 NSIS 安装包和 portable 便携版。公开发行必须配置可信的 Windows 代码签名证书；未签名构建可能触发 SmartScreen 警告。
+构建结果包括 NSIS 安装包和 portable 便携版。正式公开发行必须配置公众可信的
+Windows 代码签名证书；未签名或自签名的 Preview 不能视为已完成正式签名。
+
+### 独立的 Self-Signed Preview 通道
+
+`0.6.1-preview.1` 起可使用项目专用证书构建自签名测试版：
+
+```powershell
+npm ci
+npm run build:win:self-signed-preview
+```
+
+产物必须保留明确的 Preview 名称：
+
+- `DocFlow-Local-Setup-${version}-x64-Self-Signed-Preview.exe`
+- `DocFlow-Local-${version}-Windows-x64-Self-Signed-Preview.exe`
+
+公开证书为 `DocFlow-Local-Preview-CodeSigning.cer`，仅含公钥，不提供 PFX、
+私钥或密码。此通道与仍待批准的 SignPath 申请独立，不使用 SignPath
+Foundation 证书，也不能满足正式商业发布的公众可信签名门禁。
+
+自签名在 SmartScreen 中与未签名文件的提示行为相同，Smart App Control
+仍可能阻止运行。安装器和应用绝不自动导入或信任证书，不修改 Windows
+信任存储，不关闭安全保护，也不添加 Defender 或其他安全工具的例外。
+只在自有或经 IT 批准的测试环境使用；受管策略或 Smart App Control 阻止时，
+应使用公众可信签名或 Microsoft Store 版本，不得关闭保护来运行 Preview。
+
+证书指纹、有效期、双语风险说明，以及只读的 `Get-FileHash` /
+`Get-AuthenticodeSignature` 核对步骤，见
+[Windows 自签名 Preview 说明](release/WINDOWS_SELF_SIGNED_PREVIEW.md)。
+默认 Windows 信任链可能显示 `NotTrusted`，这不代表通过公众信任验证。
+
+### 正式公众可信签名通道
 
 正式签名构建使用：
 
@@ -96,7 +128,8 @@ npm run build:win:release
 时间戳，执行完整桌面/包消费测试与 packaged smoke，并对 NSIS 和 portable
 产物逐个调用 `Get-AuthenticodeSignature`。缺少证书、发布证据、干净工作树
 或有效签名时构建会失败。PFX 和密码只能来自受控 CI secrets 或发布机证书
-存储，不得写入仓库。
+存储，不得写入仓库。上述门禁不会因 Self-Signed Preview 构建成功而降低或
+标记完成。
 
 Windows 打包脚本会先生成 `win-unpacked` 目录，直接从打包后的
 `app.asar` 启动本地引擎并运行 JSON 导入与鉴权健康检查。只有

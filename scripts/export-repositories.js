@@ -367,7 +367,12 @@ async function generatedCiWorkflow(sourceRoot, repositoryName) {
         ...targetCommands.flatMap(command => [
           `      - run: ${command}`,
           "        if: ${{ hashFiles('package-lock.json') != '' }}"
-        ])
+        ]),
+        "      - name: Parse Windows signing scripts",
+        "        if: ${{ runner.os == 'Windows' }}",
+        "        shell: powershell",
+        "        run: |",
+        "          @('desktop/package-win-self-signed-preview.ps1', 'desktop/windows-preview-certificate.ps1', 'desktop/prepare-windows-preview-signing.ps1', 'desktop/cleanup-windows-preview-signing.ps1') | ForEach-Object { [void][scriptblock]::Create((Get-Content -LiteralPath $_ -Raw)) }"
       ]
     : [];
   const bootstrapModeStep = repositoryName === "docflow-desktop"
@@ -753,6 +758,14 @@ function repositoryDefinitions() {
           "release/split-repositories/docflow-desktop/windows-package.yml",
           ".github/workflows/windows-package.yml"
         ),
+        sourceEntry(
+          "release/split-repositories/docflow-desktop/windows-self-signed-preview.yml",
+          ".github/workflows/windows-self-signed-preview.yml"
+        ),
+        sourceEntry(
+          "release/split-repositories/docflow-desktop/CODE_SIGNING_POLICY.md",
+          "CODE_SIGNING_POLICY.md"
+        ),
         generatedEntry("README.md", "generated:docflow-desktop/README.md", sourceRoot => (
           rewrittenSource(sourceRoot, "README.md", source => rewriteDesktopDocument("README.md", source))
         )),
@@ -836,7 +849,10 @@ function repositoryDefinitions() {
         ),
         sourceEntry("release/release-evidence.json"),
         sourceEntry("release/github-repositories.json"),
+        sourceEntry("release/WINDOWS_SELF_SIGNED_PREVIEW.md"),
+        sourceEntry("release/windows-self-signed-preview-openssl.cnf"),
         sourceEntry("scripts/generate-release-metadata.js"),
+        sourceEntry("scripts/generate-windows-self-signed-preview-metadata.js"),
         sourceEntry("scripts/release-readiness.js"),
         sourceEntry("scripts/release-readiness-test.js"),
         generatedEntry(
@@ -916,6 +932,9 @@ function repositoryDefinitions() {
                 "node --check desktop/benchmark-engine.js",
                 "node --check desktop/electron-builder.release.cjs",
                 "node --check desktop/electron-builder.win-release.cjs",
+                "node --check desktop/electron-builder.win-self-signed-preview.cjs",
+                "node --check desktop/windows-preview-certificate.js",
+                "node --check desktop/windows-self-signed-preview-config-test.js",
                 "node --check desktop/release-signing-preflight.js",
                 "node --check desktop/release-signing-preflight-test.js",
                 "node --check desktop/release-signing-preflight-win.js",
@@ -923,7 +942,8 @@ function repositoryDefinitions() {
                 "node --check scripts/check-desktop-license-materials.js",
                 "node --check scripts/release-readiness.js",
                 "node --check scripts/release-readiness-test.js",
-                "node --check scripts/generate-release-metadata.js"
+                "node --check scripts/generate-release-metadata.js",
+                "node --check scripts/generate-windows-self-signed-preview-metadata.js"
               ].join(" && ");
               scripts["test:licenses"] = "node scripts/check-desktop-license-materials.js";
               scripts["test:release"] = [
@@ -931,6 +951,7 @@ function repositoryDefinitions() {
                 "node scripts/release-readiness-test.js",
                 "node desktop/release-signing-preflight-test.js",
                 "node desktop/release-signing-preflight-win-test.js",
+                "node desktop/windows-self-signed-preview-config-test.js",
                 "node scripts/release-readiness.js --channel internal --source-only"
               ].join(" && ");
               scripts["release:check"] = [
@@ -972,6 +993,11 @@ function repositoryDefinitions() {
       requiredFiles: Object.freeze([
         ".github/workflows/ci.yml",
         ".github/workflows/windows-package.yml",
+        ".github/workflows/windows-self-signed-preview.yml",
+        "CODE_SIGNING_POLICY.md",
+        "build/windows-preview/certificate.json",
+        "build/windows-preview/DocFlow-Local-Preview-CodeSigning.cer",
+        "release/WINDOWS_SELF_SIGNED_PREVIEW.md",
         "LICENSE",
         "NOTICE.md",
         "README.md",

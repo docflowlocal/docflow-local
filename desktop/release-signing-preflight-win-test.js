@@ -30,4 +30,11 @@ const missingPassword = validateWindowsSigningEnvironment({
 assert.strictEqual(missingPassword.valid, false);
 assert(missingPassword.errors.some(message => message.includes("WIN_CSC_KEY_PASSWORD")));
 
+const preview = validateWindowsSigningEnvironment({
+  DOCFLOW_WIN_CERTIFICATE_SUBJECT: "CN=DocFlow Local Community Preview",
+  DOCFLOW_WIN_PUBLISHER_NAME: "DocFlow Local Community Preview"
+});
+assert.strictEqual(preview.valid, false);
+assert(preview.errors.some(message => message.includes("self-signed Preview")));
+
 process.stdout.write("Signed Windows release preflight tests passed.\n");

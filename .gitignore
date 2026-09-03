@@ -15,5 +15,6 @@ website/node_modules/
 *.p12
 *.pfx
 *.cer
+!build/windows-preview/DocFlow-Local-Preview-CodeSigning.cer
 *.mobileprovision
 notary-profile.json
